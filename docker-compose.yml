@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: artflora
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-artflora}
+      POSTGRES_DB: artflora
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  site:
+    build: .
+    restart: unless-stopped
+    depends_on: [db]
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://artflora:${DB_PASSWORD:-artflora}@db:5432/artflora?schema=public
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET}
+      SITE_URL: ${SITE_URL:-https://artflora.by}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - uploads:/data/uploads
+
+volumes:
+  db:
+  uploads:

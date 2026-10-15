@@ -1,0 +1,191 @@
+// Схема базы данных сайта «Артфлора».
+// Все деньги хранятся в копейках (целые числа), чтобы не было ошибок округления.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FlowerKind {
+  FLOWER // цветы
+  GREEN // зелень
+}
+
+enum FlowerUnit {
+  STEM // за ветку
+  PIECE // за штуку
+}
+
+// Справочник цветов: только розничная цена и наличие.
+// Закупку считает бухгалтерия, здесь её нет.
+model Flower {
+  id            Int          @id @default(autoincrement())
+  name          String       @unique
+  kind          FlowerKind   @default(FLOWER)
+  unit          FlowerUnit   @default(STEM)
+  priceKop      Int // розничная цена за штуку/ветку
+  prevPriceKop  Int? // прошлая цена, показываем в админке «Было»
+  inStock       Boolean      @default(true)
+  sortOrder     Int          @default(0)
+  items         BouquetItem[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+enum BouquetFormat {
+  BOUQUET // букет
+  BAG // сумка с цветами
+  HATBOX // шляпная коробка
+  BASKET // корзина
+}
+
+// Коллекция = один и тот же состав в разных видах (сумка, букет, коробка, корзина).
+model Collection {
+  id        Int       @id @default(autoincrement())
+  slug      String    @unique
+  name      String
+  bouquets  Bouquet[]
+}
+
+model Bouquet {
+  id            Int           @id @default(autoincrement())
+  slug          String        @unique
+  name          String
+  description   String        @default("")
+  format        BouquetFormat @default(BOUQUET)
+  packagingKop  Int           @default(0) // стоимость упаковки
+  enabled       Boolean       @default(true) // включён вручную
+  isHit         Boolean       @default(false) // «Хит недели»
+  occasions     String[] // слаги поводов: mom, love, birthday, colleague, nothing, wedding, exotic
+  photos        String[] // пути к фото, первое — главное
+  sortOrder     Int           @default(0)
+  collectionId  Int?
+  collection    Collection?   @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  sizes         BouquetSize[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum SizeCode {
+  S
+  M
+  L
+}
+
+// У каждого размера свой состав.
+model BouquetSize {
+  id         Int           @id @default(autoincrement())
+  bouquetId  Int
+  bouquet    Bouquet       @relation(fields: [bouquetId], references: [id], onDelete: Cascade)
+  code       SizeCode
+  note       String        @default("") // «Как на фото, 11 цветков»
+  items      BouquetItem[]
+
+  @@unique([bouquetId, code])
+}
+
+model BouquetItem {
+  id        Int         @id @default(autoincrement())
+  sizeId    Int
+  size      BouquetSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+  flowerId  Int
+  flower    Flower      @relation(fields: [flowerId], references: [id], onDelete: Restrict)
+  qty       Int
+
+  @@unique([sizeId, flowerId])
+}
+
+// Дополнения к букету: открытка, конфеты, шар, ваза.
+model Addon {
+  id         Int      @id @default(autoincrement())
+  code       String   @unique
+  name       String
+  priceKop   Int      @default(0)
+  included   Boolean  @default(false) // «Уже в комплекте», выбирать не нужно
+  active     Boolean  @default(true)
+  sortOrder  Int      @default(0)
+}
+
+enum OrderStatus {
+  NEW // новый, ещё не смотрели
+  CONFIRMED // приняли, собираем
+  PHOTO_SENT // фото отправили клиенту
+  ON_THE_WAY // в пути / ждёт самовывоза
+  DONE // выполнен
+  CANCELLED // отменён
+}
+
+enum DeliveryMethod {
+  DELIVERY
+  PICKUP
+}
+
+enum PaymentMethod {
+  CARD // картой на сайте
+  ERIP // ЕРИП
+  VIBER_LINK // ссылкой в Viber после фото
+}
+
+model Order {
+  id                Int            @id @default(autoincrement())
+  number            Int            @unique // номер для клиента
+  status            OrderStatus    @default(NEW)
+  customerName      String
+  customerPhone     String
+  recipientName     String         @default("")
+  recipientPhone    String         @default("")
+  callRecipient     Boolean        @default(false)
+  anonymous         Boolean        @default(false) // не говорить, от кого
+  cardText          String         @default("")
+  comment           String         @default("")
+  deliveryMethod    DeliveryMethod
+  address           String         @default("")
+  shop              String // код магазина: uruchye / malinovka
+  deliveryZone      Int?
+  distanceKm        Float?
+  deliveryDate      DateTime       @db.Date
+  deliverySlot      String // «14–16»
+  paymentMethod     PaymentMethod
+  paid              Boolean        @default(false)
+  itemsKop          Int // сумма букетов и дополнений
+  discountKop       Int            @default(0) // скидка за самовывоз
+  deliveryKop       Int            @default(0)
+  totalKop          Int
+  items             OrderItem[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+// Позиция заказа хранит копию названия и цены на момент покупки.
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  bouquetId   Int?
+  addonId     Int?
+  name        String
+  size        String   @default("")
+  composition String   @default("")
+  qty         Int
+  priceKop    Int // цена за штуку
+}
+
+// «Напомним о важных датах»
+model Reminder {
+  id         Int      @id @default(autoincrement())
+  name       String
+  phone      String
+  occasion   String
+  date       DateTime @db.Date
+  createdAt  DateTime @default(now())
+}
+
+// Настройки сайта (доставка, контакты, реквизиты) — одна запись на ключ.
+model Setting {
+  key    String @id
+  value  Json
+}
