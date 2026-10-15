@@ -1,3 +1,5 @@
+# Сайт + база одной командой: docker compose up -d --build
+# Откроется на http://localhost:8000 (порт меняется в .env: SITE_PORT=...).
 services:
   db:
     image: postgres:16-alpine
@@ -8,18 +10,28 @@ services:
       POSTGRES_DB: artflora
     volumes:
       - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U artflora -d artflora"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
 
   site:
     build: .
     restart: unless-stopped
-    depends_on: [db]
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
-      - "3000:3000"
+      - "${SITE_PORT:-8000}:3000"
     environment:
       DATABASE_URL: postgresql://artflora:${DB_PASSWORD:-artflora}@db:5432/artflora?schema=public
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      SESSION_SECRET: ${SESSION_SECRET}
-      SITE_URL: ${SITE_URL:-https://artflora.by}
+      # Значения по умолчанию годятся только для компьютера. На сервере задайте свои в .env.
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-artflora}
+      SESSION_SECRET: ${SESSION_SECRET:-local-only-secret-change-me-on-server}
+      SITE_URL: ${SITE_URL:-http://localhost:8000}
+      # 1 — при первом запуске заполнить пустую базу цветами и букетами из макетов
+      SEED_DEMO: ${SEED_DEMO:-1}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
     volumes:

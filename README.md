@@ -29,6 +29,33 @@
 - Расчёты без базы и сети (цены, доставка, интервалы) лежат в `src/lib/pricing.ts`, `delivery.ts`, `slots.ts` и проверяются тестами в `tests/`.
 - Адрес → координаты: OpenStreetMap (бесплатно). Для большого потока заказов лучше подключить Яндекс Геокодер.
 
+## Запуск у себя через Docker (проще всего)
+
+Нужен только [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows, Mac или Linux) и интернет на время первой сборки.
+
+```bash
+git clone https://github.com/dinx393/artflora-site-.git artflora-site
+cd artflora-site
+docker compose up -d --build
+```
+
+Первая сборка занимает несколько минут. Потом откройте:
+
+- сайт: http://localhost:8000
+- админка: http://localhost:8000/admin, пароль `artflora`
+
+При первом запуске база заполняется цветами и букетами из макетов. Всё, что вы поменяете в админке, и заказы сохраняются между перезапусками.
+
+| Что сделать | Команда |
+|---|---|
+| Остановить | `docker compose down` |
+| Запустить снова | `docker compose up -d` |
+| Обновить после новых коммитов | `git pull` и `docker compose up -d --build` |
+| Посмотреть, что пишет сайт | `docker compose logs -f site` |
+| Начать с чистой базы | `docker compose down -v` (удалит заказы и фото!) |
+
+Другой порт или пароль: создайте рядом файл `.env` со строками `SITE_PORT=8080`, `ADMIN_PASSWORD=...`.
+
 ## Запуск на компьютере разработчика
 
 Нужны Node.js 22 и PostgreSQL 16.
@@ -45,11 +72,11 @@ npm test                      # проверка расчётов
 ## Запуск на сервере
 
 ```bash
-cp .env.example .env          # ADMIN_PASSWORD, SESSION_SECRET, DB_PASSWORD, SITE_URL
+cp .env.example .env          # ADMIN_PASSWORD, SESSION_SECRET, DB_PASSWORD, SITE_URL=https://artflora.by
 docker compose up -d --build
 ```
 
-Стартовые цветы и букеты можно залить один раз с компьютера разработчика: `DATABASE_URL=<адрес базы на сервере> npm run db:seed`.
+Пустая база при первом запуске заполняется примерами из макетов. Если на сервере они не нужны, добавьте в `.env` строку `SEED_DEMO=0`.
 
 Фото букетов сохраняются в томе `uploads`, база — в томе `db`. Делайте их резервные копии.
 

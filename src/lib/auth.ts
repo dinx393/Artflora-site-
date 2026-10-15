@@ -36,7 +36,8 @@ export async function startSession() {
   (await cookies()).set(COOKIE, `${exp}.${sign(exp)}`, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // Только по https: на http://localhost или по адресу в локальной сети иначе не войти.
+    secure: (process.env.SITE_URL ?? "").startsWith("https://"),
     path: "/",
     maxAge: DAYS * 86400,
   });
