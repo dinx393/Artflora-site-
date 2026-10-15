@@ -1,3 +1,4 @@
+import { formatPhone } from "@/lib/phone";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -12,7 +13,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const [o, delivery] = await Promise.all([db.order.findUnique({ where: { id }, include: { items: true } }), getSetting("delivery")]);
   if (!o) notFound();
   const shop = delivery.shops.find((s) => s.code === o.shop);
-  const tel = (p: string) => <a href={`tel:${p}`}>{p}</a>;
+  const tel = (p: string) => <a href={`tel:${p}`}>{formatPhone(p)}</a>;
 
   return (
     <>
@@ -61,7 +62,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           {o.deliveryMethod === "DELIVERY" && <div className="sum-row"><span>Доставка</span><span>{formatByn(o.deliveryKop)}</span></div>}
           <div className="sum-row" style={{ alignItems: "baseline" }}><b>Итого</b><span className="sum-total">{formatByn(o.totalKop)}</span></div>
           <div className="sum-row"><span>Оплата</span><span>{PAY_LABEL[o.paymentMethod]} · {o.paid ? "оплачен" : "не оплачен"}</span></div>
-          <form action={updateOrder} className="stack" style={{ gap: 8 }}>
+          <form key={`${o.status}-${o.paid}`} action={updateOrder} className="stack" style={{ gap: 8 }}>
             <input type="hidden" name="id" value={o.id} />
             <label className="field">
               <span>Статус</span>

@@ -7,10 +7,7 @@
 - Деньги везде в копейках (Int). Цены от клиента не принимаем: сервер пересчитывает (`src/lib/checkout.ts`).
 - Чистая логика: `src/lib/pricing.ts`, `delivery.ts`, `slots.ts`, `money.ts` — покрыта тестами `npm test`.
 
-## Первый запуск (ещё не сделан)
+## Проверено (2026-10-15)
 
-Код написан без доступа к npm, поэтому ещё не собирался. По порядку:
-1. `npm install` (создаст package-lock.json, закоммитить).
-2. Поднять Postgres, `cp .env.example .env`, `npx prisma migrate dev --name init` (закоммитить `prisma/migrations`).
-3. `npm run db:seed`, `npm run typecheck`, `npm test`, `npm run build`, исправить ошибки.
-4. Пройти руками: каталог → букет → корзина → заказ → админка (цветы, букеты, заказы).
+Собрано и запущено: `npm install`, `prisma migrate dev` (миграция `init` в `prisma/migrations`), `db:seed`, `typecheck`, `test`, `build`. Пройдены руками в браузере: каталог → букет → корзина → заказ (ПК и телефон, доставка и самовывоз) и вся админка.
+Адреса для геокодера разворачиваем из сокращений (`src/lib/address.ts`): Nominatim понимает «пр. Независимости 180» как центр Минска.

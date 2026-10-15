@@ -1,3 +1,4 @@
+import { formatPhone } from "@/lib/phone";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -39,7 +40,7 @@ export default async function OrderDone({
           Спасибо! Заказ <span className="script">принят</span>
         </h1>
         <p className="muted" style={{ fontSize: 18 }}>
-          Номер заказа {order.number}. Мы позвоним или напишем на {order.customerPhone}. Что будет дальше:
+          Номер заказа {order.number}. Мы позвоним или напишем на {formatPhone(order.customerPhone)}. Что будет дальше:
         </p>
         <ol className="stack" style={{ gap: 14, paddingLeft: 20, margin: 0 }}>
           <li>

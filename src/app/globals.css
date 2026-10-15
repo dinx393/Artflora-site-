@@ -104,7 +104,7 @@ textarea.input { resize: vertical; min-height: 60px; }
 .search input { font-size: 16px; padding: 12px 0; border: 0; outline: none; background: transparent; flex: 1; min-width: 0; color: var(--cherry); }
 .phone { font-weight: 700; text-decoration: none; white-space: nowrap; }
 .nav { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 16px; font-weight: 600; padding: 12px 0; }
-.nav a { text-decoration: none; }
+.nav a { text-decoration: none; white-space: nowrap; }
 .ribbon { background: var(--pink); }
 .ribbon .wrap {
   padding-top: 9px; padding-bottom: 9px; display: flex; white-space: nowrap; overflow: hidden;
@@ -118,7 +118,7 @@ textarea.input { resize: vertical; min-height: 60px; }
 
 /* Главная */
 .hero {
-  max-width: 1200px; margin: 0 auto; padding: 40px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center;
+  max-width: 1200px; margin: 0 auto; padding: 40px var(--gutter); display: flex; flex-wrap: wrap; gap: 40px; align-items: center;
   background:
     radial-gradient(520px 420px at 88% 30%, rgba(242,201,212,.75), rgba(242,201,212,0) 70%),
     radial-gradient(480px 380px at 8% 90%, rgba(126,31,60,.10), rgba(126,31,60,0) 70%);
@@ -140,6 +140,7 @@ textarea.input { resize: vertical; min-height: 60px; }
 .pcard-photo img { width: 100%; height: 100%; object-fit: cover; }
 .pcard-title { font-family: var(--serif); font-size: 24px; font-weight: 600; line-height: 1.1; text-decoration: none; }
 .pcard-body { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.pcard-body > :last-child { margin-top: auto; }
 .pcard-body .btn { margin-top: auto; padding: 10px 16px; }
 .badge { position: absolute; left: 12px; top: 12px; background: rgba(255,255,255,.88); padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; }
 

@@ -22,7 +22,7 @@ export default async function Collections() {
       </form>
       {list.map((c) => (
         <div key={c.id} className="card stack" style={{ gap: 10 }}>
-          <form action={renameCollection} className="row" style={{ gap: 8 }}>
+          <form key={c.name} action={renameCollection} className="row" style={{ gap: 8 }}>
             <input type="hidden" name="id" value={c.id} />
             <input className="input" name="name" defaultValue={c.name} style={{ maxWidth: 300, fontWeight: 800 }} />
             <button className="btn btn-outline">Переименовать</button>

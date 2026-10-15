@@ -1,3 +1,4 @@
+import { formatPhone } from "@/lib/phone";
 import Link from "next/link";
 import type { OrderStatus } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -39,7 +40,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
                   <td className="small">{o.deliveryDate.toLocaleDateString("ru-RU", { day: "numeric", month: "short", timeZone: "UTC" })}, {o.deliverySlot}</td>
                   <td className="small">{o.items.map((i) => `${i.name}${i.size ? ` ${i.size}` : ""}${i.qty > 1 ? ` ×${i.qty}` : ""}`).join(", ")}</td>
                   <td className="small">{o.deliveryMethod === "PICKUP" ? `Самовывоз · ${o.shop}` : o.address}</td>
-                  <td className="small">{o.customerName}<br />{o.customerPhone}</td>
+                  <td className="small">{o.customerName}<br />{formatPhone(o.customerPhone)}</td>
                   <td style={{ fontWeight: 800 }}>{formatByn(o.totalKop)}{o.paid && <div className="pill ok">оплачен</div>}</td>
                   <td><span className={`pill ${o.status === "NEW" ? "warn" : o.status === "DONE" ? "ok" : ""}`}>{STATUS_LABEL[o.status]}</span></td>
                 </tr>

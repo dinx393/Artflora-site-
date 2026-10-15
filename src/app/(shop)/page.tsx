@@ -18,7 +18,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   return (
     <>
       <section className="hero">
-        <div className="stack" style={{ flex: "1 1 420px", gap: 20 }}>
+        <div className="stack" style={{ flex: "1 1 min(420px, 100%)", minWidth: 0, gap: 20 }}>
           <p style={{ fontWeight: 700, fontSize: 15, letterSpacing: 1, textTransform: "uppercase" }}>
             Цветочный магазин в Уручье и Малиновке
           </p>
@@ -37,7 +37,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             </a>
           </div>
         </div>
-        <div style={{ flex: "1 1 420px", display: "flex", justifyContent: "center" }}>
+        <div style={{ flex: "1 1 min(420px, 100%)", minWidth: 0, display: "flex", justifyContent: "center" }}>
           <div className="hero-photo">
             <img src={heroPhoto} alt="Букет от Артфлоры" />
           </div>
