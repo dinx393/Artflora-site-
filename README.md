@@ -34,7 +34,7 @@
 Нужен только [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows, Mac или Linux) и интернет на время первой сборки.
 
 ```bash
-git clone https://github.com/dinx393/artflora-site-.git artflora-site
+git clone https://github.com/dinx393/Artflora-site-.git artflora-site
 cd artflora-site
 docker compose up -d --build
 ```
