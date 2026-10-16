@@ -9,9 +9,9 @@
   --muted: #6e5560;
   --white: #ffffff;
   --danger: #a3283c;
-  --serif: var(--font-cormorant), Georgia, serif;
-  --script: var(--font-marck), cursive;
-  --sans: var(--font-manrope), system-ui, sans-serif;
+  --serif: "Cormorant Garamond Variable", Georgia, serif;
+  --script: "Marck Script", cursive;
+  --sans: "Manrope Variable", system-ui, sans-serif;
   --gutter: 24px;
 }
 

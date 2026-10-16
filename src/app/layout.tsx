@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Manrope, Marck_Script } from "next/font/google";
+// Шрифты лежат в пакетах npm, а не качаются из Google при сборке:
+// иначе сборка падает, если Google Fonts недоступен.
+import "@fontsource-variable/manrope";
+import "@fontsource-variable/cormorant-garamond";
+import "@fontsource/marck-script/400.css";
 import "./globals.css";
-
-const manrope = Manrope({ subsets: ["latin", "cyrillic"], variable: "--font-manrope", weight: ["400", "500", "600", "700", "800"] });
-const cormorant = Cormorant_Garamond({ subsets: ["latin", "cyrillic"], variable: "--font-cormorant", weight: ["500", "600", "700"] });
-const marck = Marck_Script({ subsets: ["latin", "cyrillic"], variable: "--font-marck", weight: "400" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL ?? "https://artflora.by"),
@@ -17,7 +17,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${manrope.variable} ${cormorant.variable} ${marck.variable}`}>
+    <html lang="ru">
       <body>{children}</body>
     </html>
   );
