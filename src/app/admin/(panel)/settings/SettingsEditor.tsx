@@ -68,6 +68,7 @@ export function SettingsEditor(props: { shop: ShopSettings; delivery: DeliveryCo
           {field("Телефон в шапке", "phone")}
           {field("Ссылка Viber", "viber", "viber://chat?number=%2B375...")}
           {field("Ссылка Telegram", "telegram", "https://t.me/...")}
+          {field("Ссылка WhatsApp (пусто — по номеру телефона)", "whatsapp", "https://wa.me/375...")}
           {field("Ссылка Instagram", "instagram")}
         </div>
         {field("Строка над каталогом (акция)", "promoLine", "До Дня матери 14 октября · предзаказ −10%")}

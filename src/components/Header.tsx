@@ -1,9 +1,21 @@
 import Link from "next/link";
 import { CartLink } from "./CartLink";
 import { SearchIcon } from "./icons";
+import type { ContactLink } from "@/lib/contacts";
 import { formatByn } from "@/lib/money";
+import { PhoneMenu } from "./PhoneMenu";
 
-export function Header({ phone, minDeliveryKop, pickupPct }: { phone: string; minDeliveryKop: number; pickupPct: number }) {
+export function Header({
+  phone,
+  contacts,
+  minDeliveryKop,
+  pickupPct,
+}: {
+  phone: string;
+  contacts: ContactLink[];
+  minDeliveryKop: number;
+  pickupPct: number;
+}) {
   return (
     <>
       <header className="header">
@@ -19,9 +31,7 @@ export function Header({ phone, minDeliveryKop, pickupPct }: { phone: string; mi
               </label>
               <input id="q" name="q" type="search" placeholder="Розы, хризантемы, маме…" />
             </form>
-            <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="phone">
-              {phone}
-            </a>
+            <PhoneMenu phone={phone} links={contacts} />
             <CartLink />
           </div>
           <nav className="nav">

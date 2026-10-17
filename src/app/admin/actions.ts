@@ -343,6 +343,7 @@ export async function saveSettings(input: {
       phone: z.string().max(40),
       viber: z.string().max(300),
       telegram: z.string().max(300),
+      whatsapp: z.string().max(300).default(""),
       instagram: z.string().max(300),
       sellerDetails: z.string().max(1000),
       leadHours: z.number().min(0).max(24),

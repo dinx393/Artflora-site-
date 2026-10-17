@@ -105,7 +105,21 @@ textarea.input { resize: vertical; min-height: 60px; }
   border-radius: 999px; border: 1px solid var(--line); color: var(--muted);
 }
 .search input { font-size: 16px; padding: 12px 0; border: 0; outline: none; background: transparent; flex: 1; min-width: 0; color: var(--cherry); }
-.phone { font-weight: 700; text-decoration: none; white-space: nowrap; }
+.phone-menu { position: relative; }
+.phone { font-weight: 700; white-space: nowrap; background: none; border: 0; padding: 8px 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.phone .phone-icon { display: none; }
+.phone-pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; min-width: 240px; display: flex; flex-direction: column; gap: 4px;
+  background: var(--white); border: 1px solid var(--line); border-radius: 18px; padding: 12px; box-shadow: 0 12px 32px rgba(126,31,60,.12);
+}
+.phone-pop > .small { padding: 2px 8px 6px; }
+.phone-opt { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-radius: 12px; text-decoration: none; font-weight: 700; }
+.phone-opt:hover, .phone-opt:focus-visible { background: var(--blush); }
+.phone-opt .dot { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--white); font-weight: 800; font-size: 15px; }
+.phone-opt.telegram .dot { background: #2aabee; }
+.phone-opt.whatsapp .dot { background: #25d366; }
+.phone-opt.viber .dot { background: #7360f2; }
+.phone-opt.call .dot { background: var(--cherry); }
 .nav { display: flex; flex-wrap: wrap; gap: 8px 36px; font-size: 19px; font-weight: 700; padding: 16px 0 18px; }
 .nav a { text-decoration: none; white-space: nowrap; padding-bottom: 3px; border-bottom: 2px solid transparent; }
 .nav a:hover { border-bottom-color: currentColor; }
@@ -210,9 +224,13 @@ textarea.input { resize: vertical; min-height: 60px; }
 @media (max-width: 860px) {
   :root { --gutter: 22px; }
   html { scroll-padding-top: 190px; }
-  .header-top { flex-wrap: wrap; gap: 12px; }
+  .header-top { flex-wrap: wrap; gap: 10px; }
   .header-top .search { order: 5; flex-basis: 100%; }
-  .header-top .phone { display: none; }
+  /* На телефоне вместо номера — круглая кнопка с трубкой рядом с корзиной */
+  .header-top .phone { width: 44px; height: 44px; padding: 0; justify-content: center; border: 1px solid var(--line); border-radius: 50%; }
+  .header-top .phone .phone-number { display: none; }
+  .header-top .phone .phone-icon { display: inline-flex; }
+  .header-top .btn { padding: 10px 16px; }
   .logo { font-size: 28px; margin-right: auto; }
   .nav { overflow-x: auto; flex-wrap: nowrap; font-size: 17px; gap: 22px; padding: 12px 0 14px; }
   .ribbon .wrap { justify-content: flex-start; }
@@ -251,6 +269,8 @@ textarea.input { resize: vertical; min-height: 60px; }
   .line .line-price { grid-column: 2; }
 }
 @media (min-width: 861px) { .mobile-only { display: none !important; } }
+/* Узкие телефоны: в шапке у корзины только значок и число, чтобы всё влезло в одну строку */
+@media (max-width: 379px) { .header-top .cart-word { display: none; } }
 
 /* Админка */
 .admin { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }

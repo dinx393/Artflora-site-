@@ -9,7 +9,10 @@ export function CartLink() {
   return (
     <Link href="/cart" className="btn" aria-label={`Корзина, товаров: ${count}`}>
       <BagIcon />
-      Корзина · {count}
+      <span>
+        <span className="cart-word">Корзина · </span>
+        {count}
+      </span>
     </Link>
   );
 }

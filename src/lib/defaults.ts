@@ -6,6 +6,7 @@ export type ShopSettings = {
   phone: string; // «+375 29 683-28-32»
   viber: string; // ссылка для «Написать в Viber»
   telegram: string;
+  whatsapp: string; // пусто — откроем WhatsApp по номеру телефона
   instagram: string;
   sellerDetails: string; // реквизиты продавца в подвале
   leadHours: number; // за сколько часов минимум принимаем заказ на сегодня
@@ -18,6 +19,7 @@ export const DEFAULT_SHOP: ShopSettings = {
   phone: "+375 29 683-28-32",
   viber: "viber://chat?number=%2B375296832832",
   telegram: "https://t.me/",
+  whatsapp: "",
   instagram: "https://www.instagram.com/artflora.by/",
   sellerDetails:
     "[Наименование продавца], УНП [номер] · Юр. адрес: [адрес] · В Торговом реестре РБ с [дата], № [номер]",
