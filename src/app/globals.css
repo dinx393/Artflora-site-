@@ -103,8 +103,9 @@ textarea.input { resize: vertical; min-height: 60px; }
 }
 .search input { font-size: 16px; padding: 12px 0; border: 0; outline: none; background: transparent; flex: 1; min-width: 0; color: var(--cherry); }
 .phone { font-weight: 700; text-decoration: none; white-space: nowrap; }
-.nav { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 16px; font-weight: 600; padding: 12px 0; }
-.nav a { text-decoration: none; white-space: nowrap; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px 36px; font-size: 19px; font-weight: 700; padding: 16px 0 18px; }
+.nav a { text-decoration: none; white-space: nowrap; padding-bottom: 3px; border-bottom: 2px solid transparent; }
+.nav a:hover { border-bottom-color: currentColor; }
 .ribbon { background: var(--pink); }
 .ribbon .wrap {
   padding-top: 9px; padding-bottom: 9px; display: flex; white-space: nowrap; overflow: hidden;
@@ -206,7 +207,7 @@ textarea.input { resize: vertical; min-height: 60px; }
   .header-top .search { order: 5; flex-basis: 100%; }
   .header-top .phone { display: none; }
   .logo { font-size: 28px; margin-right: auto; }
-  .nav { overflow-x: auto; flex-wrap: nowrap; }
+  .nav { overflow-x: auto; flex-wrap: nowrap; font-size: 17px; gap: 22px; padding: 12px 0 14px; }
   .ribbon .wrap { justify-content: flex-start; }
   .hero { padding: 28px var(--gutter); gap: 28px; }
   .hero h1 { font-size: 44px; }
