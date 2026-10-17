@@ -37,10 +37,19 @@ type Totals = {
 };
 
 const PAYMENTS = [
-  { code: "CARD", title: "Картой на сайте", note: "Visa, Mastercard, Белкарт" },
-  { code: "ERIP", title: "ЕРИП", note: "Номер заказа придёт в SMS" },
+  { code: "CARD", title: "Картой", note: "Пришлём ссылку на оплату после подтверждения заказа" },
+  { code: "ERIP", title: "ЕРИП", note: "Пришлём код для оплаты после подтверждения заказа" },
   { code: "VIBER_LINK", title: "Ссылкой в Viber", note: "После того как согласуем фото" },
 ] as const;
+
+// UUID v4. crypto.randomUUID есть не везде (например, сайт открыт по адресу в домашней сети без https).
+function newKey(): string {
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
 
 export function Checkout({
   shops,
@@ -88,6 +97,8 @@ export function Checkout({
 
   const [error, setError] = useState<{ text: string; field?: string } | null>(null);
   const [sending, setSending] = useState(false);
+  // Ключ этого оформления: если запрос уйдёт дважды, сервер вернёт тот же заказ, а не создаст второй.
+  const [idempotencyKey] = useState(newKey);
 
   // Если на сегодня интервалов не осталось, сразу предлагаем завтра.
   useEffect(() => {
@@ -166,6 +177,7 @@ export function Checkout({
           anonymous,
           comment,
           payment,
+          idempotencyKey,
         }),
       });
       const r = await res.json();
@@ -389,7 +401,7 @@ export function Checkout({
                 {quoting && <p className="small muted">Считаем доставку…</p>}
                 {quote && !quote.ok && (
                   <p className="error">
-                    {quote.reason === "too-far" ? "Так далеко мы не возим, позвоните нам." : "Не нашли такой адрес. Уточните улицу и дом или выберите район."}
+                    {quote.reason === "too-far" ? "Так далеко мы не возим, позвоните нам." : quote.reason === "busy" ? "Слишком много запросов, попробуйте через минуту или выберите район." : "Не нашли такой адрес. Уточните улицу и дом или выберите район."}
                   </p>
                 )}
                 {quote?.ok && (
@@ -537,7 +549,7 @@ export function Checkout({
               {!customerName.trim() ? "Укажите имя и телефон." : ""}
             </p>
           )}
-          <p className="small muted">Пришлём фото букета до отправки. Оплатить можно сейчас или после согласования фото.</p>
+          <p className="small muted">Пришлём фото букета до отправки. Оплата после того, как подтвердим заказ.</p>
         </aside>
       </div>
 

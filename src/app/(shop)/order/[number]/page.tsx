@@ -9,7 +9,7 @@ import { getSetting } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "Заказ принят", robots: { index: false } };
 
-const PAY: Record<string, string> = { CARD: "картой на сайте", ERIP: "через ЕРИП", VIBER_LINK: "ссылкой в Viber после фото" };
+const PAY: Record<string, string> = { CARD: "картой, ссылку пришлём", ERIP: "через ЕРИП, код пришлём", VIBER_LINK: "ссылкой в Viber после фото" };
 
 function humanDate(d: Date): string {
   return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" });

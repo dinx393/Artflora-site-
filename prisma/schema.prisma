@@ -157,9 +157,19 @@ model Order {
   discountKop       Int            @default(0) // скидка за самовывоз
   deliveryKop       Int            @default(0)
   totalKop          Int
+  // Ключ из браузера: повторная отправка той же корзины не создаёт второй заказ
+  idempotencyKey    String?        @unique
+  // Уведомление в Telegram: когда дошло, сколько было попыток, последняя ошибка
+  notifiedAt        DateTime?
+  notifyAttempts    Int            @default(0)
+  notifyError       String         @default("")
   items             OrderItem[]
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+
+  @@index([status, deliveryDate])
+  @@index([deliveryDate])
+  @@index([createdAt])
 }
 
 // Позиция заказа хранит копию названия и цены на момент покупки.

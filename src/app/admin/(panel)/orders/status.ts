@@ -6,4 +6,4 @@ export const STATUS_LABEL: Record<string, string> = {
   DONE: "Выполнен",
   CANCELLED: "Отменён",
 };
-export const PAY_LABEL: Record<string, string> = { CARD: "Картой на сайте", ERIP: "ЕРИП", VIBER_LINK: "Ссылкой в Viber" };
+export const PAY_LABEL: Record<string, string> = { CARD: "Картой (ссылкой)", ERIP: "ЕРИП", VIBER_LINK: "Ссылкой в Viber" };

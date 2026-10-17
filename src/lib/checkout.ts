@@ -119,6 +119,8 @@ export const orderSchema = z
     anonymous: z.boolean().default(false),
     comment: z.string().max(1000).default(""),
     payment: z.enum(["CARD", "ERIP", "VIBER_LINK"]),
+    // Один ключ на одно оформление: повтор запроса (двойной клик, обрыв связи) вернёт уже созданный заказ.
+    idempotencyKey: z.string().uuid().optional(),
   })
   .refine((o) => o.method === "PICKUP" || o.addressUnknown || o.address.trim().length > 3, {
     message: "Укажите адрес доставки",
@@ -170,6 +172,10 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
     return { ok: false, error: issue.message, field: issue.path.join(".") };
   }
   const o = parsed.data;
+  if (o.idempotencyKey) {
+    const existing = await db.order.findUnique({ where: { idempotencyKey: o.idempotencyKey }, select: { number: true } });
+    if (existing) return { ok: true, number: existing.number, token: orderToken(existing.number) };
+  }
   const shopSettings = await getSetting("shop");
   const cfg = await getSetting("delivery");
 
@@ -180,7 +186,11 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
 
   let point = unknown ? null : o.point;
   if (o.method === "DELIVERY" && !unknown) {
-    point = (await geocode(o.address)) ?? o.point;
+    // Точку из браузера принимаем, только если это один из районов из настроек (кнопки «или выберите район»):
+    // иначе можно было бы прислать любую точку рядом с магазином и занизить цену доставки.
+    const districts = await getSetting("districts");
+    const preset = o.point && districts.find((d) => Math.abs(d.lat - o.point!.lat) < 1e-6 && Math.abs(d.lng - o.point!.lng) < 1e-6);
+    point = (await geocode(o.address)) ?? (preset ? { lat: preset.lat, lng: preset.lng } : null);
     if (!point) return { ok: false, error: "Не нашли адрес. Уточните улицу и дом или выберите район", field: "address" };
   }
 
@@ -204,7 +214,9 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
         ? totals.quote.shop.code
         : cfg.shops[0].code;
 
+  let duplicate = false;
   const order = await db.$transaction(async (tx) => {
+    // Второй такой же запрос, пришедший одновременно, упрётся в уникальный ключ (см. catch ниже).
     const created = await tx.order.create({
       data: {
         number: -1 - Math.floor(Math.random() * 2_000_000_000), // временно, ниже заменим на нормальный номер
@@ -229,6 +241,7 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
         discountKop: totals.discountKop,
         deliveryKop: totals.deliveryKop,
         totalKop: totals.totalKop,
+        idempotencyKey: o.idempotencyKey ?? null,
         items: {
           create: [
             ...totals.priced.lines.map((l) => ({
@@ -245,8 +258,14 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
       },
     });
     return tx.order.update({ where: { id: created.id }, data: { number: 10000 + created.id } });
+  }).catch(async (e: unknown) => {
+    if (o.idempotencyKey && (e as { code?: string })?.code === "P2002") {
+      duplicate = true;
+      return db.order.findUnique({ where: { idempotencyKey: o.idempotencyKey } });
+    }
+    throw e;
   });
-
-  notifyNewOrder(order.id).catch(() => {});
+  if (!order) return { ok: false, error: "Не получилось оформить заказ, попробуйте ещё раз" };
+  if (!duplicate) notifyNewOrder(order.id).catch(() => {});
   return { ok: true, number: order.number, token: orderToken(order.number) };
 }
