@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { headers } from "next/headers";
 import { db } from "@/lib/db";
+import { allow, clientIp } from "@/lib/rateLimit";
 
 export const metadata: Metadata = { title: "Напомним о важных датах" };
 
@@ -14,6 +16,7 @@ const schema = z.object({
 
 async function save(formData: FormData) {
   "use server";
+  if (!allow("remind", clientIp(await headers()))) redirect("/remind?error=busy");
   const parsed = schema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) redirect("/remind?error=1");
   await db.reminder.create({ data: { ...parsed.data, date: new Date(parsed.data.date + "T00:00:00Z") } });
@@ -35,7 +38,7 @@ export default async function Remind({ searchParams }: { searchParams: Promise<{
             <label className="field"><span>Телефон с Viber</span><input className="input" name="phone" type="tel" defaultValue="+375 " required /></label>
             <label className="field"><span>Повод</span><input className="input" name="occasion" placeholder="День рождения мамы" required /></label>
             <label className="field"><span>Дата</span><input className="input" name="date" type="date" required /></label>
-            {sp.error && <p className="error">Проверьте поля, что-то заполнено не так.</p>}
+            {sp.error && <p className="error">{sp.error === "busy" ? "Слишком много заявок подряд, попробуйте позже." : "Проверьте поля, что-то заполнено не так."}</p>}
             <button className="btn btn-lg" type="submit">Сохранить дату</button>
           </form>
         )}

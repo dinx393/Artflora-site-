@@ -4,20 +4,25 @@ import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { checkPassword, endSession, requireAdmin, startSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { allow, clientIp, forget } from "@/lib/rateLimit";
 import type { DeliveryConfig } from "@/lib/delivery";
 import type { DistrictPreset, ShopSettings } from "@/lib/defaults";
 import { saveSetting } from "@/lib/settings";
-import { ALLOWED_TYPES, UPLOAD_DIR } from "@/lib/uploads";
+import { ALLOWED_TYPES, looksLikeImage, UPLOAD_DIR } from "@/lib/uploads";
 
 // ---------- Вход ----------
 
 export async function login(_prev: string | null, formData: FormData): Promise<string | null> {
+  const ip = clientIp(await headers());
+  if (!allow("login", ip)) return "Слишком много попыток. Подождите 15 минут";
   const password = String(formData.get("password") ?? "");
   if (!checkPassword(password)) return "Неверный пароль";
+  forget("login", ip);
   await startSession();
   redirect("/admin/bouquets");
 }
@@ -253,9 +258,11 @@ export async function uploadPhoto(formData: FormData): Promise<{ ok: boolean; pa
   const ext = ALLOWED_TYPES[file.type];
   if (!ext) return { ok: false, error: "Подходят только JPG, PNG или WEBP" };
   if (file.size > 8 * 1024 * 1024) return { ok: false, error: "Фото больше 8 МБ, уменьшите его" };
+  const data = Buffer.from(await file.arrayBuffer());
+  if (!looksLikeImage(data, file.type)) return { ok: false, error: "Файл не похож на фото. Сохраните его как JPG или PNG" };
   await mkdir(UPLOAD_DIR, { recursive: true });
   const name = `${Date.now().toString(36)}-${randomBytes(4).toString("hex")}${ext}`;
-  await writeFile(path.join(UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
+  await writeFile(path.join(UPLOAD_DIR, name), data);
   return { ok: true, path: `/uploads/${name}` };
 }
 
