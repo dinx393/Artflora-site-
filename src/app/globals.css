@@ -123,8 +123,9 @@ textarea.input { resize: vertical; min-height: 60px; }
 .hero {
   max-width: 1200px; margin: 0 auto; padding: 64px var(--gutter); display: flex; flex-wrap: wrap; gap: 56px; align-items: center;
   background:
-    radial-gradient(520px 420px at 88% 30%, rgba(214,203,227,.55), rgba(214,203,227,0) 70%),
-    radial-gradient(480px 380px at 8% 90%, rgba(214,203,227,.30), rgba(214,203,227,0) 70%);
+    /* closest-side: свечение гаснет ровно у края блока, поэтому не видно прямоугольника */
+    radial-gradient(ellipse closest-side at 74% 50%, rgba(214,203,227,.6), rgba(214,203,227,0)),
+    radial-gradient(ellipse closest-side at 18% 62%, rgba(214,203,227,.28), rgba(214,203,227,0));
 }
 .hero h1 { font-size: 68px; line-height: 1; }
 .hero-photo { width: 460px; max-width: 100%; aspect-ratio: 1; padding: 16px; border-radius: 50%; border: 1.5px solid var(--lavender); }

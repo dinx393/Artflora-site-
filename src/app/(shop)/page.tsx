@@ -23,7 +23,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             Сеть салонов цветов: Уручье, Малиновка
           </p>
           <h1>
-            Букетов много,<br /> а <span className="script">запомнят</span> ваш
+            Букетов много,<br /> а запомнят <span className="script">ваш</span>
           </h1>
           <p className="muted" style={{ fontSize: 19, lineHeight: 1.5 }}>
             Радуем букетами уже 19 лет.
