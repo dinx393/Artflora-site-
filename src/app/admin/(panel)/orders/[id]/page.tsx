@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatByn } from "@/lib/money";
 import { getSetting } from "@/lib/settings";
-import { updateOrder } from "../../../actions";
+import { SLOTS } from "@/lib/slots";
+import { setOrderAddress, updateOrder } from "../../../actions";
 import { PAY_LABEL, STATUS_LABEL } from "../status";
 
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,11 +37,40 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           </div>
           <div className="card stack" style={{ gap: 6 }}>
             <span className="label">{o.deliveryMethod === "PICKUP" ? "Самовывоз" : "Доставка"}</span>
-            <span><b>{o.deliveryDate.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</b>, {o.deliverySlot}</span>
+            <span><b>{o.deliveryDate.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</b>, {o.deliverySlot || "время уточнить"}</span>
             {o.deliveryMethod === "DELIVERY" ? (
               <>
-                <span>{o.address}</span>
-                <span className="small muted">Зона {o.deliveryZone ?? "?"}, ~{o.distanceKm ?? "?"} км от магазина {shop?.name ?? o.shop}</span>
+                {o.addressUnknown ? (
+                  <>
+                    <span className="pill" style={{ alignSelf: "flex-start", background: "var(--lavender)" }}>Адрес и время уточнить у получателя</span>
+                    <form key={`${o.address}-${o.deliverySlot}-${o.deliveryKop}`} action={setOrderAddress} className="stack" style={{ gap: 8, marginTop: 6 }}>
+                      <input type="hidden" name="id" value={o.id} />
+                      <label className="field">
+                        <span>Адрес, который назвал получатель</span>
+                        <input className="input" name="address" defaultValue={o.address} placeholder="Улица, дом, квартира" />
+                      </label>
+                      <div className="row" style={{ gap: 8, alignItems: "flex-end" }}>
+                        <label className="field">
+                          <span>Время</span>
+                          <select className="input" name="slot" defaultValue={o.deliverySlot}>
+                            <option value="">не знаем</option>
+                            {SLOTS.map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </label>
+                        <label className="field" style={{ flex: "1 1 120px" }}>
+                          <span>Доплата за доставку, BYN</span>
+                          <input className="input" name="delivery" inputMode="decimal" defaultValue={(o.deliveryKop / 100).toString()} />
+                        </label>
+                        <button className="btn">Сохранить</button>
+                      </div>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <span>{o.address}</span>
+                    <span className="small muted">Зона {o.deliveryZone ?? "?"}, ~{o.distanceKm ?? "?"} км от магазина {shop?.name ?? o.shop}</span>
+                  </>
+                )}
                 <span>Получатель: {o.recipientName || "—"} {o.recipientPhone && tel(o.recipientPhone)}</span>
                 {o.callRecipient && <span className="small">Позвонить получателю перед доставкой</span>}
                 {o.anonymous && <span className="small" style={{ fontWeight: 800 }}>Не говорить, от кого букет</span>}
@@ -59,7 +89,12 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         <div className="card stack" style={{ gap: 10 }}>
           <div className="sum-row"><span>Товары</span><span>{formatByn(o.itemsKop)}</span></div>
           {o.discountKop > 0 && <div className="sum-row"><span>Скидка за самовывоз</span><span>{formatByn(-o.discountKop)}</span></div>}
-          {o.deliveryMethod === "DELIVERY" && <div className="sum-row"><span>Доставка</span><span>{formatByn(o.deliveryKop)}</span></div>}
+          {o.deliveryMethod === "DELIVERY" && (
+            <div className="sum-row">
+              <span>{o.addressUnknown ? "Доплата за доставку" : "Доставка"}</span>
+              <span>{o.addressUnknown && o.deliveryKop === 0 ? "ещё не назначена" : formatByn(o.deliveryKop)}</span>
+            </div>
+          )}
           <div className="sum-row" style={{ alignItems: "baseline" }}><b>Итого</b><span className="sum-total">{formatByn(o.totalKop)}</span></div>
           <div className="sum-row"><span>Оплата</span><span>{PAY_LABEL[o.paymentMethod]} · {o.paid ? "оплачен" : "не оплачен"}</span></div>
           <form key={`${o.status}-${o.paid}`} action={updateOrder} className="stack" style={{ gap: 8 }}>

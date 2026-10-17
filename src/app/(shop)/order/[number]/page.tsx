@@ -45,14 +45,21 @@ export default async function OrderDone({
         <ol className="stack" style={{ gap: 14, paddingLeft: 20, margin: 0 }}>
           <li>
             <b>Флорист соберёт букет</b>
-            <div className="muted">К выбранному времени: {humanDate(order.deliveryDate)}, {order.deliverySlot}</div>
+            <div className="muted">
+              {order.deliverySlot ? `К выбранному времени: ${humanDate(order.deliveryDate)}, ${order.deliverySlot}` : `На ${humanDate(order.deliveryDate)}, время согласуем с получателем`}
+            </div>
           </li>
           <li>
             <b>Пришлём фото в Viber</b>
             <div className="muted">Если что-то не так, поправим до отправки</div>
           </li>
           <li>
-            {order.deliveryMethod === "DELIVERY" ? (
+            {order.deliveryMethod === "DELIVERY" && order.addressUnknown ? (
+              <>
+                <b>Позвоним получателю и уточним адрес</b>
+                <div className="muted">Потом пришлём вам доплату за доставку, и курьер привезёт букет</div>
+              </>
+            ) : order.deliveryMethod === "DELIVERY" ? (
               <>
                 <b>Курьер позвонит получателю</b>
                 <div className="muted">И привезёт букет по адресу</div>
@@ -84,7 +91,10 @@ export default async function OrderDone({
         <div className="sum-row"><span>Открытка и подкормка</span><span style={{ color: "var(--olive)", fontWeight: 700 }}>в подарок</span></div>
         {order.discountKop > 0 && <div className="sum-row"><span>Скидка за самовывоз</span><span>{formatByn(-order.discountKop)}</span></div>}
         {order.deliveryMethod === "DELIVERY" && (
-          <div className="sum-row"><span>Доставка{order.deliveryZone ? `, зона ${order.deliveryZone}` : ""}</span><span>{order.deliveryKop ? formatByn(order.deliveryKop) : "бесплатно"}</span></div>
+          <div className="sum-row">
+            <span>Доставка{order.deliveryZone ? `, зона ${order.deliveryZone}` : ""}</span>
+            <span>{order.addressUnknown && !order.deliveryKop ? "доплата после уточнения адреса" : order.deliveryKop ? formatByn(order.deliveryKop) : "бесплатно"}</span>
+          </div>
         )}
         <div className="sum-row"><span>Оплата</span><span>{PAY[order.paymentMethod]}</span></div>
         <div className="sum-row" style={{ borderTop: "1px solid var(--line)", paddingTop: 10, alignItems: "baseline" }}>

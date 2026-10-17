@@ -37,9 +37,9 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
               {orders.map((o) => (
                 <tr key={o.id}>
                   <td><Link href={`/admin/orders/${o.id}`} style={{ fontWeight: 800 }}>{o.number}</Link></td>
-                  <td className="small">{o.deliveryDate.toLocaleDateString("ru-RU", { day: "numeric", month: "short", timeZone: "UTC" })}, {o.deliverySlot}</td>
+                  <td className="small">{o.deliveryDate.toLocaleDateString("ru-RU", { day: "numeric", month: "short", timeZone: "UTC" })}, {o.deliverySlot || "время ?"}</td>
                   <td className="small">{o.items.map((i) => `${i.name}${i.size ? ` ${i.size}` : ""}${i.qty > 1 ? ` ×${i.qty}` : ""}`).join(", ")}</td>
-                  <td className="small">{o.deliveryMethod === "PICKUP" ? `Самовывоз · ${o.shop}` : o.address}</td>
+                  <td className="small">{o.deliveryMethod === "PICKUP" ? `Самовывоз · ${o.shop}` : o.address || (o.addressUnknown ? "Уточнить у получателя" : "")}</td>
                   <td className="small">{o.customerName}<br />{formatPhone(o.customerPhone)}</td>
                   <td style={{ fontWeight: 800 }}>{formatByn(o.totalKop)}{o.paid && <div className="pill ok">оплачен</div>}</td>
                   <td><span className={`pill ${o.status === "NEW" ? "warn" : o.status === "DONE" ? "ok" : ""}`}>{STATUS_LABEL[o.status]}</span></td>

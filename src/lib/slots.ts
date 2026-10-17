@@ -34,6 +34,11 @@ export function availableSlots(isoDate: string, leadHours: number, now = new Dat
   return SLOTS.filter((s) => slotStartHour(s) >= ready);
 }
 
+// Можно ли ещё привезти в этот день хоть в какой-то интервал (когда время уточним у получателя).
+export function isDateAllowed(isoDate: string, leadHours: number, now = new Date()): boolean {
+  return availableSlots(isoDate, leadHours, now).length > 0;
+}
+
 export function isSlotAllowed(isoDate: string, slot: string, leadHours: number, now = new Date()): boolean {
   return (availableSlots(isoDate, leadHours, now) as string[]).includes(slot);
 }

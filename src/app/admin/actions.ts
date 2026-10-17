@@ -305,6 +305,30 @@ export async function updateOrder(formData: FormData) {
   revalidatePath(`/admin/orders/${id}`);
 }
 
+// Заказ «уточнить адрес у получателя»: флорист вписывает адрес, время и доплату за доставку.
+export async function setOrderAddress(formData: FormData) {
+  await requireAdmin();
+  const parsed = z
+    .object({
+      id: z.coerce.number().int(),
+      address: z.string().trim().max(300),
+      slot: z.string().max(10),
+      delivery: z.string().trim().regex(/^\d{1,4}([.,]\d{1,2})?$/),
+    })
+    .safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return;
+  const { id, address, slot, delivery } = parsed.data;
+  const o = await db.order.findUnique({ where: { id } });
+  if (!o || !o.addressUnknown) return;
+  const deliveryKop = Math.round(Number(delivery.replace(",", ".")) * 100);
+  await db.order.update({
+    where: { id },
+    data: { address, deliverySlot: slot, deliveryKop, totalKop: o.itemsKop - o.discountKop + deliveryKop },
+  });
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${id}`);
+}
+
 // ---------- Настройки ----------
 
 export async function saveSettings(input: {

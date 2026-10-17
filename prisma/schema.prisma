@@ -145,6 +145,7 @@ model Order {
   comment           String         @default("")
   deliveryMethod    DeliveryMethod
   address           String         @default("")
+  addressUnknown    Boolean        @default(false) // адрес и время уточним у получателя, доставка — доплатой потом
   shop              String // код магазина: uruchye / malinovka
   deliveryZone      Int?
   distanceKm        Float?

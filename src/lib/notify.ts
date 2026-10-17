@@ -12,8 +12,12 @@ export async function notifyNewOrder(orderId: number) {
   const lines = [
     `🌸 Новый заказ №${o.number} — ${formatByn(o.totalKop)}`,
     ...o.items.map((i) => `• ${i.name}${i.size ? `, ${i.size}` : ""} × ${i.qty}`),
-    o.deliveryMethod === "PICKUP" ? `Самовывоз: ${o.shop}` : `Доставка: ${o.address} (зона ${o.deliveryZone ?? "?"})`,
-    `Когда: ${o.deliveryDate.toISOString().slice(0, 10)}, ${o.deliverySlot}`,
+    o.deliveryMethod === "PICKUP"
+      ? `Самовывоз: ${o.shop}`
+      : o.addressUnknown
+        ? `Доставка: адрес и время уточнить у получателя ${o.recipientPhone}, доплата за доставку отдельно`
+        : `Доставка: ${o.address} (зона ${o.deliveryZone ?? "?"})`,
+    `Когда: ${o.deliveryDate.toISOString().slice(0, 10)}, ${o.deliverySlot || "время уточнить"}`,
     `Клиент: ${o.customerName}, ${o.customerPhone}`,
     `${process.env.SITE_URL ?? ""}/admin/orders/${o.id}`,
   ];

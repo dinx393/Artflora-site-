@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { availableSlots, isSlotAllowed } from "@/lib/slots";
+import { availableSlots, isDateAllowed, isSlotAllowed } from "@/lib/slots";
 
 // 11:30 по Минску = 08:30 UTC
 const now = new Date("2026-10-15T08:30:00Z");
@@ -17,5 +17,11 @@ describe("интервалы доставки", () => {
   it("проверка интервала при оформлении", () => {
     expect(isSlotAllowed("2026-10-15", "12–14", 2, now)).toBe(false);
     expect(isSlotAllowed("2026-10-15", "14–16", 2, now)).toBe(true);
+  });
+  it("день без точного времени (адрес уточним у получателя)", () => {
+    expect(isDateAllowed("2026-10-15", 2, now)).toBe(true);
+    expect(isDateAllowed("2026-10-14", 2, now)).toBe(false);
+    // 20:30 по Минску — на сегодня уже не успеть
+    expect(isDateAllowed("2026-10-15", 2, new Date("2026-10-15T17:30:00Z"))).toBe(false);
   });
 });

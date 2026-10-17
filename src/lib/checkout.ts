@@ -7,7 +7,7 @@ import { pickupDiscountKop, quoteDelivery, type DeliveryQuote } from "./delivery
 import { geocode } from "./geocode";
 import { bouquetVisibility, compositionText, sizeAvailable, sizePriceKop } from "./pricing";
 import { getSetting } from "./settings";
-import { isSlotAllowed } from "./slots";
+import { isDateAllowed, isSlotAllowed } from "./slots";
 import { notifyNewOrder } from "./notify";
 import { orderToken } from "./orderToken";
 
@@ -105,6 +105,8 @@ export const orderSchema = z
     }),
     method: z.enum(["DELIVERY", "PICKUP"]),
     address: z.string().max(300).default(""),
+    // Клиент не знает адрес: уточним у получателя, сейчас платит только за букет.
+    addressUnknown: z.boolean().default(false),
     point: z.object({ lat: z.number(), lng: z.number() }).nullable().default(null),
     shop: z.string().max(40).default(""),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -118,9 +120,13 @@ export const orderSchema = z
     comment: z.string().max(1000).default(""),
     payment: z.enum(["CARD", "ERIP", "VIBER_LINK"]),
   })
-  .refine((o) => o.method === "PICKUP" || o.address.trim().length > 3, {
+  .refine((o) => o.method === "PICKUP" || o.addressUnknown || o.address.trim().length > 3, {
     message: "Укажите адрес доставки",
     path: ["address"],
+  })
+  .refine((o) => !(o.method === "DELIVERY" && o.addressUnknown) || o.recipientPhone.replace(/\D/g, "").length >= 9, {
+    message: "Укажите телефон получателя: по нему уточним адрес",
+    path: ["recipientPhone"],
   });
 
 export type OrderInput = z.input<typeof orderSchema>;
@@ -167,12 +173,13 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
   const shopSettings = await getSetting("shop");
   const cfg = await getSetting("delivery");
 
-  if (!isSlotAllowed(o.date, o.slot, shopSettings.leadHours)) {
-    return { ok: false, error: "Это время уже недоступно, выберите другое", field: "slot" };
+  const unknown = o.method === "DELIVERY" && o.addressUnknown;
+  if (unknown ? !isDateAllowed(o.date, shopSettings.leadHours) : !isSlotAllowed(o.date, o.slot, shopSettings.leadHours)) {
+    return { ok: false, error: unknown ? "На этот день уже не успеваем, выберите другой" : "Это время уже недоступно, выберите другое", field: "slot" };
   }
 
-  let point = o.point;
-  if (o.method === "DELIVERY") {
+  let point = unknown ? null : o.point;
+  if (o.method === "DELIVERY" && !unknown) {
     point = (await geocode(o.address)) ?? o.point;
     if (!point) return { ok: false, error: "Не нашли адрес. Уточните улицу и дом или выберите район", field: "address" };
   }
@@ -186,15 +193,15 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
     };
   }
   if (totals.priced.lines.length === 0) return { ok: false, error: "Корзина пуста" };
-  if (o.method === "DELIVERY" && (!totals.quote || !totals.quote.ok)) {
+  if (o.method === "DELIVERY" && !unknown && (!totals.quote || !totals.quote.ok)) {
     return { ok: false, error: "Так далеко мы не возим. Позвоните нам, что-нибудь придумаем", field: "address" };
   }
 
   const shopCode =
     o.method === "PICKUP"
       ? (cfg.shops.find((s) => s.code === o.shop) ?? cfg.shops[0]).code
-      : totals.quote!.ok
-        ? totals.quote!.shop.code
+      : totals.quote?.ok
+        ? totals.quote.shop.code
         : cfg.shops[0].code;
 
   const order = await db.$transaction(async (tx) => {
@@ -210,12 +217,13 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
         cardText: o.cart.cardText,
         comment: o.comment,
         deliveryMethod: o.method,
-        address: o.method === "DELIVERY" ? o.address : "",
+        address: o.method === "DELIVERY" && !unknown ? o.address : "",
+        addressUnknown: unknown,
         shop: shopCode,
         deliveryZone: totals.quote?.ok ? totals.quote.zone : null,
         distanceKm: totals.quote?.ok ? totals.quote.km : null,
         deliveryDate: new Date(o.date + "T00:00:00Z"),
-        deliverySlot: o.slot,
+        deliverySlot: unknown ? "" : o.slot,
         paymentMethod: o.payment,
         itemsKop: totals.priced.bouquetsKop + totals.priced.addonsKop,
         discountKop: totals.discountKop,

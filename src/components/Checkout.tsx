@@ -62,6 +62,8 @@ export function Checkout({
 
   const [method, setMethod] = useState<"DELIVERY" | "PICKUP">("DELIVERY");
   const [address, setAddress] = useState("");
+  // Адрес и время не знает клиент: уточним у получателя, доставку доплатят потом.
+  const [addressUnknown, setAddressUnknown] = useState(false);
   const [district, setDistrict] = useState<string | null>(null);
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [point, setPoint] = useState<{ lat: number; lng: number } | null>(null);
@@ -106,14 +108,14 @@ export function Checkout({
     fetch("/api/cart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cart, method, point: method === "DELIVERY" ? point : null }),
+      body: JSON.stringify({ cart, method, point: method === "DELIVERY" && !addressUnknown ? point : null }),
       signal: ctrl.signal,
     })
       .then((r) => r.json())
       .then((t: Totals) => setTotals(t))
       .catch(() => {});
     return () => ctrl.abort();
-  }, [cart, method, point, ready]);
+  }, [cart, method, point, addressUnknown, ready]);
 
   // Убираем из корзины то, что закончилось.
   useEffect(() => {
@@ -150,8 +152,9 @@ export function Checkout({
         body: JSON.stringify({
           cart,
           method,
-          address: method === "DELIVERY" ? address : "",
-          point: method === "DELIVERY" ? point : null,
+          address: method === "DELIVERY" && !addressUnknown ? address : "",
+          addressUnknown: method === "DELIVERY" && addressUnknown,
+          point: method === "DELIVERY" && !addressUnknown ? point : null,
           shop: method === "PICKUP" ? pickupShop : "",
           date,
           slot,
@@ -173,7 +176,7 @@ export function Checkout({
       }
       setError({ text: r.error ?? "Не получилось оформить заказ", field: r.field });
       if (r.field === "address" || r.field === "slot") setStep(2);
-      if (r.field?.startsWith("customer")) setStep(3);
+      if (r.field?.startsWith("customer") || r.field === "recipientPhone") setStep(3);
     } catch {
       setError({ text: "Нет связи с сайтом. Проверьте интернет и попробуйте ещё раз" });
     } finally {
@@ -201,10 +204,12 @@ export function Checkout({
   }
 
   const lines = totals?.priced.lines ?? [];
-  const deliveryReady = method === "PICKUP" || (quote?.ok ?? false);
+  const unknown = method === "DELIVERY" && addressUnknown;
+  const deliveryReady = method === "PICKUP" || unknown || (quote?.ok ?? false);
   const canNext1 = lines.length > 0;
-  const canNext2 = deliveryReady && !!slot && (method === "PICKUP" || address.trim().length > 3);
-  const canSubmit = canNext1 && canNext2 && customerName.trim().length > 0 && customerPhone.replace(/\D/g, "").length >= 9;
+  const canNext2 = unknown ? slots.length > 0 : deliveryReady && !!slot && (method === "PICKUP" || address.trim().length > 3);
+  const recipientOk = !unknown || recipientPhone.replace(/\D/g, "").length >= 9;
+  const canSubmit = canNext1 && canNext2 && recipientOk && customerName.trim().length > 0 && customerPhone.replace(/\D/g, "").length >= 9;
 
   return (
     <div className="wrap">
@@ -328,7 +333,21 @@ export function Checkout({
               <button type="button" className={method === "PICKUP" ? "on" : ""} onClick={() => setMethod("PICKUP")}>Самовывоз −{pickupPct}%</button>
             </div>
 
-            {method === "DELIVERY" ? (
+            {method === "DELIVERY" && (
+              <label className="check">
+                <input type="checkbox" checked={addressUnknown} onChange={(e) => setAddressUnknown(e.target.checked)} />
+                Не знаю адрес, уточните у получателя
+              </label>
+            )}
+            {unknown ? (
+              <div className="zone">
+                <b>Адрес и время уточним у получателя</b>
+                <span className="small muted">
+                  Сейчас вы оплачиваете только букет. Мы позвоним получателю, узнаем адрес и удобное время и пришлём вам
+                  доплату за доставку по обычным тарифам.
+                </span>
+              </div>
+            ) : method === "DELIVERY" ? (
               <div className="stack">
                 <label className="field">
                   <span>Адрес доставки</span>
@@ -415,6 +434,9 @@ export function Checkout({
                   <input type="date" className="input" style={{ width: "auto" }} min={addDays(today, 1)} max={addDays(today, 90)} value={otherDate} onChange={(e) => setOtherDate(e.target.value)} />
                 )}
               </div>
+              {unknown ? (
+                <p className="small muted">Точное время согласуем с получателем.</p>
+              ) : (
               <div className="row" style={{ gap: 8 }}>
                 {SLOTS.map((s) => (
                   <button key={s} type="button" className={`chip ${slot === s ? "on" : ""}`} disabled={!slots.includes(s)} onClick={() => setSlot(s)}>
@@ -422,6 +444,7 @@ export function Checkout({
                   </button>
                 ))}
               </div>
+              )}
               {error?.field === "slot" && <p className="error">{error.text}</p>}
             </div>
           </section>
@@ -445,8 +468,15 @@ export function Checkout({
                     <input className="input" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="Если дарите не себе" />
                   </label>
                   <label className="field">
-                    <span>Телефон получателя</span>
-                    <input className="input" type="tel" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} />
+                    <span>{unknown ? "Телефон получателя — по нему уточним адрес" : "Телефон получателя"}</span>
+                    <input
+                      className="input"
+                      type="tel"
+                      value={recipientPhone}
+                      onChange={(e) => setRecipientPhone(e.target.value)}
+                      placeholder={unknown ? "+375 …" : undefined}
+                      aria-invalid={error?.field === "recipientPhone" || (unknown && !recipientOk && recipientPhone.length > 0)}
+                    />
                   </label>
                 </>
               )}
@@ -482,7 +512,10 @@ export function Checkout({
           {method === "PICKUP" ? (
             <div className="sum-row"><span>Скидка за самовывоз</span><span>{formatByn(-(totals?.discountKop ?? 0))}</span></div>
           ) : (
-            <div className="sum-row"><span>Доставка</span><span>{quote?.ok ? (totals?.deliveryKop ? formatByn(totals.deliveryKop) : "бесплатно") : "по адресу"}</span></div>
+            <div className="sum-row">
+              <span>Доставка</span>
+              <span>{unknown ? "доплата после уточнения" : quote?.ok ? (totals?.deliveryKop ? formatByn(totals.deliveryKop) : "бесплатно") : "по адресу"}</span>
+            </div>
           )}
           <div className="sum-row" style={{ alignItems: "baseline", borderTop: "1px solid var(--line)", paddingTop: 12 }}>
             <b>Итого</b>
@@ -498,8 +531,9 @@ export function Checkout({
           </button>
           {!canSubmit && (
             <p className="small muted desktop-only">
-              {!deliveryReady || (method === "DELIVERY" && address.trim().length <= 3) ? "Укажите адрес доставки. " : ""}
-              {!slot ? "Выберите время. " : ""}
+              {!unknown && (!deliveryReady || (method === "DELIVERY" && address.trim().length <= 3)) ? "Укажите адрес доставки. " : ""}
+              {!unknown && !slot ? "Выберите время. " : ""}
+              {!recipientOk ? "Укажите телефон получателя. " : ""}
               {!customerName.trim() ? "Укажите имя и телефон." : ""}
             </p>
           )}
