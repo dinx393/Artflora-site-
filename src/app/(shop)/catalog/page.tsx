@@ -8,7 +8,10 @@ import { formatByn } from "@/lib/money";
 import { FORMATS, OCCASIONS, PRICE_RANGES } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
 
-type SP = { occasion?: string; price?: string; flower?: string; format?: string; collection?: string; q?: string };
+type SP = { occasion?: string; price?: string; flower?: string; format?: string; collection?: string; q?: string; n?: string };
+
+// Сколько букетов показывать сразу и добавлять по кнопке «Показать ещё».
+const PAGE = 24;
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SP> }): Promise<Metadata> {
   const sp = await searchParams;
@@ -17,7 +20,8 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 }
 
 function href(sp: SP, patch: Partial<SP>): string {
-  const next = { ...sp, ...patch };
+  // При смене фильтра список снова начинается с первых PAGE букетов.
+  const next = { ...sp, n: undefined, ...patch };
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(next)) if (v) qs.set(k, v);
   const s = qs.toString();
@@ -42,6 +46,7 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
     collection: sp.collection,
     q: sp.q,
   });
+  const shown = Math.max(PAGE, Math.floor(Number(sp.n) || 0));
   const occ = OCCASIONS.find((o) => o.slug === sp.occasion);
   const deliveryNote = `Доставка от ${formatByn(minDeliveryKop(delivery))}`;
   const activeFilters = [range?.label, sp.flower].filter(Boolean) as string[];
@@ -104,11 +109,23 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
         </div>
 
         {list.length > 0 ? (
-          <div className="grid">
-            {list.map((b) => (
-              <ProductCard key={b.id} b={b} note={deliveryNote} />
-            ))}
-          </div>
+          <>
+            <div className="grid">
+              {list.slice(0, shown).map((b) => (
+                <ProductCard key={b.id} b={b} note={deliveryNote} />
+              ))}
+            </div>
+            {list.length > shown && (
+              <div className="more">
+                <Link href={href(sp, { n: String(shown + PAGE) })} scroll={false} className="btn btn-outline btn-lg">
+                  Показать ещё
+                </Link>
+                <span className="small muted">
+                  Показано {shown} из {list.length}
+                </span>
+              </div>
+            )}
+          </>
         ) : sp.q ? (
           <div className="empty panel">
             <h2 className="h2">По запросу «{sp.q}» ничего нет</h2>
