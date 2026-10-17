@@ -27,7 +27,12 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+RUN mkdir -p /data/uploads && chown -R node:node /app/.next
 EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1
 # При каждом запуске применяем новые изменения схемы базы, при SEED_DEMO=1 заполняем
 # пустую базу примерами (непустую не трогаем), потом стартуем сайт
-CMD ["sh", "-c", "node prisma/migrate.js && if [ \"$SEED_DEMO\" = 1 ]; then node prisma/seed.js; fi && node server.js"]
+# Папку с фото отдаём пользователю node (у старых установок она принадлежит root),
+# и сам сайт работает уже от node, а не от администратора контейнера
+CMD ["sh", "-c", "chown -R node:node /data/uploads && exec su node -s /bin/sh -c 'node prisma/migrate.js && if [ \"$SEED_DEMO\" = 1 ]; then node prisma/seed.js; fi && exec node server.js'"]
