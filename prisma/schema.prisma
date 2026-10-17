@@ -2,7 +2,8 @@
 // Все деньги хранятся в копейках (целые числа), чтобы не было ошибок округления.
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "client"
 }
 
 datasource db {

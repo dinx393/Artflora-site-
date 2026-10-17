@@ -6,3 +6,5 @@ out
 *.tsbuildinfo
 uploads/*
 !uploads/.gitkeep
+prisma/migrate.js
+prisma/seed.js

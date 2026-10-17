@@ -1,9 +1,10 @@
 // Стартовые данные из макетов: цветы, букеты, коллекция «rose», дополнения.
 // Цены демонстрационные — поменяйте их в админке → «Цветы».
 // Запуск: npm run db:seed (повторный запуск ничего не дублирует).
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, type BouquetFormat, type FlowerKind, type FlowerUnit } from "@prisma/client";
 
-const db = new PrismaClient();
+const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 const FLOWERS: { name: string; kind: FlowerKind; unit: FlowerUnit; price: number; inStock?: boolean }[] = [
   { name: "Роза кустовая 60 см", kind: "FLOWER", unit: "STEM", price: 10 },

@@ -5,18 +5,17 @@ COPY package.json package-lock.json* ./
 RUN npm ci || npm install
 
 FROM node:22-alpine AS build
+# Prisma здесь работает без своих бинарных файлов (engineType = "client" + драйвер pg),
+# но CLI всё равно пытается скачать их с binaries.prisma.sh, который из Беларуси
+# часто недоступен. Указываем заглушки, чтобы сборка не ходила туда вовсе.
+ENV PRISMA_SCHEMA_ENGINE_BINARY=/bin/true PRISMA_QUERY_ENGINE_LIBRARY=/bin/true
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Миграции и стартовые данные собираем в обычные .js, чтобы в контейнере не нужны были tsx и Prisma CLI
 RUN npx prisma generate && npx next build \
- && npx esbuild prisma/seed.ts --bundle --platform=node --format=cjs --external:@prisma/client --outfile=prisma/seed.js
-
-# Prisma CLI для миграций при запуске: ставим отдельно со всеми его зависимостями
-FROM node:22-alpine AS migrator
-WORKDIR /cli
-COPY package.json ./app-package.json
-RUN npm init -y >/dev/null \
- && npm install --no-audit --no-fund "prisma@$(node -p "require('./app-package.json').devDependencies.prisma")"
+ && npx esbuild scripts/migrate.ts --bundle --platform=node --format=cjs --external:pg-native --outfile=prisma/migrate.js \
+ && npx esbuild prisma/seed.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:pg-native --outfile=prisma/seed.js
 
 FROM node:22-alpine AS run
 WORKDIR /app
@@ -27,8 +26,7 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=migrator /cli/node_modules ./prisma-cli/node_modules
 EXPOSE 3000
 # При каждом запуске применяем новые изменения схемы базы, при SEED_DEMO=1 заполняем
 # пустую базу примерами (непустую не трогаем), потом стартуем сайт
-CMD ["sh", "-c", "node prisma-cli/node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma && if [ \"$SEED_DEMO\" = 1 ]; then node prisma/seed.js; fi && node server.js"]
+CMD ["sh", "-c", "node prisma/migrate.js && if [ \"$SEED_DEMO\" = 1 ]; then node prisma/seed.js; fi && node server.js"]
