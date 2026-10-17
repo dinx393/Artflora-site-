@@ -32,6 +32,7 @@ export function BouquetEditor({
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
   const [uploading, setUploading] = useState(false);
+  const [flowerQuery, setFlowerQuery] = useState("");
   const byId = useMemo(() => new Map(flowers.map((f) => [f.id, f])), [flowers]);
 
   const size = b.sizes.find((s) => s.code === sizeCode)!;
@@ -75,6 +76,12 @@ export function BouquetEditor({
   }
 
   const used = new Set(size.items.map((i) => i.flowerId));
+  const norm = (t: string) => t.toLowerCase().replace(/ё/g, "е").trim();
+  const candidates = flowers.filter((f) => !used.has(f.id) && norm(f.name).includes(norm(flowerQuery)));
+  function addFlower(flowerId: number) {
+    patchSize((s) => ({ ...s, items: [...s.items, { flowerId, qty: 1 }] }));
+    setFlowerQuery("");
+  }
   const sum = flowersKop(size);
 
   return (
@@ -157,7 +164,7 @@ export function BouquetEditor({
                 <div className="seg">
                   {b.sizes.map((s) => (
                     <button key={s.code} type="button" className={s.code === sizeCode ? "on" : ""} onClick={() => setSizeCode(s.code)}>
-                      {s.code} · {priceOf(s) === null ? "нет" : formatByn(priceOf(s)!)}
+                      {s.code} · {priceOf(s) === null ? "пусто" : formatByn(priceOf(s)!)}
                     </button>
                   ))}
                 </div>
@@ -167,7 +174,13 @@ export function BouquetEditor({
               <span>Подпись размера на сайте</span>
               <input className="input" value={size.note} placeholder="Как на фото, 11 цветков" onChange={(e) => patchSize((s) => ({ ...s, note: e.target.value }))} />
             </label>
-            <table className="table">
+            {size.items.length === 0 && (
+              <p className="small muted">
+                В размере {sizeCode} пока нет ни одного цветка, поэтому на сайте его не видно. Найдите цветы ниже и укажите количество.
+                Размер можно оставить пустым, если он не нужен.
+              </p>
+            )}
+            {size.items.length > 0 && <table className="table">
               <thead><tr><th>Цветок</th><th>Количество</th><th>Цена</th><th>Сумма</th><th /></tr></thead>
               <tbody>
                 {size.items.map((i) => {
@@ -194,15 +207,36 @@ export function BouquetEditor({
                   );
                 })}
               </tbody>
-            </table>
-            <div className="stack" style={{ gap: 6 }}>
-              <span className="small muted">+ Добавить цветок</span>
+            </table>}
+            <div className="stack" style={{ gap: 8 }}>
+              <label className="field">
+                <span>Добавить цветок</span>
+                <input
+                  className="input"
+                  type="search"
+                  value={flowerQuery}
+                  placeholder="Начните писать: роза, эвкалипт…"
+                  onChange={(e) => setFlowerQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Enter добавляет первый найденный цветок
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (flowerQuery.trim() && candidates[0]) addFlower(candidates[0].id);
+                    }
+                  }}
+                />
+              </label>
               <div className="row" style={{ gap: 6 }}>
-                {flowers.filter((f) => !used.has(f.id)).map((f) => (
-                  <button key={f.id} type="button" className="chip" style={{ fontSize: 14, minHeight: 36, padding: "6px 12px" }} onClick={() => patchSize((s) => ({ ...s, items: [...s.items, { flowerId: f.id, qty: 1 }] }))}>
-                    {f.name}{f.inStock ? "" : " · нет"}
+                {candidates.map((f) => (
+                  <button key={f.id} type="button" className="chip" style={{ fontSize: 14, minHeight: 36, padding: "6px 12px" }} onClick={() => addFlower(f.id)}>
+                    {f.name}{f.inStock ? "" : " · нет в наличии"}
                   </button>
                 ))}
+                {candidates.length === 0 && (
+                  <span className="small muted">
+                    {flowerQuery.trim() ? "Такого цветка нет в справочнике. Добавьте его в разделе «Цветы»." : "Все цветы из справочника уже в составе."}
+                  </span>
+                )}
               </div>
             </div>
             {sizeCode !== "M" && size.items.length === 0 && (
