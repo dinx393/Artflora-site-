@@ -18,7 +18,8 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+/* Ссылки-якоря («По поводу») не прячут начало блока под липкой шапкой. */
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 120px; }
 body {
   margin: 0;
   background: var(--white);
@@ -208,6 +209,7 @@ textarea.input { resize: vertical; min-height: 60px; }
 /* Телефон */
 @media (max-width: 860px) {
   :root { --gutter: 22px; }
+  html { scroll-padding-top: 190px; }
   .header-top { flex-wrap: wrap; gap: 12px; }
   .header-top .search { order: 5; flex-basis: 100%; }
   .header-top .phone { display: none; }
