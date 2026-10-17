@@ -65,6 +65,7 @@ cp .env.example .env          # впишите пароль админки и SE
 npm install
 npx prisma migrate dev        # создаст таблицы
 npm run db:seed               # цветы и букеты из макетов
+npm run db:demo-catalog       # +140 букетов с artflora.by для проверки большого каталога
 npm run dev                   # сайт на http://localhost:3000, админка на /admin
 npm test                      # проверка расчётов
 ```
@@ -77,6 +78,13 @@ docker compose up -d --build
 ```
 
 Пустая база при первом запуске заполняется примерами из макетов. Если на сервере они не нужны, добавьте в `.env` строку `SEED_DEMO=0`.
+
+Чтобы посмотреть сайт с большим каталогом, добавьте 140 букетов с artflora.by (фото грузятся оттуда же):
+
+```bash
+docker compose exec site node prisma/demo-catalog.js           # добавить
+docker compose exec site node prisma/demo-catalog.js --remove  # убрать
+```
 
 Фото букетов сохраняются в томе `uploads`, база — в томе `db`. Делайте их резервные копии.
 

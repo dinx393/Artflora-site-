@@ -1,0 +1,2153 @@
+[
+ {
+  "slug": "af-shikarnaya-korzina-119-bordovyh-roz",
+  "name": "Шикарная корзина 119 бордовых роз",
+  "price": 1005.0,
+  "format": "BASKET",
+  "occasions": [
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": 119,
+  "photos": [
+   "https://artflora.by/files/products/04007252-7C03-41E4-B354-F499E2E9D613.800x800.jpeg",
+   "https://artflora.by/files/products/20CFD274-CFA1-43E9-AE7D-D441ABCEDDBD.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-101-belaya-roza",
+  "name": "101 белая роза",
+  "price": 808.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": 101,
+  "photos": [
+   "https://artflora.by/files/products/F237D6E0-1BB4-4A06-B382-A4E8FAB9B7D5.800x800.jpeg",
+   "https://artflora.by/files/products/FF81D0F9-6B1E-4314-8683-CC0597D34039.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-sumochka-s-eustomoj-i-alstromeriej",
+  "name": "Сумочка с эустомой и альстромерией",
+  "price": 145.0,
+  "format": "BAG",
+  "occasions": [
+   "mom"
+  ],
+  "flower": "Эустома",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_1803.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_1802.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-alstromeriya-11-vetok",
+  "name": "Альстромерия 11 веток",
+  "price": 125.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3001.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-frantsuzskie-rozy-i-alstormeriya",
+  "name": "Французские розы и альстормерия",
+  "price": 105.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_21-03-11.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-05-06_21-03-20.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-stojkij-buket-xxl",
+  "name": "Стойкий букет XXL",
+  "price": 1000.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2026-04-17_10-03-48.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-yarkij-miks-alstormerij",
+  "name": "Яркий микс альстормерий",
+  "price": 165.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2026-04-17_09-55-53.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-buket-radost-moya",
+  "name": "Букет «Радость моя»",
+  "price": 105.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6856.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6844.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6840.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6843.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-rozovoe-oblachko",
+  "name": "Розовое облачко",
+  "price": 105.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_20-31-56.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-05-06_20-31-50.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-yarkij-miks-alstormerij-15sht",
+  "name": "Яркий микс альстормерий 15шт",
+  "price": 155.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "nothing"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_20-27-01.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-05-06_20-27-21.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-korobka-s-alstromeriej",
+  "name": "Коробка с альстромерией",
+  "price": 120.0,
+  "format": "HATBOX",
+  "occasions": [
+   "mom"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6699.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-sumochka-leto",
+  "name": "Сумочка \"Лето\"",
+  "price": 120.0,
+  "format": "BAG",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2026-07-24_18-03-50.800x800.jpg",
+   "https://artflora.by/files/products/photo_2026-07-24_18-03-52.800x800.jpg",
+   "https://artflora.by/files/products/photo_2026-07-24_18-03-54.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-kruglyj-buket-miks",
+  "name": "Круглый букет-микс",
+  "price": 200.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2026-07-24_17-59-26.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-yarkij-miks",
+  "name": "Яркий микс",
+  "price": 200.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_3_2026-04-30_14-49-59.800x800.jpg",
+   "https://artflora.by/files/products/photo_1_2026-04-30_14-49-59.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-yarkaya-avtorskaya-korzina",
+  "name": "Яркая, авторская корзина",
+  "price": 600.0,
+  "format": "BASKET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2026-04-17_10-00-28.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-yarkij-shik",
+  "name": "Яркий шик",
+  "price": 600.0,
+  "format": "BASKET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2026-04-17_10-22-47.800x800.jpg",
+   "https://artflora.by/files/products/photo_2026-04-17_09-50-29.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-shlyapnaya-korobka-rozovyj-shik",
+  "name": "Шляпная коробка \"розовый шик\"",
+  "price": 300.0,
+  "format": "HATBOX",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_21-11-09.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-buket-nezhnaya-moya",
+  "name": "Букет «нежная моя»",
+  "price": 250.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_7807.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_7810.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-shik-korzina-v-svetlyh-ottenkah",
+  "name": "Шик-корзина в светлых оттенках",
+  "price": 650.0,
+  "format": "BASKET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_20-46-42.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-05-06_20-46-52.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-korzina-belyj-shik",
+  "name": "Корзина «белый шик»",
+  "price": 400.0,
+  "format": "BASKET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_7786.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_7790.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-korzina-s-liliyami-i-alstromeriej",
+  "name": "Корзина с лилиями и альстромерией",
+  "price": 320.0,
+  "format": "BASKET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6864.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6857.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-korzina-lyubov",
+  "name": "Корзина Любовь",
+  "price": 650.0,
+  "format": "BASKET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6279.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6267.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6268.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-nezhnaya-korzina-osobennaya",
+  "name": "Нежная корзина «особенная»",
+  "price": 750.0,
+  "format": "BASKET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/img_7213_7214.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_7225.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-shikarnaya-korzina--lyubovyu",
+  "name": "Шикарная корзина « любовью»",
+  "price": 1000.0,
+  "format": "BASKET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_8200.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_8196.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_8190.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-s-gortenziej-i-kustovymi-rozami",
+  "name": "Букет с гортензией и кустовыми розами",
+  "price": 200.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза кустовая 60 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_1744.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_1738.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_1737.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-s-goluboj-gortenziej-miks",
+  "name": "Букет с голубой гортензией микс",
+  "price": 190.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Гортензия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2024-08-26_09-38-02.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-kompozitsiya-v-korobke-s-rozovymi-ottenkami",
+  "name": "Композиция в коробке с розовыми оттенками",
+  "price": 160.0,
+  "format": "HATBOX",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6594.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6708.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6607.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-nezhnost-dnya",
+  "name": "Букет «Нежность дня»",
+  "price": 160.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_5845.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_5843.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_5844.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-s-yagodnymi-motivami",
+  "name": "Букет с ягодными мотивами",
+  "price": 240.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_2601_jpg.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-kompozitsiya-rozovyj-miks",
+  "name": "Композиция «Розовый микс»",
+  "price": 180.0,
+  "format": "HATBOX",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_5828.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_5826.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-kompozitsiya-v-shlyapnoj-korobke-v-nezhnyh-ottenkah",
+  "name": "Композиция в шляпной коробке в нежных оттенках",
+  "price": 175.0,
+  "format": "HATBOX",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6876.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6890.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-kompozitsiya-yagodnyj-miks",
+  "name": "Композиция «Ягодный микс»",
+  "price": 170.0,
+  "format": "HATBOX",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6862.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6868.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-rozovaya-gortenziya",
+  "name": "Букет «Розовая гортензия»",
+  "price": 160.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Гортензия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3868.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_3867.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_3869.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buketik-sochnyj-miks",
+  "name": "Букетик «Сочный Микс»",
+  "price": 200.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/860D2A11-98C9-4657-ABC5-5C470279E8F3.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_5327.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-roskoshnaya-korzina-miks-xl",
+  "name": "Роскошная корзина «Микс» XL",
+  "price": 1250.0,
+  "format": "BASKET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_0010.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_0009.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_0011.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-yarkij-mig",
+  "name": "Букет «яркий миг»",
+  "price": 250.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_1784.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_1779.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-rozovye-kraski",
+  "name": "Букет «розовые краски»",
+  "price": 300.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3969.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_3968.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-priznanie-v-lyubvi",
+  "name": "Букет «признание в любви»",
+  "price": 350.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/1D75FE84-E7F3-4920-B626-DB10D1F09068.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-sumochka-alaya-s-frantsuzskoj-rozoj",
+  "name": "Сумочка «Алая» с французской розой",
+  "price": 155.0,
+  "format": "BAG",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_7140.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_4977.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-korobka-vostorg",
+  "name": "Коробка «восторг»",
+  "price": 340.0,
+  "format": "HATBOX",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/135ED1A2-851E-445C-A0F4-2E8D359EE7CC.800x800.jpeg",
+   "https://artflora.by/files/products/F3C29703-B421-4253-ACDE-BD18C122D9FC.800x800.jpeg",
+   "https://artflora.by/files/products/D32EDF61-F003-46B0-AC57-5C0C4E44252B.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-nezhnyj-miks-xl",
+  "name": "Нежный микс Xl",
+  "price": 290.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3371.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_3372.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-iz-25-kenijskih-roz",
+  "name": "Букет из 25 кенийских роз",
+  "price": 135.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": 25,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_20-38-46.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-buket-iz-15-kenijskih-roz",
+  "name": "Букет из 15 кенийских роз",
+  "price": 85.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": 15,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_20-33-37.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-05-06_20-33-48.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-shikarnyj-buket-iz-51-rozy",
+  "name": "Шикарный букет из 51 розы",
+  "price": 225.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": 51,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-08-28_10-46-09.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-08-28_10-46-04.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-08-28_10-46-07.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-shikarnyj-buket-iz-malinovyh-kustovyh-roz",
+  "name": "Шикарный букет из малиновых кустовых роз",
+  "price": 800.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза кустовая 60 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_20-16-36.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-05-06_20-16-48.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-buket-nezhnyh-roz-s-lagurusom",
+  "name": "Букет «Нежных роз» с лагурусом",
+  "price": 145.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/5BED7F1F-D019-4C02-B8F8-70D62DEFA77D.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-v-persikovyh-ottenkah",
+  "name": "Букет в персиковых оттенках",
+  "price": 120.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/Facetune_23-04-2024-13-07-52.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-hit-buket-s-frantsuzkimi-rozami",
+  "name": "букет с Французкими розами",
+  "price": 230.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/3130C479-C893-41D6-A3A5-8AFB7D52F492.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-s-frantsuzkimi-rozami-i-silvoj-pink",
+  "name": "Букет с Французкими розами и сильвой пинк",
+  "price": 145.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/F4D9DBF1-DCC4-43CF-830C-20EAB59E552A.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-xxl-cochnyj-miks",
+  "name": "Букет Xxl “cочный микс»",
+  "price": 905.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/14C0716A-07DA-4B58-BE68-C160B0DAE6ED.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-51-roza-kremovo-krasnaya",
+  "name": "51 Роза кремово-красная",
+  "price": 675.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": 51,
+  "photos": [
+   "https://artflora.by/files/products/FB4E8B74-648D-482B-8F6B-E1E1221B7F4E.800x800.jpeg",
+   "https://artflora.by/files/products/F2131F4A-EFD9-4B5F-AC19-256B0078A746.800x800.jpeg",
+   "https://artflora.by/files/products/92368B2E-61FB-4C49-8B7F-D9782D190832.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-hit-25-kenijskih-roz",
+  "name": "25 кенийских роз",
+  "price": 135.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": 25,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-08-28_10-49-29.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-08-28_10-49-30.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-08-28_10-49-33.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-rozovaya-mechta",
+  "name": "Розовая мечта",
+  "price": 105.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_21-05-53.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-nezhnyj-buket",
+  "name": "Нежный букет",
+  "price": 90.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-08-28_10-57-28.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-malinovyj-buket",
+  "name": "Малиновый букет",
+  "price": 115.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-03-17_15-56-18.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-03-17_15-56-21.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-dlya-lyubimoj",
+  "name": "Для любимой",
+  "price": 145.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3698.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-korobka-s-frantsuzskoj-rozoj-i-nezhnym-miksom",
+  "name": "Коробка с французской розой и нежным миксом",
+  "price": 135.0,
+  "format": "HATBOX",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3965.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-sumka-s-tsvetami-rose",
+  "name": "Сумка с цветами “rose”",
+  "price": 130.0,
+  "format": "BAG",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_9488.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_9489.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-sbornyj-s-rozami",
+  "name": "Букет сборный с розами",
+  "price": 135.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/Facetune_10-02-2024-09-40-41.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-belo-rozovyj-miks",
+  "name": "Букет «Бело-розовый микс»",
+  "price": 125.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/img_7068_7069.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-sumka-s-frantsuzskimi-rozami",
+  "name": "Сумка с французскими розами",
+  "price": 115.0,
+  "format": "BAG",
+  "occasions": [
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/8DEBE1FD-8E40-4A40-8D61-4958CB92CACE.800x800.jpeg",
+   "https://artflora.by/files/products/A5C31A17-20BC-4CE8-BBA0-0A4F5AB05564.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-s-diantusami-i-alstromeriej",
+  "name": "Букет с диантусами и альстромерией",
+  "price": 100.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_4170.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_4169.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-s-podsolnuhami-i-hrizantemoj",
+  "name": "Букет с подсолнухами и хризантемой",
+  "price": 120.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Хризантема кустовая",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/4D72322F-2630-4D9F-B720-6409F3E2AF14.800x800.jpeg",
+   "https://artflora.by/files/products/4F01A6DA-E4EC-4E61-B7F3-89CBF40F1388.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-zefirka",
+  "name": "Зефирка",
+  "price": 270.0,
+  "format": "HATBOX",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2026-04-30_15-00-54.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-sumochka-bordo",
+  "name": "Сумочка бордо",
+  "price": 135.0,
+  "format": "BAG",
+  "occasions": [
+   "mom",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_2025-05-06_20-29-27.800x800.jpg",
+   "https://artflora.by/files/products/photo_2025-05-06_20-29-45.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-sumka-s-rozami-orhideyami-i-alstromeriej",
+  "name": "Сумка с розами, орхидеями и альстромерией",
+  "price": 165.0,
+  "format": "BAG",
+  "occasions": [
+   "mom",
+   "exotic"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_4672.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_4666.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_4615.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-stilnaya-sumochka",
+  "name": "Стильная сумочка",
+  "price": 155.0,
+  "format": "BAG",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_1852.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_1853.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-legkij-briz",
+  "name": "Букет «Легкий бриз»",
+  "price": 175.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_2836.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_2838.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_2825.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_2824.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-nezhnost-moya",
+  "name": "Букет «нежность моя»",
+  "price": 155.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/img_0011_12.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_0027.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_0028.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-monobuket-s-diantusami",
+  "name": "Монобукет с диантусами",
+  "price": 160.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/img_7003_7004.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-iz-rozovyh-roz",
+  "name": "Букет из розовых роз",
+  "price": 350.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6069.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6070.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-alyjs-amarillisami",
+  "name": "Букет «Алый»с амариллисами",
+  "price": 185.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_7368.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-s-amarillisami",
+  "name": "Букет с амариллисами",
+  "price": 185.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/AD6F3D6A-D727-4A1F-A064-7E07FB5A7029.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_0262.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-rozovyj-miks",
+  "name": "Розовый микс",
+  "price": 140.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/_2.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-korzinka-svezhest",
+  "name": "Корзинка свежесть",
+  "price": 140.0,
+  "format": "BASKET",
+  "occasions": [
+   "mom"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/%20.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-bordo",
+  "name": "Бордо",
+  "price": 240.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/2.800x800.jpg",
+   "https://artflora.by/files/products/.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-kompozitsiya-v-shlyapnoj-korobke-s-orhideyami-i-frantsuzskimi-rozami",
+  "name": "Композиция в шляпной коробке с орхидеями и французскими розами",
+  "price": 165.0,
+  "format": "HATBOX",
+  "occasions": [
+   "mom",
+   "exotic"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_2534.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_2528.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-belye-nochi",
+  "name": "Букет «Белые ночи»",
+  "price": 240.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_4031.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_4038.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_4035.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-miks-s-amarillisami",
+  "name": "Букет «Микс с амариллисами»",
+  "price": 260.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_2446.800x800.jpeg",
+   "https://artflora.by/files/products/FullSizeRender.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-shlyapnaya-korobka-yarkij-vostorg",
+  "name": "Шляпная коробка «яркий восторг»",
+  "price": 340.0,
+  "format": "HATBOX",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3164.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-shikarnaya-korobka-shik",
+  "name": "Шикарная коробка «шик»",
+  "price": 250.0,
+  "format": "HATBOX",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3474.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_3475.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-barhatnaya-korobka-s-frantsuzskimi-rozami",
+  "name": "Бархатная коробка с французскими розами",
+  "price": 255.0,
+  "format": "HATBOX",
+  "occasions": [
+   "mom",
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/632ADCB8-CFAE-4BEE-BB98-7F0A7B787FCB.800x800.jpeg",
+   "https://artflora.by/files/products/B2D8F72F-52E5-4A8E-8D43-5147FFE34928.800x800.jpeg",
+   "https://artflora.by/files/products/2E3D84A4-F704-43B6-91C7-1711CBBC60FC.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-miks-xl",
+  "name": "Букет микс XL",
+  "price": 495.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "mom",
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/BE2D6F2D-19C6-49EC-A5BF-83AC8B901D77.800x800.jpeg",
+   "https://artflora.by/files/products/21DEA093-B366-460B-8A68-685CBAFC3825.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-korzina-s-pionovidnymi-rozami-xl",
+  "name": "Корзина с пионовидными розами XL",
+  "price": 800.0,
+  "format": "BASKET",
+  "occasions": [
+   "mom"
+  ],
+  "flower": "Роза кустовая 60 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/C2F93056-C9E7-4FAF-91A6-74F13DEFDFCD.800x800.jpeg",
+   "https://artflora.by/files/products/E269E0E8-B10F-4F6F-A901-61483E146A7A.800x800.jpeg",
+   "https://artflora.by/files/products/9B9A9A91-33DA-4730-99B5-D3C43222AD56.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-mono-korzina-frantsuzskih-roz",
+  "name": "Моно корзина французских роз",
+  "price": 300.0,
+  "format": "BASKET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/300%D1%80.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-shikarnye-romashki",
+  "name": "Шикарные ромашки",
+  "price": 270.0,
+  "format": "BASKET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/photo_1_2026-04-30_14-51-57.800x800.jpg",
+   "https://artflora.by/files/products/photo_3_2026-04-30_14-51-57.800x800.jpg",
+   "https://artflora.by/files/products/photo_2_2026-04-30_14-51-57.800x800.jpg"
+  ]
+ },
+ {
+  "slug": "af-korzina-nezhnaya-moya",
+  "name": "Корзина «нежная моя»",
+  "price": 240.0,
+  "format": "BASKET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_7726.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_7734.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-kompozitsiya-slivochnyj-krem",
+  "name": "Композиция «Сливочный крем»",
+  "price": 200.0,
+  "format": "HATBOX",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_5847.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_5848.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_5846.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-kompozitsiya-rozovoe-oblako-s-lagurusom",
+  "name": "Композиция «Розовое облако» с лагурусом",
+  "price": 150.0,
+  "format": "HATBOX",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_5829.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_5830.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_5824.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-shlyapnaya-korobka-s-amarillisom-i-frantsuzskimi-rozami",
+  "name": "Шляпная коробка с амариллисом и французскими розами",
+  "price": 250.0,
+  "format": "HATBOX",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_5762.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_5763.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-dlya-lyubimoj",
+  "name": "Букет «для любимой»",
+  "price": 250.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love",
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_4999.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-belyh-roz",
+  "name": "Букет белых роз",
+  "price": 225.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6255.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6256.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6257.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-korzina-s-kustovoj-i-frantsuzskoj-rozami",
+  "name": "Корзина с кустовой и французской розами",
+  "price": 415.0,
+  "format": "BASKET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза кустовая 60 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/72682159-3BD3-45E2-BA9F-3EBFD14C89AB.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-razmera-xl-dzhuletta",
+  "name": "Букет размера XL «Джульетта»",
+  "price": 590.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "nothing"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/95F39606-82DB-4977-9372-29ED496FB703.800x800.jpeg",
+   "https://artflora.by/files/products/905E7754-65F8-42F0-AEC0-5EAFB9A92A7F.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-zefir",
+  "name": "Букет «Зефир»",
+  "price": 270.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "love"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3369.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_3384.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_3462.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-kalloj-i-eustomoj",
+  "name": "Свадебный букет с каллой и эустомой",
+  "price": 240.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding",
+   "exotic"
+  ],
+  "flower": "Эустома",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_2476.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_2477.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svalebnyj-buket-iz-belyh-kall-15-sht",
+  "name": "Свалебный букет из белых калл 15 шт",
+  "price": 255.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding",
+   "exotic"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/54AD01C3-6863-4900-B08F-320DE98EDF2D.800x800.jpeg",
+   "https://artflora.by/files/products/4C4547BA-4D26-48BD-ADCB-B1E0F662BDF9.800x800.jpeg",
+   "https://artflora.by/files/products/B3EA3031-A6F8-4C07-90A9-972D1FA60A45.800x800.jpeg",
+   "https://artflora.by/files/products/03E5E36E-50BD-46D7-A6D3-2900303ABD20.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-stilnye-kally",
+  "name": "Свадебный букет «стильные каллы»",
+  "price": 255.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding",
+   "exotic"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/CF5B92F0-395C-4CF2-915F-2EBC99499697.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-nezhnye-alstromerii",
+  "name": "Свадебный букет «нежные альстромерии»",
+  "price": 160.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/C7152CB4-3E5A-44B0-9B2D-9A907E7421E3.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-rozovymi-diantusami",
+  "name": "Свадебный букет с розовыми диантусами",
+  "price": 130.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/878876E3-5B1A-48FB-9EAE-E929002AA9A7.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-aromatnye-frezii",
+  "name": "Свадебный букет «Ароматные Фрезии»",
+  "price": 305.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/20AED2C7-5CE2-4B46-8C3E-9E52138D0046.800x800.jpeg",
+   "https://artflora.by/files/products/03C24513-D3C0-4FDC-B5EF-5EC525EEA218.800x800.jpeg",
+   "https://artflora.by/files/products/F6302F3A-AD18-41CF-9DA4-7DC3E0795530.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-diantusami",
+  "name": "Свадебный букет с диантусами",
+  "price": 130.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/DFEF6D2C-FAE4-41FD-BC91-0940B7174B89.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-gipsofiloj",
+  "name": "Свадебный букет с гипсофилой",
+  "price": 135.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/55C41ED0-6C82-408F-9B44-1646A4A30744.800x800.jpeg",
+   "https://artflora.by/files/products/810B0542-BC43-4C9F-955A-AF5A3C2AEC9E.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-belo-goluboj",
+  "name": "Букет бело-голубой",
+  "price": 170.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/6EF8732B-F180-4746-A546-D1213A27543C.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-s-freziyami-i-zelenyu",
+  "name": "Букет с фрезиями и зеленью",
+  "price": 305.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/37ED4B95-D867-4003-91C2-A16C5DB04EDB.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-iz-hrizantem-i-zeleni",
+  "name": "Свадебный букет из хризантем и зелени",
+  "price": 100.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Хризантема кустовая",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/63B1328D-4A92-44D5-8F89-801BF7773020.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-iz-51-frezii",
+  "name": "Свадебный букет из 51 фрезии",
+  "price": 652.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/3FFA3EF0-0E15-4590-BB84-3CD0328C38E7.800x800.jpeg",
+   "https://artflora.by/files/products/C696B8B1-46DC-4BAC-9AEA-854F7AEA5ECE.800x800.jpeg",
+   "https://artflora.by/files/products/C7ACCF2D-5E6B-46B3-B450-83F947BE6260.800x800.jpeg",
+   "https://artflora.by/files/products/5A96B070-6A7C-4BDC-ACE8-921C525433FE.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-freziej",
+  "name": "Свадебный букет с фрезией",
+  "price": 420.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/80DEABED-41A1-4FED-BC0B-F8ADD98BE470.800x800.jpeg",
+   "https://artflora.by/files/products/8A22A243-020A-4687-A599-15B9FC21FA7C.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-iz-alstromerij-i-orhidej",
+  "name": "Свадебный букет из альстромерий и орхидей",
+  "price": 145.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding",
+   "exotic"
+  ],
+  "flower": "Альстромерия",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/CCF22BD4-D9BC-4E7F-B040-40E20AEC9785.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-yarkij-iris",
+  "name": "Свадебный букет «яркий ирис»",
+  "price": 215.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/CDCB1427-4FD7-44ED-A4BB-B9F7B568C93E.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-barhatnyj",
+  "name": "Свадебный букет «бархатный»",
+  "price": 135.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/89044BF5-094F-48EF-824A-DAD33BDD56E3.800x800.jpeg",
+   "https://artflora.by/files/products/8D10D8C5-DE90-4BA8-8D87-CB2541B749D4.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-frantsuzskimi-rozami",
+  "name": "Свадебный букет с французскими розами",
+  "price": 125.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6284.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6325.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6294.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-svadebnyj-miks",
+  "name": "Букет свадебный «Микс»",
+  "price": 145.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6310.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6318.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6300.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-v-nezhnom-ispolnenii",
+  "name": "Свадебный букет в нежном исполнении",
+  "price": 160.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_6327.800x800.jpeg",
+   "https://artflora.by/files/products/img_6235_6236.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6328.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_6226.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-iz-roz-miks-i-eustomy",
+  "name": "Свадебный букет из роз микс и эустомы",
+  "price": 165.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Эустома",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_7937.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_7935.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-v-belo-persikovyh-ottenkah",
+  "name": "Свадебный букет в бело-персиковых оттенках",
+  "price": 175.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_7927.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_7926.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-belosnezhnyj",
+  "name": "Свадебный букет Белоснежный",
+  "price": 165.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_7939.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_7925.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-klassicheskij-belyj",
+  "name": "Свадебный букет «Классический белый»",
+  "price": 165.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_4760.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_4759.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_4758.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-rozami-i-evkaliptom",
+  "name": "Свадебный букет с розами и эвкалиптом",
+  "price": 145.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/IMG_3936.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_3932.800x800.jpeg",
+   "https://artflora.by/files/products/IMG_3933.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-stilnyj",
+  "name": "Свадебный букет «стильный»",
+  "price": 185.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/ED163BCB-7DAC-47A2-AB9E-74431AE69634.800x800.jpeg",
+   "https://artflora.by/files/products/49109061-8F36-4F5C-BFAB-BB359C868769.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-mansfild-park",
+  "name": "Свадебный букет «мансфилд парк»",
+  "price": 205.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/90BCA682-30D4-42F9-8D4E-E3DD005BAA58.800x800.jpeg",
+   "https://artflora.by/files/products/FBC0F58E-FB6A-499F-8191-AB42A0D1680D.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-belo-rozovyj",
+  "name": "Свадебный букет бело-розовый",
+  "price": 170.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/A243BB38-1A69-404F-BA71-DC0B34DD3D95.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-ohara-s-eustomoj",
+  "name": "Свадебный букет Охара с эустомой",
+  "price": 165.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Эустома",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/CF3B94EF-1AD4-43BE-9585-830E4A590065.800x800.jpeg",
+   "https://artflora.by/files/products/3F0CD60B-784D-4147-88DC-8C587630E3A7.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadenyj-buket-s-rozoj-i-frezij",
+  "name": "Сваденый букет с розой и Фрезий",
+  "price": 210.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/139BDCE7-B9C7-4EEF-83A0-120BAC0C44CB.800x800.jpeg",
+   "https://artflora.by/files/products/4B83DB09-DFD2-4A24-97A1-8CDA3D31F172.800x800.jpeg",
+   "https://artflora.by/files/products/951A4012-D91D-4D2B-A88E-266EA9119C69.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-nezhnyj-miks",
+  "name": "Свадебный букет «нежный микс»",
+  "price": 165.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/4C3534D0-D42B-4C35-BE37-6473042D1AE5.800x800.jpeg",
+   "https://artflora.by/files/products/F43FA5AB-1398-4A4D-95E8-1F2B173FDBBE.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-nezhnost-lyubvi",
+  "name": "Свадебный букет «нежность любви»",
+  "price": 170.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/EEAB3F7D-6146-41F8-B3C1-BE93B1A82848.800x800.jpeg",
+   "https://artflora.by/files/products/AFFE03D8-EBC8-4615-A4F5-7B6DD19B1698.800x800.jpeg",
+   "https://artflora.by/files/products/9084B663-B02A-4AED-8DC6-F0C34FAE946A.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-izyaschnyj",
+  "name": "Свадебный букет «изящный»",
+  "price": 140.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/94B977A4-77A5-429B-8127-903679F0FA17.800x800.jpeg",
+   "https://artflora.by/files/products/0D010C6B-162E-4AAE-A322-6F998AFF9686.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-ohara",
+  "name": "Свадебный букет «o’хара»",
+  "price": 155.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/606FF5F6-4992-49EA-8B55-CE007B22E921.800x800.jpeg",
+   "https://artflora.by/files/products/2F1CC3C2-159C-486D-BE0E-586B32B853B1.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-nezhnoe-schaste",
+  "name": "Свадебный букет «нежное счастье»",
+  "price": 150.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/416B6ED2-3EF5-46F5-B7C2-7C40A350EFC5.800x800.jpeg",
+   "https://artflora.by/files/products/0904C62A-4EDB-4042-ADF7-32B895EEA72B.800x800.jpeg",
+   "https://artflora.by/files/products/0E504041-77B9-4ABC-851A-EDB39C2ABFBD.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-beloj-kustovoj-rozoj",
+  "name": "Свадебный букет с белой кустовой розой",
+  "price": 155.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза кустовая 60 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/72A3D47A-DBC6-40B8-AE2D-E6E1E1445FA4.800x800.jpeg",
+   "https://artflora.by/files/products/7BAC53DA-4FD8-4085-8AF2-AFC0DDFFC30D.800x800.jpeg",
+   "https://artflora.by/files/products/22FBF956-C334-4E58-A0C8-9CECC90C81F9.800x800.jpeg",
+   "https://artflora.by/files/products/C33BF40E-4388-480E-9520-A44BCBD35787.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-rozami-i-bruniej",
+  "name": "Свадебный букет с розами и брунией",
+  "price": 160.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/FFBC96FD-DE18-45B8-A99A-FAFFE66CA2DC.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-s-pionovidnoj-rozoj-i-eustomoj",
+  "name": "Букет с пионовидной розой и эустомой",
+  "price": 220.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза кустовая 60 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/4C049F11-0193-41DB-B1BA-8B0EA41A7BEC.800x800.jpeg",
+   "https://artflora.by/files/products/05B3B1F9-B8FC-47B2-9DFE-48B26EF88203.800x800.jpeg",
+   "https://artflora.by/files/products/5EBAE26A-757D-4D1A-A043-E903B3E638D2.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-eustomoj-frieziej-rozami",
+  "name": "Свадебный букет с эустомой, фриезией, розами",
+  "price": 220.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Эустома",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/028A6E33-181E-4E60-8719-25DB42CFB5E1.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-nezhnoe-oblako",
+  "name": "Свадебный букет «нежное облако»",
+  "price": 180.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/2E4A6E7A-EAEF-422B-9279-BD3779B9C4A7.800x800.jpeg",
+   "https://artflora.by/files/products/7EC050F1-0E0F-4410-A73A-96398BA1E347.800x800.jpeg",
+   "https://artflora.by/files/products/D3848946-F210-40EE-84E4-2BE088ABBB09.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-rozovye-sny",
+  "name": "Свадебный букет «розовые сны»",
+  "price": 190.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/F45087E2-7668-4815-9AE9-EB20236BDDA7.800x800.jpeg",
+   "https://artflora.by/files/products/0BB0736B-331C-4A61-B49E-53F068BC4DD8.800x800.jpeg",
+   "https://artflora.by/files/products/C7299D7F-D25A-46F1-91DD-557A66C7CED7.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-legkij",
+  "name": "Свадебный букет «лёгкий»",
+  "price": 115.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/A234140A-3DE5-4D42-A301-BF68854DFC5B.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-buket-iz-roz-i-hamelatsiuma",
+  "name": "Букет из роз и хамелациума",
+  "price": 170.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/8BD50C03-784C-4E91-BEA8-C24B66F06B8E.800x800.jpeg",
+   "https://artflora.by/files/products/F18144AF-92DB-4467-ACD6-63CB9CC5008A.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-s-pionovidnymi-rozami-nezhnyj-potseluj",
+  "name": "Свадебный букет с пионовидными розами «нежный поцелуй»",
+  "price": 200.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза кустовая 60 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/FD6462FF-88BD-402C-A0E5-8202EE2D45F1.800x800.jpeg",
+   "https://artflora.by/files/products/EB0C0FA0-E999-4380-A5D2-979811A85A1D.800x800.jpeg",
+   "https://artflora.by/files/products/67D5F4B5-D697-4E20-A526-2CE5FE15BD05.800x800.jpeg"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-nezhnost",
+  "name": "Свадебный букет «нежность»",
+  "price": 235.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Роза Кения 40 см",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/6664D953-D437-4136-95BE-25FF8E54AEEE.800x800.png"
+  ]
+ },
+ {
+  "slug": "af-svadebnyj-buket-iz-roz-i-eustomy",
+  "name": "Свадебный букет из роз и эустомы",
+  "price": 190.0,
+  "format": "BOUQUET",
+  "occasions": [
+   "wedding"
+  ],
+  "flower": "Эустома",
+  "qty": null,
+  "photos": [
+   "https://artflora.by/files/products/A1865EAD-CC5E-4EC0-9ABB-D698FE17143B.800x800.jpeg",
+   "https://artflora.by/files/products/8E2A2595-57D0-4EC5-B491-BF48CDAB06A3.800x800.jpeg",
+   "https://artflora.by/files/products/A6BED66E-2A55-4738-BA85-93516A09650B.800x800.jpeg"
+  ]
+ }
+]

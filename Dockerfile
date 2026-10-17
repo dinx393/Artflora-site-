@@ -15,7 +15,8 @@ COPY . .
 # Миграции и стартовые данные собираем в обычные .js, чтобы в контейнере не нужны были tsx и Prisma CLI
 RUN npx prisma generate && npx next build \
  && npx esbuild scripts/migrate.ts --bundle --platform=node --format=cjs --external:pg-native --outfile=prisma/migrate.js \
- && npx esbuild prisma/seed.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:pg-native --outfile=prisma/seed.js
+ && npx esbuild prisma/seed.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:pg-native --outfile=prisma/seed.js \
+ && npx esbuild prisma/demo-catalog.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:pg-native --outfile=prisma/demo-catalog.js
 
 FROM node:22-alpine AS run
 WORKDIR /app
