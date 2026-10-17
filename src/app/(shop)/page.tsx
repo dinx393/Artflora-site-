@@ -20,13 +20,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
       <section className="hero">
         <div className="stack" style={{ flex: "1 1 min(420px, 100%)", minWidth: 0, gap: 20 }}>
           <p style={{ fontWeight: 700, fontSize: 15, letterSpacing: 1, textTransform: "uppercase" }}>
-            Цветочный магазин в Уручье и Малиновке
+            Сеть салонов цветов в Уручье и Малиновке
           </p>
           <h1>
-            Свежий букет, который вы <span className="script">увидите</span> до оплаты
+            Букетов много,<br /> а <span className="script">запомнят</span> ваш
           </h1>
           <p className="muted" style={{ fontSize: 19, lineHeight: 1.5 }}>
-            Соберём, пришлём фото на согласование и привезём в день заказа.
+            Радуем букетами больше 15 лет. Пришлём фото перед отправкой и привезём в день заказа.
           </p>
           <div className="row" style={{ gap: 12 }}>
             <Link href="/catalog" className="btn btn-lg">

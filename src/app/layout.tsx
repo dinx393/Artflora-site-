@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL ?? "https://artflora.by"),
   title: { default: "Артфлора — цветы и букеты с доставкой по Минску", template: "%s — Артфлора" },
   description:
-    "Цветочный магазин в Уручье и Малиновке. Пришлём фото букета до отправки, доставим по Минску в день заказа. Самовывоз −10%.",
+    "Сеть салонов цветов в Уручье и Малиновке, радуем букетами больше 15 лет. Пришлём фото букета до отправки, доставим по Минску в день заказа. Самовывоз −10%.",
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#7E1F3C" };
