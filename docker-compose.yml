@@ -26,7 +26,8 @@ services:
       - "${SITE_PORT:-8000}:3000"
     environment:
       DATABASE_URL: postgresql://artflora:${DB_PASSWORD:-artflora}@db:5432/artflora?schema=public
-      # Значения по умолчанию годятся только для компьютера. На сервере задайте свои в .env.
+      # Значения по умолчанию годятся только для компьютера. На сервере задайте свои в .env:
+      # с адресом https:// сайт не запустится с этим паролем и ключом.
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-artflora}
       SESSION_SECRET: ${SESSION_SECRET:-local-only-secret-change-me-on-server}
       SITE_URL: ${SITE_URL:-http://localhost:8000}
