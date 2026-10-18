@@ -11,6 +11,7 @@ export type ShopSettings = {
   sellerDetails: string; // реквизиты продавца в подвале
   leadHours: number; // за сколько часов минимум принимаем заказ на сегодня
   promoLine: string; // строка над каталогом, например про День матери
+  orderEmail: string; // куда присылать письма о новых заказах (через запятую можно несколько)
 };
 
 export type DistrictPreset = { name: string; lat: number; lng: number };
@@ -25,6 +26,7 @@ export const DEFAULT_SHOP: ShopSettings = {
     "[Наименование продавца], УНП [номер] · Юр. адрес: [адрес] · В Торговом реестре РБ с [дата], № [номер]",
   leadHours: 2,
   promoLine: "",
+  orderEmail: "",
 };
 
 // Координаты приблизительные, их можно уточнить в настройках.

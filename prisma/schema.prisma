@@ -163,6 +163,10 @@ model Order {
   notifiedAt        DateTime?
   notifyAttempts    Int            @default(0)
   notifyError       String         @default("")
+  // Письмо о заказе на почту магазина: то же самое
+  emailedAt         DateTime?
+  emailAttempts     Int            @default(0)
+  emailError        String         @default("")
   items             OrderItem[]
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt

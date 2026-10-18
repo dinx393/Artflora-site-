@@ -2,7 +2,7 @@ import { formatPhone } from "@/lib/phone";
 import Link from "next/link";
 import type { OrderStatus } from "@prisma/client";
 import { db } from "@/lib/db";
-import { telegramConfigured } from "@/lib/notify";
+import { smtpConfigured, telegramConfigured } from "@/lib/notify";
 import { formatByn } from "@/lib/money";
 import { STATUS_LABEL } from "./status";
 
@@ -17,14 +17,20 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
   const orders = await db.order.findMany({ where, include: { items: true }, orderBy: [{ deliveryDate: "asc" }, { deliverySlot: "asc" }], take: 200 });
   const counts = await db.order.groupBy({ by: ["status"], _count: true });
   const count = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
-  // Заказы, о которых Telegram не сообщил: их нужно посмотреть здесь.
-  const unnotified = telegramConfigured() ? await db.order.count({ where: { notifiedAt: null, notifyAttempts: { gt: 0 } } }) : 0;
+  // Заказы, о которых не пришло уведомление в Telegram или письмо: их нужно посмотреть здесь.
+  const [unnotified, unemailed] = await Promise.all([
+    telegramConfigured() ? db.order.count({ where: { notifiedAt: null, notifyAttempts: { gt: 0 } } }) : 0,
+    smtpConfigured() ? db.order.count({ where: { emailedAt: null, emailAttempts: { gt: 0 } } }) : 0,
+  ]);
 
   return (
     <>
       <h1>Заказы</h1>
       {unnotified > 0 && (
         <p className="error">Уведомление в Telegram не дошло по {unnotified} заказ(ам). Сайт повторяет отправку сам, но проверьте новые заказы здесь.</p>
+      )}
+      {unemailed > 0 && (
+        <p className="error">Письмо о заказе не ушло на почту по {unemailed} заказ(ам). Сайт повторяет отправку сам; если не проходит, проверьте настройки почты.</p>
       )}
       <div className="tabs">
         <Link href="/admin/orders" className={`chip ${active ? "on" : ""}`}>В работе</Link>

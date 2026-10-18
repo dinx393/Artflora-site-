@@ -70,6 +70,7 @@ export function SettingsEditor(props: { shop: ShopSettings; delivery: DeliveryCo
           {field("Ссылка Telegram", "telegram", "https://t.me/...")}
           {field("Ссылка WhatsApp (пусто — по номеру телефона)", "whatsapp", "https://wa.me/375...")}
           {field("Ссылка Instagram", "instagram")}
+          {field("Почта для писем о заказах (можно несколько через запятую)", "orderEmail", "zakaz@artflora.by")}
         </div>
         {field("Строка над каталогом (акция)", "promoLine", "До Дня матери 14 октября · предзаказ −10%")}
         <label className="field">

@@ -355,6 +355,11 @@ export async function saveSettings(input: {
       sellerDetails: z.string().max(1000),
       leadHours: z.number().min(0).max(24),
       promoLine: z.string().max(300),
+      orderEmail: z
+        .string()
+        .max(300)
+        .default("")
+        .refine((v) => v.split(",").every((e) => !e.trim() || z.string().email().safeParse(e.trim()).success), "Проверьте почту для заказов"),
     }),
     delivery: z.object({
       shops: z
@@ -371,7 +376,10 @@ export async function saveSettings(input: {
     districts: z.array(z.object({ name: z.string().min(1).max(40), lat: z.number(), lng: z.number() })).max(20),
   });
   const parsed = schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Проверьте поля: " + parsed.error.issues[0].path.join(" → ") };
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return { ok: false, error: issue.message.startsWith("Проверьте") ? issue.message : "Проверьте поля: " + issue.path.join(" → ") };
+  }
   const zones = [...parsed.data.delivery.zones].sort((a, b) => a.maxKm - b.maxKm);
   await saveSetting("shop", parsed.data.shop);
   await saveSetting("delivery", { ...parsed.data.delivery, zones });
