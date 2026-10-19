@@ -56,6 +56,56 @@ export default async function BouquetPage({ params }: { params: Promise<Params> 
   const firstOcc = b.occasions[0];
   const [nameMain, nameQuote] = b.name.includes("«") ? [b.name.slice(0, b.name.indexOf("«")), b.name.slice(b.name.indexOf("«"))] : [b.name, ""];
 
+  // Сначала размеры, потом этот же состав в другом виде; если других видов нет — похожие букеты.
+  const variants =
+    siblings.length > 1 ? (
+      <div className="stack">
+        <div className="row between" style={{ alignItems: "baseline" }}>
+          <span className="label">Этот же состав в другом виде</span>
+          {b.collectionSlug && (
+            <Link href={`/catalog?collection=${b.collectionSlug}`} className="small" style={{ fontWeight: 700 }}>
+              Вся коллекция «{b.collectionName}» →
+            </Link>
+          )}
+        </div>
+        <div className="forms">
+          {siblings.map((s) => (
+            <Link key={s.id} href={`/bouquet/${s.slug}`} className={s.id === b.id ? "on" : ""}>
+              <span className="ph"><img src={s.photos[0]} alt={FORMATS[s.format].inForm} /></span>
+              <span className="t stack" style={{ gap: 2 }}>
+                <b style={{ fontSize: 14 }}>{FORMATS[s.format].inForm}</b>
+                {s.id === b.id ? (
+                  <span style={{ color: "var(--muted)", fontWeight: 700 }}>Вы смотрите</span>
+                ) : (
+                  <span className="muted">{formatByn(s.priceKop)}</span>
+                )}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    ) : similar.length > 0 ? (
+      <div className="stack">
+        <div className="row between" style={{ alignItems: "baseline" }}>
+          <span className="label">Похожие букеты</span>
+          <Link href="/catalog" className="small" style={{ fontWeight: 700 }}>
+            Смотреть все →
+          </Link>
+        </div>
+        <div className="forms">
+          {similar.slice(0, 3).map((s) => (
+            <Link key={s.id} href={`/bouquet/${s.slug}`}>
+              <span className="ph"><img src={s.photos[0]} alt={s.name} /></span>
+              <span className="t stack" style={{ gap: 2 }}>
+                <b className="forms-name">{s.name}</b>
+                <span className="price" style={{ fontSize: 15 }}>{formatByn(s.priceKop)}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    ) : null;
+
   return (
     <div className="wrap stack" style={{ paddingTop: 20, paddingBottom: 64, gap: 40 }}>
       <nav className="small muted row" style={{ gap: 8 }}>
@@ -89,34 +139,6 @@ export default async function BouquetPage({ params }: { params: Promise<Params> 
             {nameQuote && <span className="script">{nameQuote}</span>}
           </h1>
 
-          {siblings.length > 1 && (
-            <div className="stack">
-              <div className="row between" style={{ alignItems: "baseline" }}>
-                <span className="label">Этот же состав в другом виде</span>
-                {b.collectionSlug && (
-                  <Link href={`/catalog?collection=${b.collectionSlug}`} className="small" style={{ fontWeight: 700, color: "var(--olive)" }}>
-                    Вся коллекция «{b.collectionName}» →
-                  </Link>
-                )}
-              </div>
-              <div className="forms">
-                {siblings.map((s) => (
-                  <Link key={s.id} href={`/bouquet/${s.slug}`} className={s.id === b.id ? "on" : ""}>
-                    <span className="ph"><img src={s.photos[0]} alt={FORMATS[s.format].inForm} /></span>
-                    <span className="t stack" style={{ gap: 2 }}>
-                      <b style={{ fontSize: 14 }}>{FORMATS[s.format].inForm}</b>
-                      {s.id === b.id ? (
-                        <span style={{ color: "var(--olive)", fontWeight: 700 }}>Вы смотрите</span>
-                      ) : (
-                        <span className="muted">{formatByn(s.priceKop)}</span>
-                      )}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
           <BuyBox
             bouquetId={b.id}
             sizes={b.sizes}
@@ -124,6 +146,7 @@ export default async function BouquetPage({ params }: { params: Promise<Params> 
             addons={addons.map((a) => ({ id: a.id, name: a.name, priceKop: a.priceKop, included: a.included }))}
             pickupPct={delivery.pickupDiscountPct}
             viber={shop.viber}
+            afterSizes={variants}
           />
 
           <DeliveryEstimate subtotalKop={def.priceKop} districts={districts} freeFromKop={delivery.freeFromKop} leadHours={shop.leadHours} />
@@ -166,7 +189,7 @@ export default async function BouquetPage({ params }: { params: Promise<Params> 
       {similar.length > 0 && (
         <section className="stack" style={{ gap: 20 }}>
           <h2 className="h2">Похожие <span className="script">букеты</span></h2>
-          <div className="grid">
+          <div className="grid grid-4">
             {similar.map((x) => <ProductCard key={x.id} b={x} />)}
           </div>
         </section>

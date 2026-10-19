@@ -44,6 +44,49 @@ export function LeafIcon({ size = 18 }: P) {
   );
 }
 
+export function MenuIcon({ size = 20 }: P) {
+  return (
+    <svg {...base(size)} viewBox="0 0 24 24" strokeWidth={1.4} aria-hidden>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
+export function CloseIcon({ size = 20 }: P) {
+  return (
+    <svg {...base(size)} viewBox="0 0 24 24" strokeWidth={1.6} aria-hidden>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+export function ClockIcon({ size = 24 }: P) {
+  return (
+    <svg {...base(size)} viewBox="0 0 24 24" strokeWidth={1.4} aria-hidden>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l3 2" />
+    </svg>
+  );
+}
+
+export function CameraIcon({ size = 24 }: P) {
+  return (
+    <svg {...base(size)} viewBox="0 0 24 24" strokeWidth={1.4} aria-hidden>
+      <path d="M4 8h3l2-2h6l2 2h3v11H4z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  );
+}
+
+export function CardIcon({ size = 24 }: P) {
+  return (
+    <svg {...base(size)} viewBox="0 0 24 24" strokeWidth={1.4} aria-hidden>
+      <rect x="4" y="6" width="16" height="12" rx="1.5" />
+      <path d="M4 7l8 6 8-6" />
+    </svg>
+  );
+}
+
 const OCC: Record<string, React.ReactNode> = {
   mom: (
     <>

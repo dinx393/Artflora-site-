@@ -127,16 +127,16 @@ export function renderOrderEmail(o: OrderEmailData): { subject: string; html: st
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
   <tr><td style="height:6px;background:${C.lavender};border-radius:6px 6px 0 0"></td></tr>
   <tr><td style="padding:22px 4px 6px">
-    <div style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-size:26px;color:${C.cherry};letter-spacing:.5px">Артфлора</div>
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;color:${C.cherry};letter-spacing:.5px">Артфлора</div>
   </td></tr>
   <tr><td style="padding:8px 4px 18px">
-    <div style="font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-size:32px;line-height:1.15;color:${C.ink}">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:32px;line-height:1.15;color:${C.ink}">
       <a href="${esc(o.adminUrl)}" style="color:${C.cherry};text-decoration:underline">Заказ №${o.number}</a> на сумму ${total}
       <span style="font-style:italic;color:${C.lavenderInk}">${state}</span>
     </div>
   </td></tr>
   <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${C.line};border-radius:14px;border-collapse:separate;overflow:hidden">${info}</table></td></tr>
-  <tr><td style="padding:28px 4px 10px;font-family:'Cormorant Garamond',Cormorant,Georgia,serif;font-size:26px;color:${C.ink}">Покупатель заказал</td></tr>
+  <tr><td style="padding:28px 4px 10px;font-family:'Playfair Display',Georgia,serif;font-size:26px;color:${C.ink}">Покупатель заказал</td></tr>
   <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${C.line};border-radius:14px;border-collapse:separate;overflow:hidden">${items}</table></td></tr>
   <tr><td style="height:10px;line-height:10px;font-size:0">&nbsp;</td></tr>
   <tr><td style="padding:12px 14px;background:${C.blush};border-radius:14px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${sums}</table></td></tr>

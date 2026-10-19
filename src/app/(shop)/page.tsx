@@ -1,11 +1,40 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { OccasionIcon } from "@/components/icons";
-import { visibleBouquets } from "@/lib/catalog";
+import { CameraIcon, CardIcon, ClockIcon, BagIcon, OccasionIcon } from "@/components/icons";
+import { visibleBouquets, type BouquetView } from "@/lib/catalog";
 import { minDeliveryKop } from "@/lib/delivery";
 import { formatByn } from "@/lib/money";
 import { OCCASIONS, PRICE_RANGES } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
+
+// Вырез в вишнёвом блоке главной: справа сверху встаёт «Букет дня», снизу — фото.
+const HERO_NOTCH =
+  "M706 336C706 349.26 695.26 360 682 360H553.82C540.57 360 529.82 370.75 529.82 384V564C529.82 577.26 519.08 588 505.82 588H24C10.75 588 0 577.26 0 564V24C0 10.75 10.75 0 24 0H682C695.26 0 706 10.75 706 24V336Z";
+
+// «Огненный экзотический букет»: первое слово — рукописным, остальное — обычным шрифтом.
+function splitName(name: string): [string, string] {
+  const clean = name.replace(/[«»"]/g, "").trim();
+  const [first, ...rest] = clean.split(/\s+/);
+  if (!rest.length || !/^\p{L}+$/u.test(first)) return ["", clean];
+  return [first, rest.join(" ")];
+}
+
+function ExclusiveCard({ b }: { b: BouquetView }) {
+  const [script, text] = splitName(b.name);
+  const size = b.sizes.find((s) => s.code === b.defaultSize);
+  return (
+    <Link href={`/bouquet/${b.slug}`} className="story">
+      <img src={b.photos[0]} alt={b.name} loading="lazy" />
+      <span className="story-shade" />
+      <span className="story-title">
+        {script && <span className="story-script">{script}</span>}
+        <span className="story-text">{text}</span>
+      </span>
+      <span className="story-price">{formatByn(b.priceKop).replace(" BYN", " р")}</span>
+      {size?.note && <span className="story-note">{size.note}</span>}
+    </Link>
+  );
+}
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ price?: string }> }) {
   const { price } = await searchParams;
@@ -13,40 +42,58 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   const range = PRICE_RANGES.find((r) => r.slug === price);
   const hitsAll = all.filter((b) => b.isHit).length >= 4 ? all.filter((b) => b.isHit) : all;
   const hits = (range ? hitsAll.filter((b) => b.priceKop >= range.min && b.priceKop < range.max) : hitsAll).slice(0, 8);
-  const heroPhoto = all.find((b) => b.isHit)?.photos[0] ?? all[0]?.photos[0] ?? "/demo/hero.jpg";
+  const ofDay = all.find((b) => b.isHit) ?? all[0];
+  const tilePhoto = all.find((b) => b !== ofDay && b.photos[0] !== ofDay?.photos[0])?.photos[0] ?? "/demo/hero.jpg";
+  const exclusive = all.filter((b) => b.isExclusive).slice(0, 3);
+  const minDelivery = formatByn(minDeliveryKop(delivery));
 
   return (
     <>
-      <section className="hero">
-        <div className="stack" style={{ flex: "1 1 min(420px, 100%)", minWidth: 0, gap: 20 }}>
-          <p style={{ fontWeight: 700, fontSize: 15, letterSpacing: 1, textTransform: "uppercase" }}>
-            Сеть салонов цветов: Уручье, Малиновка
-          </p>
-          <h1>
-            Букетов много,<br /> а запомнят <span className="script">ваш</span>
-          </h1>
-          <p className="muted" style={{ fontSize: 19, lineHeight: 1.5 }}>
-            Радуем букетами уже 19 лет.
-          </p>
-          <div className="row" style={{ gap: 12 }}>
-            <Link href="/catalog" className="btn btn-lg">
-              Выбрать букет
+      <section className="wrap hero-wrap">
+        <div className="hero">
+          <div className="hero-main">
+            <svg className="hero-shape" viewBox="0 0 706 588" preserveAspectRatio="none" aria-hidden>
+              <path d={HERO_NOTCH} />
+            </svg>
+            <div className="hero-text">
+              <span className="eyebrow">Сеть салонов цветов: Уручье, Малиновка</span>
+              <h1>
+                Букетов много,
+                <br /> а запомнят <span className="script">ваш</span>
+              </h1>
+              <p>Радуем букетами уже 19 лет. Соберём, пришлём фото до отправки и привезём в день заказа.</p>
+            </div>
+            <div className="hero-actions">
+              <Link href="/catalog" className="btn btn-pink">
+                Выбрать букет
+              </Link>
+              <a href={shop.viber} className="btn btn-on-cherry">
+                Написать в Viber
+              </a>
+            </div>
+          </div>
+          {ofDay && (
+            <Link href={`/bouquet/${ofDay.slug}`} className="hero-day">
+              <img src={ofDay.photos[0]} alt={ofDay.name} />
+              <span className="hero-day-body">
+                <span className="eyebrow muted">Букет дня · собран сегодня</span>
+                <span className="hero-day-row">
+                  <span className="hero-day-name">{ofDay.name}</span>
+                  <span className="price">{formatByn(ofDay.priceKop)}</span>
+                </span>
+              </span>
             </Link>
-            <a href={shop.viber} className="btn btn-lg btn-outline">
-              Написать в Viber
-            </a>
-          </div>
-        </div>
-        <div style={{ flex: "1 1 min(420px, 100%)", minWidth: 0, display: "flex", justifyContent: "center" }}>
-          <div className="hero-photo">
-            <img src={heroPhoto} alt="Букет от Артфлоры" />
-          </div>
+          )}
+          <Link href="/catalog" className="hero-tile">
+            <img src={tilePhoto} alt="Букеты Артфлоры" />
+            <span className="hero-chip">Весь каталог ↗</span>
+          </Link>
         </div>
       </section>
 
       <section className="section" id="occasions">
-        <h2 className="h2" style={{ marginBottom: 24 }}>
-          Кому <span className="script">дарим?</span>
+        <h2 className="h2 sec-title">
+          Кому сегодня <span className="script">дарим?</span>
         </h2>
         <div className="occasions">
           {OCCASIONS.filter((o) => o.slug !== "exotic").map((o) => (
@@ -61,15 +108,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
       </section>
 
       <section className="section">
-        <div className="row between" style={{ alignItems: "baseline", marginBottom: 20, gap: 12 }}>
+        <div className="row between sec-title" style={{ alignItems: "flex-end", gap: 16 }}>
           <h2 className="h2">
             Хиты <span className="script">этой недели</span>
           </h2>
-          <div className="row" style={{ gap: 8 }}>
+          <div className="row chips-row" style={{ gap: 8 }}>
+            <Link href="/#hits" className={`chip ${!range ? "on" : ""}`} scroll={false}>
+              Все
+            </Link>
             {PRICE_RANGES.map((r) => (
               <Link
                 key={r.slug}
-                href={price === r.slug ? "/" : `/?price=${r.slug}#hits`}
+                href={price === r.slug ? "/#hits" : `/?price=${r.slug}#hits`}
                 className={`chip ${price === r.slug ? "on" : ""}`}
                 scroll={false}
               >
@@ -78,7 +128,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             ))}
           </div>
         </div>
-        <div className="grid" id="hits">
+        <div className="grid grid-4" id="hits">
           {hits.map((b) => (
             <ProductCard key={b.id} b={b} />
           ))}
@@ -88,59 +138,84 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             В этом диапазоне хитов нет. <Link href="/catalog">Смотреть весь каталог →</Link>
           </p>
         )}
+        <div className="more">
+          <Link href="/catalog" className="btn btn-outline btn-lg">
+            Смотреть весь каталог →
+          </Link>
+        </div>
       </section>
 
       <section className="section">
-        <div className="perks">
-          <div>
-            <b>В день заказа</b>
-            <span className="muted">Доставка из ближайшего магазина, от {formatByn(minDeliveryKop(delivery))}</span>
+        <div className="band">
+          <div className="stack" style={{ flex: "1 1 420px", gap: 12 }}>
+            <h2>
+              Не нашли свой? Соберём <span className="script">вместе.</span>
+            </h2>
+            <p>Напишите повод, любимые цвета и бюджет. Флорист предложит состав и пришлёт фото до отправки.</p>
           </div>
-          <div>
-            <b>Фото</b>
-            <span className="muted">Согласуем букет с вами до отправки</span>
+          <a href={shop.viber} className="btn btn-pink btn-lg">
+            Написать флористу
+          </a>
+        </div>
+      </section>
+
+      <section className="section">
+        <h2 className="h2 sec-title">
+          Важно <span className="script">знать</span>
+        </h2>
+        <div className="cards-4">
+          <div className="info-card">
+            <i><ClockIcon /></i>
+            <h3>В день заказа</h3>
+            <p>Везём из ближайшего магазина, доставка от {minDelivery}.</p>
           </div>
-          <div>
-            <b>В подарок</b>
-            <span className="muted">Открытка и подкормка к каждому букету</span>
+          <div className="info-card">
+            <i><CameraIcon /></i>
+            <h3>Фото до отправки</h3>
+            <p>Согласуем букет с вами, прежде чем курьер выедет.</p>
           </div>
-          <div>
-            <b>−{delivery.pickupDiscountPct}%</b>
-            <span className="muted">При самовывозе в Уручье и Малиновке</span>
+          <div className="info-card">
+            <i><CardIcon /></i>
+            <h3>Открытка и подкормка</h3>
+            <p>
+              Кладём <span className="gift">в подарок</span> к каждому букету.
+            </p>
+          </div>
+          <div className="info-card">
+            <i><BagIcon size={24} /></i>
+            <h3>Самовывоз −{delivery.pickupDiscountPct}%</h3>
+            <p>В Уручье и Малиновке, к выбранному времени.</p>
           </div>
         </div>
       </section>
 
-      <section className="section row" style={{ gap: 24 }}>
-        <div className="stack" style={{ flex: "1 1 360px", gap: 12 }}>
-          <h2 className="h2">
-            В каждом заказе <span className="script">в подарок</span>
-          </h2>
-          <p className="muted" style={{ fontSize: 18, lineHeight: 1.5 }}>
-            Открытка с вашим текстом и 2 пакетика подкормки, чтобы букет стоял дольше.
-          </p>
-        </div>
-        <div style={{ flex: "1 1 480px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <div className="panel" style={{ padding: 20, textAlign: "center", fontWeight: 700 }}>
-            Открытка
-          </div>
-          <div className="panel" style={{ padding: 20, textAlign: "center", fontWeight: 700 }}>
-            Подкормка
-          </div>
-        </div>
-      </section>
-
-      <section className="section" style={{ paddingTop: 8 }}>
+      <section className="section">
         <div className="panel row between" style={{ gap: 20 }}>
-          <div className="stack" style={{ gap: 6, flex: "1 1 360px" }}>
-            <div style={{ fontFamily: "var(--serif)", fontSize: 32, fontWeight: 600 }}>Напомним о важных датах</div>
-            <div className="muted">Оставьте дату, за 5 дней пришлём в Viber подборку букетов и скидку 5%.</div>
+          <div className="stack" style={{ gap: 8, flex: "1 1 360px" }}>
+            <h2 style={{ fontSize: 32 }}>Напомним о важных датах</h2>
+            <p className="muted">Оставьте дату, и за 5 дней пришлём в Viber подборку букетов и скидку 5%.</p>
           </div>
           <Link href="/remind" className="btn btn-lg">
             Добавить дату
           </Link>
         </div>
       </section>
+
+      {exclusive.length > 0 && (
+        <section className="section">
+          <div className="stack sec-title" style={{ gap: 10 }}>
+            <span className="eyebrow muted">Только на этой неделе</span>
+            <h2 className="h2">
+              Эксклюзив <span className="script">этой недели</span>
+            </h2>
+          </div>
+          <div className="stories">
+            {exclusive.map((b) => (
+              <ExclusiveCard key={b.id} b={b} />
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

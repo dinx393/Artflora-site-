@@ -1,14 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
+import { SortSelect } from "@/components/SortSelect";
 import { filterBouquets, visibleBouquets } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { minDeliveryKop } from "@/lib/delivery";
 import { formatByn } from "@/lib/money";
-import { FORMATS, OCCASIONS, PRICE_RANGES } from "@/lib/occasions";
+import { COLORS, FORMATS, OCCASIONS, PRICE_RANGES } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
 
-type SP = { occasion?: string; price?: string; flower?: string; format?: string; collection?: string; q?: string; n?: string };
+type SP = {
+  occasion?: string;
+  price?: string;
+  flower?: string;
+  color?: string;
+  format?: string;
+  collection?: string;
+  q?: string;
+  sort?: string;
+  n?: string;
+};
 
 // Сколько букетов показывать сразу и добавлять по кнопке «Показать ещё».
 const PAGE = 24;
@@ -17,6 +28,21 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const occ = OCCASIONS.find((o) => o.slug === sp.occasion);
   return { title: occ ? `Букеты ${occ.title}` : "Каталог букетов" };
+}
+
+// Быстрые разделы над каталогом.
+const SECTIONS: { label: string; patch: Partial<SP>; href?: string }[] = [
+  { label: "Розы", patch: { flower: "Роза" } },
+  { label: "Экзотика", patch: { occasion: "exotic" } },
+  { label: "Шляпные коробки", patch: { format: "HATBOX" } },
+  { label: "Сумки с цветами", patch: { format: "BAG" } },
+  { label: "Композиции", patch: { format: "BASKET" } },
+  { label: "Поштучно", patch: {}, href: "/single" },
+];
+
+function isOn(sp: SP, patch: Partial<SP>): boolean {
+  const keys = Object.keys(patch) as (keyof SP)[];
+  return keys.length > 0 && keys.every((k) => sp[k] === patch[k]);
 }
 
 function href(sp: SP, patch: Partial<SP>): string {
@@ -42,47 +68,31 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
     occasion: sp.occasion,
     price: range ? { min: range.min, max: range.max } : undefined,
     flower: sp.flower,
+    color: sp.color,
     format: sp.format,
     collection: sp.collection,
     q: sp.q,
   });
+  if (sp.sort === "cheap") list.sort((a, b) => a.priceKop - b.priceKop);
+  if (sp.sort === "expensive") list.sort((a, b) => b.priceKop - a.priceKop);
   const shown = Math.max(PAGE, Math.floor(Number(sp.n) || 0));
   const occ = OCCASIONS.find((o) => o.slug === sp.occasion);
   const deliveryNote = `Доставка от ${formatByn(minDeliveryKop(delivery))}`;
-  const activeFilters = [range?.label, sp.flower].filter(Boolean) as string[];
+  const color = COLORS.find((c) => c.slug === sp.color);
+  const activeFilters = [range?.label, sp.flower, color?.label].filter(Boolean) as string[];
+  const allBouquets = !sp.occasion && !sp.flower && !sp.format && !sp.collection && !sp.q;
+  const sortHrefs = { "": href(sp, { sort: undefined }), cheap: href(sp, { sort: "cheap" }), expensive: href(sp, { sort: "expensive" }) };
 
   return (
-    <div className="wrap catalog">
-      <aside className="filters">
-        <div>
-          <h3>Цена</h3>
-          {PRICE_RANGES.map((r) => (
-            <Link key={r.slug} href={href(sp, { price: sp.price === r.slug ? undefined : r.slug })} className={sp.price === r.slug ? "on" : ""}>
-              {r.label}
-            </Link>
-          ))}
-        </div>
-        <div>
-          <h3>Цветок</h3>
-          {flowers.map((f) => (
-            <Link key={f.id} href={href(sp, { flower: sp.flower === f.name ? undefined : f.name })} className={sp.flower === f.name ? "on" : ""}>
-              {f.name}
-            </Link>
-          ))}
-        </div>
-        <div>
-          <h3>Формат</h3>
-          {Object.entries(FORMATS).map(([code, f]) => (
-            <Link key={code} href={href(sp, { format: sp.format === code ? undefined : code })} className={sp.format === code ? "on" : ""}>
-              {f.label}
-            </Link>
-          ))}
-        </div>
-      </aside>
-
-      <div className="stack" style={{ gap: 20, minWidth: 0 }}>
-        <div className="stack" style={{ gap: 8 }}>
-          <h1 className="h2">
+    <>
+      <section className="wrap catalog-head">
+        <nav className="crumbs" aria-label="Навигация">
+          <Link href="/">Главная</Link>
+          <span aria-hidden>/</span>
+          <span>Каталог</span>
+        </nav>
+        <div className="row between" style={{ alignItems: "flex-end", gap: 16 }}>
+          <h1 className="h1">
             {sp.collection ? (
               <>
                 Коллекция <span className="script">«{list[0]?.collectionName ?? sp.collection}»</span>
@@ -91,26 +101,109 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
               <>
                 Поиск: <span className="script">{sp.q}</span>
               </>
-            ) : (
+            ) : occ ? (
               <>
-                Букеты {occ ? <span className="script">{occ.title}</span> : null}
-                {range && <span className="muted" style={{ fontSize: 24 }}> · {range.label}</span>}
+                Букеты <span className="script">{occ.title}</span>
               </>
+            ) : (
+              "Каталог"
             )}
           </h1>
-          {shop.promoLine && <p className="muted">{shop.promoLine}</p>}
+          <span className="muted">{shop.promoLine || "Перед отправкой пришлём фото именно вашего букета"}</span>
         </div>
-        <div className="row" style={{ gap: 8, flexWrap: "nowrap", overflowX: "auto" }}>
-          {OCCASIONS.filter((o) => ["mom", "love", "wedding", "nothing", "exotic"].includes(o.slug)).map((o) => (
-            <Link key={o.slug} href={href(sp, { occasion: sp.occasion === o.slug ? undefined : o.slug })} className={`chip ${sp.occasion === o.slug ? "on" : ""}`}>
-              {o.label}
-            </Link>
-          ))}
+        <div className="row chips-row" style={{ gap: 8 }}>
+          <Link href="/catalog" className={`chip ${allBouquets ? "on" : ""}`}>
+            Все букеты
+          </Link>
+          {SECTIONS.map((c) =>
+            c.href ? (
+              <Link key={c.label} href={c.href} className="chip">
+                {c.label}
+              </Link>
+            ) : (
+              <Link key={c.label} href={isOn(sp, c.patch) ? "/catalog" : href({}, c.patch)} className={`chip ${isOn(sp, c.patch) ? "on" : ""}`}>
+                {c.label}
+              </Link>
+            ),
+          )}
+        </div>
+      </section>
+
+      <div className="wrap catalog">
+        <aside className="filters">
+          <div>
+            <h3>Цена</h3>
+            {PRICE_RANGES.map((r) => (
+              <Link key={r.slug} href={href(sp, { price: sp.price === r.slug ? undefined : r.slug })} className={`radio ${sp.price === r.slug ? "on" : ""}`}>
+                {r.label}
+              </Link>
+            ))}
+          </div>
+          <div>
+            <h3>Кому</h3>
+            <div className="chips-wrap">
+              {OCCASIONS.filter((o) => ["mom", "love", "colleague", "birthday", "nothing"].includes(o.slug)).map((o) => (
+                <Link key={o.slug} href={href(sp, { occasion: sp.occasion === o.slug ? undefined : o.slug })} className={`chip chip-sm ${sp.occasion === o.slug ? "on" : ""}`}>
+                  {o.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3>Цвет</h3>
+            <div className="chips-wrap">
+              {COLORS.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={href(sp, { color: sp.color === c.slug ? undefined : c.slug })}
+                  className={`swatch-btn ${sp.color === c.slug ? "on" : ""}`}
+                  title={c.label}
+                  aria-label={c.label}
+                >
+                  <i className="swatch" style={{ background: c.swatch }} />
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3>Цветок</h3>
+            <div className="chips-wrap">
+              {flowers.map((f) => (
+                <Link key={f.id} href={href(sp, { flower: sp.flower === f.name ? undefined : f.name })} className={`chip chip-sm ${sp.flower === f.name ? "on" : ""}`}>
+                  {f.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3>Формат</h3>
+            {Object.entries(FORMATS).map(([code, f]) => (
+              <Link key={code} href={href(sp, { format: sp.format === code ? undefined : code })} className={`box ${sp.format === code ? "on" : ""}`}>
+                {f.label}
+              </Link>
+            ))}
+          </div>
+          <div className="help">
+            <b>Нужна подсказка?</b>
+            <span className="small muted">Флорист поможет выбрать в Viber.</span>
+            <a href={shop.viber} className="small" style={{ fontWeight: 700 }}>
+              Написать флористу →
+            </a>
+          </div>
+        </aside>
+
+      <div className="stack" style={{ gap: 28, minWidth: 0 }}>
+        <div className="catalog-bar">
+          <span>
+            Сегодня по Минску из ближайшего магазина. Доставка от {formatByn(minDeliveryKop(delivery))}, от {formatByn(delivery.freeFromKop)}{" "}
+            <span className="gift">бесплатно</span>.
+          </span>
+          <SortSelect value={sp.sort === "cheap" || sp.sort === "expensive" ? sp.sort : ""} hrefs={sortHrefs} />
         </div>
 
         {list.length > 0 ? (
           <>
-            <div className="grid">
+            <div className="grid grid-3">
               {list.slice(0, shown).map((b) => (
                 <ProductCard key={b.id} b={b} note={deliveryNote} />
               ))}
@@ -149,21 +242,32 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
         )}
 
         {addons.length > 0 && (
-          <div className="stack" style={{ marginTop: 16 }}>
-            <h2 style={{ fontSize: 32 }}>Добавить к букету</h2>
-            <div className="row" style={{ gap: 10 }}>
+          <div className="addons">
+            <h2>Добавить к букету</h2>
+            <div className="addons-grid">
               {addons.map((a) => (
-                <div key={a.id} className="card" style={{ flex: "1 1 160px" }}>
-                  <div style={{ fontWeight: 700 }}>{a.name}</div>
-                  <div className="small" style={{ color: a.priceKop === 0 ? "var(--olive)" : "var(--muted)", fontWeight: 700 }}>
-                    {a.priceKop === 0 ? "Бесплатно" : formatByn(a.priceKop)}
-                  </div>
+                <div key={a.id} className="addon">
+                  <b>{a.name}</b>
+                  {a.priceKop === 0 ? <span className="gift">В подарок</span> : <span className="price" style={{ fontSize: 18 }}>{formatByn(a.priceKop)}</span>}
                 </div>
               ))}
             </div>
           </div>
         )}
+
+        <div className="band">
+          <div className="stack" style={{ flex: "1 1 320px", gap: 10 }}>
+            <h2>
+              Тот самый букет ещё <span className="script">не придуман?</span>
+            </h2>
+            <p>Расскажите флористу, кому и по какому поводу. Соберём и пришлём фото до отправки.</p>
+          </div>
+          <a href={shop.viber} className="btn btn-pink btn-lg">
+            Написать флористу
+          </a>
+        </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

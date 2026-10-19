@@ -20,6 +20,7 @@ export function BuyBox({
   pickupPct,
   viber,
   onSizeChange,
+  afterSizes,
 }: {
   bouquetId: number;
   sizes: Size[];
@@ -28,6 +29,7 @@ export function BuyBox({
   pickupPct: number;
   viber: string;
   onSizeChange?: (priceKop: number) => void;
+  afterSizes?: React.ReactNode; // «Этот же состав в другом виде» или «Похожие букеты» сразу под размерами
 }) {
   const { cart, setCart } = useCart();
   const [size, setSize] = useState(defaultSize);
@@ -71,6 +73,8 @@ export function BuyBox({
           </div>
         </div>
       )}
+
+      {afterSizes}
 
       <div className="stack" style={{ gap: 8 }}>
         <div className="label">К букету</div>

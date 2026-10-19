@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 // Шрифты лежат в пакетах npm, а не качаются из Google при сборке:
 // иначе сборка падает, если Google Fonts недоступен.
 import "@fontsource-variable/manrope";
-import "@fontsource-variable/cormorant-garamond";
-import "@fontsource/marck-script/400.css";
+import "@fontsource-variable/playfair-display/wght.css";
+import "@fontsource-variable/playfair-display/wght-italic.css";
+import "@fontsource/great-vibes/400.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

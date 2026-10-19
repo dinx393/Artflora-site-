@@ -11,12 +11,14 @@ export function AddToCartButton({
   cardText,
   large,
   compact,
+  card,
 }: {
   bouquetId: number;
   size: "S" | "M" | "L";
   cardText?: string;
   large?: boolean;
   compact?: boolean;
+  card?: boolean; // карточка в сетке: «В корзину» обводкой, на телефоне — круглая кнопка
 }) {
   const { add } = useCart();
   const [added, setAdded] = useState(false);
@@ -35,15 +37,26 @@ export function AddToCartButton({
   return (
     <button
       type="button"
-      className={`btn ${large ? "btn-lg btn-block" : ""}`}
-      aria-label={compact ? "Добавить в корзину" : undefined}
+      className={card ? `btn btn-outline pcard-add ${added ? "done" : ""}` : `btn ${large ? "btn-lg btn-block" : ""}`}
+      aria-label={compact || card ? "Добавить в корзину" : undefined}
       onClick={() => {
         add({ bouquetId, size, qty: 1 }, cardText);
         setAdded(true);
         if (!large) setTimeout(() => setAdded(false), 1600);
       }}
     >
-      {compact ? <BagIcon /> : added ? "В корзине ✓" : "Добавить в корзину"}
+      {card ? (
+        <>
+          {added ? <span aria-hidden>✓</span> : <BagIcon size={18} />}
+          <span className="pcard-add-word">{added ? "В корзине" : "В корзину"}</span>
+        </>
+      ) : compact ? (
+        <BagIcon />
+      ) : added ? (
+        "В корзине ✓"
+      ) : (
+        "Добавить в корзину"
+      )}
     </button>
   );
 }

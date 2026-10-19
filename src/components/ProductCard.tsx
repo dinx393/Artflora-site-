@@ -11,14 +11,14 @@ export function ProductCard({ b, note }: { b: BouquetView; note?: string }) {
         {b.isHit && <span className="badge">Хит недели</span>}
       </Link>
       <div className="pcard-body">
-        <span className="stack" style={{ gap: 0 }}>
-          <Link href={`/bouquet/${b.slug}`} className="pcard-title">
-            {b.name}
-          </Link>
+        <Link href={`/bouquet/${b.slug}`} className="pcard-title" title={b.name}>
+          {b.name}
+        </Link>
+        {note && <span className="small muted">{note}</span>}
+        <div className="pcard-buy">
           <span className="price">{formatByn(b.priceKop)}</span>
-          {note && <span className="small muted">{note}</span>}
-        </span>
-        <AddToCartButton bouquetId={b.id} size={b.defaultSize} />
+          <AddToCartButton bouquetId={b.id} size={b.defaultSize} card />
+        </div>
       </div>
     </div>
   );
