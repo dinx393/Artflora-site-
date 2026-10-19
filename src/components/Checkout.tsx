@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CartState } from "@/lib/cart";
+import type { DistrictOption } from "@/lib/districts";
 import { formatByn } from "@/lib/money";
 import { addDays, availableSlots, minskNow, SLOTS } from "@/lib/slots";
 import { SUBSTITUTION_NOTE } from "./BuyBox";
 import { useCart } from "./CartProvider";
-import { fetchQuote, type QuoteResponse } from "./DeliveryEstimate";
 import { Guarantee } from "./Guarantee";
 import { LeafIcon } from "./icons";
 import { Byn } from "@/components/Byn";
 
 type ShopLite = { code: string; name: string; address: string };
+
 
 type Totals = {
   priced: {
@@ -57,12 +58,14 @@ export function Checkout({
   pickupPct,
   freeFromKop,
   maxOutsideKm,
+  districts,
   leadHours,
 }: {
   shops: ShopLite[];
   pickupPct: number;
   freeFromKop: number;
   maxOutsideKm: number;
+  districts: DistrictOption[];
   leadHours: number;
 }) {
   const router = useRouter();
@@ -74,16 +77,13 @@ export function Checkout({
   const [address, setAddress] = useState("");
   // Адрес и время не знает клиент: уточним у получателя, доставку доплатят потом.
   const [addressUnknown, setAddressUnknown] = useState(false);
-  const latestAddress = useRef("");
-  latestAddress.current = address;
   const [apartment, setApartment] = useState("");
   const [entrance, setEntrance] = useState("");
   const [floor, setFloor] = useState("");
-  const [quote, setQuote] = useState<QuoteResponse | null>(null);
-  const [point, setPoint] = useState<{ lat: number; lng: number } | null>(null);
-  // Какой из похожих адресов выбрал покупатель (сервер проверит его сам).
-  const [placeId, setPlaceId] = useState<number | null>(null);
-  const [quoting, setQuoting] = useState(false);
+  // Район доставки из списка: по нему считается цена (адрес по карте не проверяем, решение владельца).
+  const [districtName, setDistrictName] = useState("");
+  const district = districts.find((d) => d.name === districtName) ?? null;
+  const point = district ? { lat: district.lat, lng: district.lng } : null;
   const [pickupShop, setPickupShop] = useState(shops[0]?.code ?? "");
 
   const today = useMemo(() => minskNow().date, []);
@@ -142,35 +142,6 @@ export function Checkout({
     setCart((c) => ({ ...c, lines: c.lines.filter((l) => keep.has(`${l.bouquetId}:${l.size}`)) }));
   }, [totals, setCart]);
 
-  async function runQuote(input: { address?: string; placeId?: number }) {
-    setQuoting(true);
-    try {
-      const q = await fetchQuote({ ...input, subtotalKop: totals?.priced.bouquetsKop ?? 0 });
-      // Пока считали, адрес успели поменять — этот ответ уже не про него.
-      if (input.address && input.address.trim() !== latestAddress.current.trim()) return;
-      setQuote(q);
-      setPoint(q.ok ? q.point : null);
-      setPlaceId(q.ok ? (q.placeId ?? null) : null);
-    } finally {
-      setQuoting(false);
-    }
-  }
-
-  // Адрес вводят — через секунду после последней буквы сами находим его и считаем зону.
-  // Ждём номер дома: по одной улице цена может быть разной.
-  useEffect(() => {
-    if (method !== "DELIVERY" || addressUnknown) return;
-    const a = address.trim();
-    if (a.length < 4 || !/\d/.test(a)) {
-      setQuote(null);
-      setPoint(null);
-      setPlaceId(null);
-      return;
-    }
-    const t = setTimeout(() => runQuote({ address: a }), 900);
-    return () => clearTimeout(t);
-  }, [address, method, addressUnknown]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Подписи «До бесплатной доставки …» пересчитываем при изменении суммы.
   const leftToFree = Math.max(0, freeFromKop - (totals?.priced.bouquetsKop ?? 0));
 
@@ -194,7 +165,7 @@ export function Checkout({
           floor,
           addressUnknown: method === "DELIVERY" && addressUnknown,
           point: method === "DELIVERY" && !addressUnknown ? point : null,
-          placeId: method === "DELIVERY" && !addressUnknown ? placeId : null,
+          district: method === "DELIVERY" && !addressUnknown ? districtName : "",
           shop: method === "PICKUP" ? pickupShop : "",
           date,
           slot,
@@ -246,7 +217,7 @@ export function Checkout({
 
   const lines = totals?.priced.lines ?? [];
   const unknown = method === "DELIVERY" && addressUnknown;
-  const deliveryReady = method === "PICKUP" || unknown || (quote?.ok ?? false);
+  const deliveryReady = method === "PICKUP" || unknown || !!district;
   const canNext1 = lines.length > 0;
   const canNext2 = unknown ? slots.length > 0 : deliveryReady && !!slot && (method === "PICKUP" || address.trim().length > 3);
   const recipientOk = !unknown || recipientPhone.replace(/\D/g, "").length >= 9;
@@ -390,27 +361,46 @@ export function Checkout({
             ) : method === "DELIVERY" ? (
               <div className="stack">
                 <label className="field">
+                  <span>Район</span>
+                  <select
+                    className="input"
+                    value={districtName}
+                    onChange={(e) => setDistrictName(e.target.value)}
+                    aria-invalid={error?.field === "address" && !district}
+                  >
+                    <option value="">Выберите район</option>
+                    {districts.map((d) => (
+                      <option key={d.name} value={d.name}>
+                        {d.name} — {formatByn(d.priceKop)}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="small muted">
+                    Минск и до {maxOutsideKm} км за МКАД. Нет вашего района? Отметьте «Не знаю адрес» выше или напишите нам.
+                  </span>
+                </label>
+                {district && (
+                  <div className="zone">
+                    <div className="row between">
+                      <b>{district.name}</b>
+                      <span className="price" style={{ fontSize: 24 }}>
+                        {totals && totals.deliveryKop === 0 ? "Бесплатно" : <Byn kop={totals?.deliveryKop ?? district.priceKop} />}
+                      </span>
+                    </div>
+                    <span className="small muted">Привезём из магазина {district.shopName}, от {leadHours} часов</span>
+                    {leftToFree > 0 && <span className="small" style={{ color: "var(--olive)", fontWeight: 700 }}>До бесплатной доставки {formatByn(leftToFree)}</span>}
+                  </div>
+                )}
+                <label className="field">
                   <span>Улица и дом</span>
                   <input
                     className="input"
                     value={address}
-                    onChange={(e) => {
-                      setAddress(e.target.value);
-                      setQuote(null);
-                      setPoint(null);
-                      setPlaceId(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (address.trim().length > 3) runQuote({ address });
-                      }
-                    }}
+                    onChange={(e) => setAddress(e.target.value)}
                     placeholder="Например, пр. Независимости, 180"
                     autoComplete="street-address"
-                    aria-invalid={error?.field === "address"}
+                    aria-invalid={error?.field === "address" && !!district}
                   />
-                  <span className="small muted">Возим по Минску и до {maxOutsideKm} км за МКАД. Цена зависит от адреса.</span>
                 </label>
                 <div className="addr-extra">
                   <label className="field">
@@ -426,64 +416,6 @@ export function Checkout({
                     <input className="input" value={floor} maxLength={20} onChange={(e) => setFloor(e.target.value)} inputMode="numeric" />
                   </label>
                 </div>
-                {!quote && !quoting && address.trim().length > 3 && !/\d/.test(address) && (
-                  <p className="small muted">Допишите номер дома, и мы посчитаем доставку.</p>
-                )}
-                {quoting && <p className="small muted">Считаем доставку…</p>}
-                {quote && !quote.ok && quote.reason === "choose" && (
-                  <div className="addr-choices" role="group" aria-label="Какой адрес ваш?">
-                    <b>Таких адресов несколько. Какой ваш?</b>
-                    {quote.choices.map((c) => (
-                      <button key={c.placeId} type="button" className="addr-choice" onClick={() => runQuote({ address, placeId: c.placeId })}>
-                        <span>
-                          <b>{c.label || address}</b>
-                          <span className="small muted">{c.area}</span>
-                        </span>
-                        <span className="small">
-                          {c.quote.ok ? (c.quote.free ? "бесплатно" : <>Зона {c.quote.zone} · <Byn kop={c.quote.priceKop} /></>) : "не возим"}
-                        </span>
-                      </button>
-                    ))}
-                    <span className="small muted">Нет вашего? Допишите город или деревню, например «Боровляны, Садовая 5».</span>
-                  </div>
-                )}
-                {quote && !quote.ok && quote.reason !== "choose" && (
-                  <p className="error">
-                    {quote.reason === "too-far"
-                      ? `Этот адрес дальше ${maxOutsideKm} км за МКАД, туда мы не возим. Позвоните нам, что-нибудь придумаем.`
-                      : quote.reason === "busy"
-                        ? "Слишком много запросов, попробуйте через минуту."
-                        : quote.reason === "unavailable"
-                          ? "Не получилось проверить адрес. Попробуйте ещё раз через минуту."
-                          : "Не нашли такой адрес. Проверьте улицу и номер дома или отметьте «Не знаю адрес» выше."}
-                  </p>
-                )}
-                {quote?.ok && (
-                  <div className="zone">
-                    {quote.label && (
-                      <span className="small">
-                        Нашли: <b>{quote.label}</b>
-                        {quote.area ? `, ${quote.area}` : ""}
-                      </span>
-                    )}
-                    <div className="row between">
-                      <b>Зона {quote.zone}</b>
-                      <span className="price" style={{ fontSize: 24 }}>
-                        {totals && totals.deliveryKop === 0 ? "Бесплатно" : <Byn kop={totals?.deliveryKop ?? quote.priceKop} />}
-                      </span>
-                    </div>
-                    <span className="small muted">
-                      Ближайший магазин {quote.shop.name}, ~{quote.km} км{quote.outsideMkadKm > 0 ? `, ${quote.outsideMkadKm} км за МКАД` : ""}
-                    </span>
-                    <span className="small muted">Привезём от {leadHours} часов</span>
-                    {placeId && quote.ok && (
-                      <button type="button" className="link-btn small" onClick={() => runQuote({ address })}>
-                        Другой адрес с таким названием
-                      </button>
-                    )}
-                    {leftToFree > 0 && <span className="small" style={{ color: "var(--olive)", fontWeight: 700 }}>До бесплатной доставки {formatByn(leftToFree)}</span>}
-                  </div>
-                )}
               </div>
             ) : (
               <div className="stack">
@@ -532,7 +464,7 @@ export function Checkout({
               ) : (
                 <div className="sum-row">
                   <span>Доставка</span>
-                  <span>{unknown ? "после уточнения" : quote?.ok ? (totals?.deliveryKop ? formatByn(totals.deliveryKop) : <span className="gift">бесплатно</span>) : "по адресу"}</span>
+                  <span>{unknown ? "после уточнения" : district ? (totals?.deliveryKop ? formatByn(totals.deliveryKop) : <span className="gift">бесплатно</span>) : "по району"}</span>
                 </div>
               )}
               <div className="sum-row" style={{ alignItems: "baseline" }}>
@@ -607,7 +539,7 @@ export function Checkout({
           ) : (
             <div className="sum-row">
               <span>Доставка</span>
-              <span>{unknown ? "доплата после уточнения" : quote?.ok ? (totals?.deliveryKop ? formatByn(totals.deliveryKop) : "бесплатно") : "по адресу"}</span>
+              <span>{unknown ? "доплата после уточнения" : district ? (totals?.deliveryKop ? formatByn(totals.deliveryKop) : "бесплатно") : "по району"}</span>
             </div>
           )}
           <div className="sum-row" style={{ alignItems: "baseline", borderTop: "1px solid var(--line)", paddingTop: 12 }}>
@@ -625,7 +557,7 @@ export function Checkout({
           </button>
           {!canSubmit && (
             <p className="small muted desktop-only">
-              {!unknown && (!deliveryReady || (method === "DELIVERY" && address.trim().length <= 3)) ? "Укажите адрес доставки. " : ""}
+              {!unknown && (!deliveryReady || (method === "DELIVERY" && address.trim().length <= 3)) ? (district ? "Укажите адрес доставки. " : "Выберите район доставки. ") : ""}
               {!unknown && !slot ? "Выберите время. " : ""}
               {!recipientOk ? "Укажите телефон получателя. " : ""}
               {!customerName.trim() ? "Укажите имя и телефон." : ""}

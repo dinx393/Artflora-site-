@@ -5,7 +5,6 @@ import { bouquetInclude } from "./catalog";
 import type { CartState } from "./cart";
 import { pickupDiscountKop, quoteDelivery, type DeliveryQuote } from "./delivery";
 import { fullAddress } from "./address";
-import { resolveAddress } from "./geocode";
 import { bouquetVisibility, compositionText, sizeAvailable, sizePriceKop } from "./pricing";
 import { getSetting } from "./settings";
 import { isDateAllowed, isSlotAllowed } from "./slots";
@@ -105,8 +104,8 @@ export const orderSchema = z
       cardText: z.string().max(500),
     }),
     method: z.enum(["DELIVERY", "PICKUP"]),
-    address: z.string().max(300).default(""), // улица и дом: по ним считаем доставку
-    placeId: z.number().int().positive().nullish(), // какой из похожих адресов выбрал покупатель
+    address: z.string().max(300).default(""), // улица, дом — для курьера
+    district: z.string().trim().max(40).default(""), // район из списка: по нему считаем доставку
     apartment: z.string().trim().max(20).default(""),
     entrance: z.string().trim().max(20).default(""),
     floor: z.string().trim().max(20).default(""),
@@ -190,23 +189,15 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
     return { ok: false, error: unknown ? "На этот день уже не успеваем, выберите другой" : "Это время уже недоступно, выберите другое", field: "slot" };
   }
 
-  // Зону доставки считаем только по адресу, который ввёл покупатель: свою точку или район он прислать не может,
-  // иначе адрес за МКАД можно было бы оплатить как ближний район (решение владельца 2026-10-19).
+  // Доставку считаем по району из нашего списка (решение владельца 2026-10-19: без проверки адреса по карте).
+  // Точку из браузера не берём. Район и адрес вместе видны в заказе: при подтверждении их сверяют,
+  // а оплату покупатель вносит только после подтверждения.
   let point: { lat: number; lng: number } | null = null;
-  let foundAs = ""; // как адрес понял геокодер: курьер видит, какая из «Садовых, 5» имелась в виду
   if (o.method === "DELIVERY" && !unknown) {
-    const r = await resolveAddress(o.address, o.placeId);
-    if (!r.ok) {
-      const error =
-        r.reason === "choose"
-          ? "Таких адресов несколько. Выберите свой под полем адреса"
-          : r.reason === "unavailable"
-            ? "Не получилось проверить адрес. Попробуйте ещё раз через минуту"
-            : "Не нашли адрес. Проверьте улицу и номер дома";
-      return { ok: false, error, field: "address" };
-    }
-    point = r.choice.point;
-    foundAs = [r.choice.label, r.choice.area].filter(Boolean).join(", ");
+    const districts = await getSetting("districts");
+    const d = districts.find((x) => x.name === o.district);
+    if (!d) return { ok: false, error: "Выберите район доставки", field: "address" };
+    point = { lat: d.lat, lng: d.lng };
   }
 
   const totals = await computeTotals({ cart: o.cart, method: o.method, point });
@@ -219,7 +210,7 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
   }
   if (totals.priced.lines.length === 0) return { ok: false, error: "Корзина пуста" };
   if (o.method === "DELIVERY" && !unknown && (!totals.quote || !totals.quote.ok)) {
-    return { ok: false, error: `Мы возим по Минску и до ${cfg.maxOutsideMkadKm} км за МКАД. Этот адрес дальше: позвоните нам, что-нибудь придумаем`, field: "address" };
+    return { ok: false, error: `Мы возим по Минску и до ${cfg.maxOutsideMkadKm} км за МКАД. Этот район дальше: позвоните нам, что-нибудь придумаем`, field: "address" };
   }
 
   const shopCode =
@@ -244,7 +235,7 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
         cardText: o.cart.cardText,
         comment: o.comment,
         deliveryMethod: o.method,
-        address: o.method === "DELIVERY" && !unknown ? fullAddress({ ...o, foundAs }) : "",
+        address: o.method === "DELIVERY" && !unknown ? fullAddress(o) : "",
         addressUnknown: unknown,
         shop: shopCode,
         deliveryZone: totals.quote?.ok ? totals.quote.zone : null,

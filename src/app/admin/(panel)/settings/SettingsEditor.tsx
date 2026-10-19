@@ -127,7 +127,7 @@ export function SettingsEditor(props: { shop: ShopSettings; delivery: DeliveryCo
       </div>
 
       <div className="card stack" style={{ gap: 12 }}>
-        <span className="label" style={{ fontSize: 18 }}>Районы для быстрого выбора</span>
+        <span className="label" style={{ fontSize: 18 }}>Районы доставки (покупатель выбирает свой в корзине; цена — по точке района)</span>
         {districts.map((r, i) => {
           const set = (p: Partial<DistrictPreset>) => setDistricts(districts.map((x, j) => (j === i ? { ...x, ...p } : x)));
           return (

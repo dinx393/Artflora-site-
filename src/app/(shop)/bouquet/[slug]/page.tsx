@@ -11,6 +11,7 @@ import { formatByn } from "@/lib/money";
 import { FORMATS, occasionLabel } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
 import { Byn } from "@/components/Byn";
+import { districtOptions } from "@/lib/districts";
 
 type Params = { slug: string };
 
@@ -150,7 +151,7 @@ export default async function BouquetPage({ params }: { params: Promise<Params> 
             afterSizes={variants}
           />
 
-          <DeliveryEstimate subtotalKop={def.priceKop} districts={districts} freeFromKop={delivery.freeFromKop} maxOutsideKm={delivery.maxOutsideMkadKm} leadHours={shop.leadHours} />
+          <DeliveryEstimate districts={districtOptions(districts, delivery, def.priceKop)} freeFromKop={delivery.freeFromKop} maxOutsideKm={delivery.maxOutsideMkadKm} leadHours={shop.leadHours} />
 
           <div className="acc">
             <details open>

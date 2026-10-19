@@ -377,7 +377,10 @@ export async function saveSettings(input: {
       pickupDiscountPct: z.number().min(0).max(50),
       maxOutsideMkadKm: z.number().min(0).max(200),
     }),
-    districts: z.array(z.object({ name: z.string().min(1).max(40), lat: z.number(), lng: z.number() })).max(20),
+    districts: z
+      .array(z.object({ name: z.string().trim().min(1).max(40), lat: z.number(), lng: z.number() }))
+      .max(80)
+      .refine((l) => new Set(l.map((d) => d.name)).size === l.length, "Два района с одинаковым названием"),
   });
   const parsed = schema.safeParse(input);
   if (!parsed.success) {

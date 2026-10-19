@@ -59,7 +59,7 @@ export default async function DeliveryPage() {
             <b>до {d.maxOutsideMkadKm} км за МКАД</b>
           </div>
         </div>
-        <p className="small muted">Зону определяем по адресу сами: введите улицу и дом в корзине, и цена появится сразу. Если такой адрес есть и в Минске, и в деревне рядом, предложим выбрать свой.</p>
+        <p className="small muted">Выберите район в корзине, и цена появится сразу. Нет вашего района в списке? Напишите нам, договоримся.</p>
       </div>
 
       <div className="stack" style={{ gap: 14 }}>
