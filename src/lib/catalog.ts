@@ -100,7 +100,7 @@ export type CatalogFilter = {
   occasion?: string;
   price?: { min: number; max: number };
   flower?: string;
-  color?: string;
+  colors?: string[]; // букет подходит, если у него есть хотя бы один из выбранных цветов
   format?: string;
   collection?: string;
   q?: string;
@@ -110,7 +110,7 @@ export function filterBouquets(list: BouquetView[], f: CatalogFilter): BouquetVi
   const q = f.q?.trim().toLowerCase();
   return list.filter((b) => {
     if (f.occasion && !b.occasions.includes(f.occasion)) return false;
-    if (f.color && !b.colors.includes(f.color)) return false;
+    if (f.colors?.length && !f.colors.some((c) => b.colors.includes(c))) return false;
     if (f.price && (b.priceKop < f.price.min || b.priceKop >= f.price.max)) return false;
     if (f.flower && !b.flowerNames.some((n) => n.toLowerCase().includes(f.flower!.toLowerCase())))
       return false;

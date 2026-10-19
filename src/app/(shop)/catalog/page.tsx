@@ -6,7 +6,7 @@ import { filterBouquets, visibleBouquets } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { minDeliveryKop } from "@/lib/delivery";
 import { formatByn } from "@/lib/money";
-import { COLORS, FORMATS, OCCASIONS, PRICE_RANGES } from "@/lib/occasions";
+import { COLORS, FORMATS, OCCASIONS, PRICE_RANGES, parseColors, toggleColor } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
 import { Byn } from "@/components/Byn";
 
@@ -65,11 +65,12 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
     getSetting("delivery"),
   ]);
   const range = PRICE_RANGES.find((r) => r.slug === sp.price);
+  const colors = parseColors(sp.color);
   const list = filterBouquets(all, {
     occasion: sp.occasion,
     price: range ? { min: range.min, max: range.max } : undefined,
     flower: sp.flower,
-    color: sp.color,
+    colors,
     format: sp.format,
     collection: sp.collection,
     q: sp.q,
@@ -79,8 +80,8 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
   const shown = Math.max(PAGE, Math.floor(Number(sp.n) || 0));
   const occ = OCCASIONS.find((o) => o.slug === sp.occasion);
   const deliveryNote = `Доставка от ${formatByn(minDeliveryKop(delivery))}`;
-  const color = COLORS.find((c) => c.slug === sp.color);
-  const activeFilters = [range?.label, sp.flower, color?.label].filter(Boolean) as string[];
+  const colorLabels = COLORS.filter((c) => colors.includes(c.slug)).map((c) => c.label.toLowerCase());
+  const activeFilters = [range?.label, sp.flower, colorLabels.length ? `цвет: ${colorLabels.join(", ")}` : undefined].filter(Boolean) as string[];
   const allBouquets = !sp.occasion && !sp.flower && !sp.format && !sp.collection && !sp.q;
   const sortHrefs = { "": href(sp, { sort: undefined }), cheap: href(sp, { sort: "cheap" }), expensive: href(sp, { sort: "expensive" }) };
 
@@ -152,19 +153,28 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
           </div>
           <div>
             <h3>Цвет</h3>
+            <p className="small muted" style={{ marginTop: -6, marginBottom: 10 }}>Можно выбрать несколько</p>
             <div className="chips-wrap">
               {COLORS.map((c) => (
                 <Link
                   key={c.slug}
-                  href={href(sp, { color: sp.color === c.slug ? undefined : c.slug })}
-                  className={`swatch-btn ${sp.color === c.slug ? "on" : ""}`}
+                  href={href(sp, { color: toggleColor(colors, c.slug) })}
+                  className={`swatch-btn ${colors.includes(c.slug) ? "on" : ""}`}
                   title={c.label}
-                  aria-label={c.label}
+                  aria-label={colors.includes(c.slug) ? `${c.label}, выбран` : c.label}
                 >
                   <i className="swatch" style={{ background: c.swatch }} />
                 </Link>
               ))}
             </div>
+            {colorLabels.length > 0 && (
+              <p className="small" style={{ marginTop: 10 }}>
+                {colorLabels.join(", ")} ·{" "}
+                <Link href={href(sp, { color: undefined })} style={{ fontWeight: 700 }}>
+                  сбросить
+                </Link>
+              </p>
+            )}
           </div>
           <div>
             <h3>Цветок</h3>

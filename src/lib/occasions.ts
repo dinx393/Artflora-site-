@@ -39,3 +39,15 @@ export const COLORS = [
   { slug: "lilac", label: "Сиреневые", swatch: "#b9a3d6" },
   { slug: "mix", label: "Микс", swatch: "conic-gradient(#f2c9d4, #b3122e, #f2c94c, #b9a3d6, #ffffff, #f2c9d4)" },
 ] as const;
+
+// В адресе каталога цвета идут через запятую: ?color=pink,red. Можно выбрать несколько.
+export function parseColors(param: string | undefined): string[] {
+  const known = new Set<string>(COLORS.map((c) => c.slug));
+  return [...new Set((param ?? "").split(",").filter((c) => known.has(c)))];
+}
+
+// Нажали на кружок: был выбран — убираем, не был — добавляем. Пустой список → undefined (фильтра нет).
+export function toggleColor(selected: string[], slug: string): string | undefined {
+  const next = selected.includes(slug) ? selected.filter((c) => c !== slug) : [...selected, slug];
+  return next.length ? COLORS.map((c) => c.slug).filter((c) => next.includes(c)).join(",") : undefined;
+}
