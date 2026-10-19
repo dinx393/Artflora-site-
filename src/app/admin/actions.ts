@@ -41,6 +41,9 @@ function refreshSite() {
 
 // ---------- Цветы ----------
 
+// Ошибка с понятным текстом для админки.
+class UserError extends Error {}
+
 const flowerRow = z.object({
   id: z.number().int().optional(), // нет id — новый цветок
   name: z.string().trim().min(1).max(80),
@@ -50,44 +53,77 @@ const flowerRow = z.object({
   inStock: z.boolean(),
 });
 
-export async function saveFlowers(rows: z.input<typeof flowerRow>[]): Promise<{ ok: boolean; error?: string }> {
+export type SavedFlower = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; prevPriceKop: number | null; inStock: boolean };
+
+export async function saveFlowers(rows: z.input<typeof flowerRow>[]): Promise<{ ok: boolean; error?: string; flowers?: SavedFlower[] }> {
   await requireAdmin();
   const parsed = z.array(flowerRow).max(500).safeParse(rows);
   if (!parsed.success) return { ok: false, error: "Проверьте названия и цены" };
-  const names = parsed.data.map((r) => r.name.toLowerCase());
-  if (new Set(names).size !== names.length) return { ok: false, error: "Два цветка с одинаковым названием" };
+  const norm = (t: string) => t.toLowerCase().replace(/ё/g, "е").trim();
+  const names = parsed.data.map((r) => norm(r.name));
+  const dup = names.find((n, i) => names.indexOf(n) !== i);
+  if (dup) return { ok: false, error: `Два цветка с одинаковым названием: ${parsed.data[names.indexOf(dup)].name}` };
 
-  await db.$transaction(async (tx) => {
-    const existing = await tx.flower.findMany();
-    for (const [i, r] of parsed.data.entries()) {
-      const old = existing.find((f) => f.id === r.id);
-      if (old) {
-        await tx.flower.update({
-          where: { id: old.id },
-          data: {
-            name: r.name,
-            kind: r.kind,
-            unit: r.unit,
-            inStock: r.inStock,
-            priceKop: r.priceKop,
-            prevPriceKop: old.priceKop !== r.priceKop ? old.priceKop : old.prevPriceKop,
-            sortOrder: i,
-          },
-        });
-      } else {
-        await tx.flower.create({ data: { name: r.name, kind: r.kind, unit: r.unit, priceKop: r.priceKop, inStock: r.inStock, sortOrder: i } });
-      }
-    }
-  });
+  try {
+    await db.$transaction(
+      async (tx) => {
+        const existing = await tx.flower.findMany();
+        // Строка без id, но с названием уже существующего цветка (например, страницу не обновили
+        // после прошлого сохранения) — это тот же цветок, обновляем его, а не создаём второй.
+        const plan = parsed.data.map((r, i) => ({
+          r,
+          i,
+          old: existing.find((f) => f.id === r.id) ?? (r.id ? undefined : existing.find((f) => norm(f.name) === norm(r.name))),
+        }));
+        // Цветок, которого нет в списке (удалён в другой вкладке и т.п.), но с тем же названием, что у строки, — мешает.
+        const clash = existing.find((f) => !plan.some((p) => p.old?.id === f.id) && names.includes(norm(f.name)));
+        if (clash) throw new UserError(`Цветок «${clash.name}» уже есть в базе. Обновите страницу (F5) и попробуйте ещё раз.`);
+        // Сначала временные названия: так можно поменять двум цветкам названия местами.
+        for (const { old } of plan) if (old) await tx.flower.update({ where: { id: old.id }, data: { name: `__tmp_${old.id}` } });
+        for (const { r, i, old } of plan) {
+          if (old) {
+            await tx.flower.update({
+              where: { id: old.id },
+              data: {
+                name: r.name,
+                kind: r.kind,
+                unit: r.unit,
+                inStock: r.inStock,
+                priceKop: r.priceKop,
+                prevPriceKop: old.priceKop !== r.priceKop ? old.priceKop : old.prevPriceKop,
+                sortOrder: i,
+              },
+            });
+          } else {
+            await tx.flower.create({ data: { name: r.name, kind: r.kind, unit: r.unit, priceKop: r.priceKop, inStock: r.inStock, sortOrder: i } });
+          }
+        }
+      },
+      { timeout: 30_000 },
+    );
+  } catch (e) {
+    if (e instanceof UserError) return { ok: false, error: e.message };
+    console.error("saveFlowers:", e);
+    return { ok: false, error: "Не удалось сохранить, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз." };
+  }
   refreshSite();
-  return { ok: true };
+  const flowers = await db.flower.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
+  return {
+    ok: true,
+    flowers: flowers.map((f) => ({ id: f.id, name: f.name, kind: f.kind, unit: f.unit, priceKop: f.priceKop, prevPriceKop: f.prevPriceKop, inStock: f.inStock })),
+  };
 }
 
 export async function deleteFlower(id: number): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
   const used = await db.bouquetItem.count({ where: { flowerId: id } });
   if (used > 0) return { ok: false, error: "Цветок есть в букетах. Сначала уберите его из состава или просто отметьте «Нет»." };
-  await db.flower.delete({ where: { id } });
+  try {
+    await db.flower.deleteMany({ where: { id } });
+  } catch (e) {
+    console.error("deleteFlower:", e);
+    return { ok: false, error: "Не удалось удалить цветок. Обновите страницу (F5) и попробуйте ещё раз." };
+  }
   refreshSite();
   return { ok: true };
 }
@@ -140,40 +176,45 @@ export async function saveBouquet(input: BouquetInput): Promise<{ ok: boolean; e
   const clash = await db.bouquet.findFirst({ where: { slug: b.slug, id: { not: b.id } } });
   if (clash) return { ok: false, error: "Такой адрес страницы уже занят другим букетом" };
 
-  await db.$transaction(async (tx) => {
-    await tx.bouquet.update({
-      where: { id: b.id },
-      data: {
-        name: b.name,
-        slug: b.slug,
-        description: b.description,
-        format: b.format,
-        packagingKop: b.packagingKop,
-        enabled: b.enabled,
-        isHit: b.isHit,
-        isExclusive: b.isExclusive,
-        photoSize: b.photoSize,
-        colors: b.colors,
-        occasions: b.occasions,
-        photos: b.photos,
-        collectionId: b.collectionId,
-      },
-    });
-    await tx.bouquetSize.deleteMany({ where: { bouquetId: b.id } });
-    for (const s of sizes) {
-      // одинаковые цветы в одном размере складываем
-      const merged = new Map<number, number>();
-      s.items.forEach((i) => merged.set(i.flowerId, (merged.get(i.flowerId) ?? 0) + i.qty));
-      await tx.bouquetSize.create({
+  try {
+    await db.$transaction(async (tx) => {
+      await tx.bouquet.update({
+        where: { id: b.id },
         data: {
-          bouquetId: b.id,
-          code: s.code,
-          note: s.note,
-          items: { create: [...merged].map(([flowerId, qty]) => ({ flowerId, qty })) },
+          name: b.name,
+          slug: b.slug,
+          description: b.description,
+          format: b.format,
+          packagingKop: b.packagingKop,
+          enabled: b.enabled,
+          isHit: b.isHit,
+          isExclusive: b.isExclusive,
+          photoSize: b.photoSize,
+          colors: b.colors,
+          occasions: b.occasions,
+          photos: b.photos,
+          collectionId: b.collectionId,
         },
       });
-    }
-  });
+      await tx.bouquetSize.deleteMany({ where: { bouquetId: b.id } });
+      for (const s of sizes) {
+        // одинаковые цветы в одном размере складываем
+        const merged = new Map<number, number>();
+        s.items.forEach((i) => merged.set(i.flowerId, (merged.get(i.flowerId) ?? 0) + i.qty));
+        await tx.bouquetSize.create({
+          data: {
+            bouquetId: b.id,
+            code: s.code,
+            note: s.note,
+            items: { create: [...merged].map(([flowerId, qty]) => ({ flowerId, qty })) },
+          },
+        });
+      }
+    });
+  } catch (e) {
+    console.error("saveBouquet:", e);
+    return { ok: false, error: "Не удалось сохранить букет, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз." };
+  }
   refreshSite();
   return { ok: true };
 }
@@ -424,19 +465,27 @@ const addonRow = z.object({
   active: z.boolean(),
 });
 
-export async function saveAddons(rows: z.input<typeof addonRow>[]): Promise<{ ok: boolean; error?: string }> {
+export async function saveAddons(
+  rows: z.input<typeof addonRow>[],
+): Promise<{ ok: boolean; error?: string; addons?: z.infer<typeof addonRow>[] }> {
   await requireAdmin();
   const parsed = z.array(addonRow).max(50).safeParse(rows);
   if (!parsed.success) return { ok: false, error: "Проверьте дополнения" };
-  await db.$transaction(
-    parsed.data.map((r, i) =>
-      r.id
-        ? db.addon.update({ where: { id: r.id }, data: { ...r, id: undefined, sortOrder: i } })
-        : db.addon.create({ data: { ...r, sortOrder: i } }),
-    ),
-  );
+  try {
+    // по code (он уникальный): новое дополнение, сохранённое второй раз без обновления страницы, не создаётся дважды
+    await db.$transaction(
+      parsed.data.map((r, i) => {
+        const data = { code: r.code, name: r.name, priceKop: r.priceKop, included: r.included, active: r.active, sortOrder: i };
+        return r.id ? db.addon.update({ where: { id: r.id }, data }) : db.addon.upsert({ where: { code: r.code }, update: data, create: data });
+      }),
+    );
+  } catch (e) {
+    console.error("saveAddons:", e);
+    return { ok: false, error: "Не удалось сохранить дополнения. Обновите страницу (F5) и попробуйте ещё раз." };
+  }
   refreshSite();
-  return { ok: true };
+  const addons = await db.addon.findMany({ orderBy: { sortOrder: "asc" } });
+  return { ok: true, addons: addons.map(({ id, code, name, priceKop, included, active }) => ({ id, code, name, priceKop, included, active })) };
 }
 
 // Кнопка «Отправить пробное письмо» в настройках: шлём на адреса из поля (даже если ещё не сохранены).

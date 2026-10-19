@@ -73,9 +73,13 @@ export function BouquetEditor({
       return;
     }
     start(async () => {
-      const r = await saveBouquet({ ...b, packagingKop: pkg });
-      setMsg(r.ok ? { ok: true, text: "Сохранено, сайт обновлён" } : { ok: false, text: r.error ?? "Ошибка" });
-      if (r.ok) router.refresh();
+      try {
+        const r = await saveBouquet({ ...b, packagingKop: pkg });
+        setMsg(r.ok ? { ok: true, text: "Сохранено, сайт обновлён" } : { ok: false, text: r.error ?? "Ошибка" });
+        if (r.ok) router.refresh();
+      } catch {
+        setMsg({ ok: false, text: "Не удалось сохранить: нет связи с сервером. Ничего не потеряно, нажмите «Сохранить» ещё раз." });
+      }
     });
   }
 

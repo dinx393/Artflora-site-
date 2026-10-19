@@ -45,16 +45,19 @@ function summary(b: PricedBouquet) {
   return { vis, price: s ? sizePriceKop(s, b.packagingKop) : null };
 }
 
+type FlowerData = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; prevPriceKop: number | null; inStock: boolean };
+
+const toRow = (f: FlowerData): Row => ({ ...f, key: String(f.id), priceText: kopToInput(f.priceKop) });
+
 export function FlowersEditor({
   initial,
   bouquets,
 }: {
-  initial: { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; prevPriceKop: number | null; inStock: boolean }[];
+  initial: FlowerData[];
   bouquets: BouquetLite[];
 }) {
   const router = useRouter();
-  const start0 = initial.map<Row>((f) => ({ ...f, key: String(f.id), priceText: kopToInput(f.priceKop) }));
-  const [rows, setRows] = useState<Row[]>(start0);
+  const [rows, setRows] = useState<Row[]>(() => initial.map(toRow));
   const [filter, setFilter] = useState<"all" | "FLOWER" | "GREEN">("all");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
@@ -96,9 +99,18 @@ export function FlowersEditor({
       return;
     }
     start(async () => {
-      const r = await saveFlowers(rows.map((x) => ({ id: x.id, name: x.name, kind: x.kind, unit: x.unit, priceKop: parseByn(x.priceText)!, inStock: x.inStock })));
-      setMsg(r.ok ? { ok: true, text: "Сохранено, цены на сайте обновлены" } : { ok: false, text: r.error ?? "Ошибка" });
-      if (r.ok) router.refresh();
+      try {
+        const r = await saveFlowers(rows.map((x) => ({ id: x.id, name: x.name, kind: x.kind, unit: x.unit, priceKop: parseByn(x.priceText)!, inStock: x.inStock })));
+        setMsg(r.ok ? { ok: true, text: "Сохранено, цены на сайте обновлены" } : { ok: false, text: r.error ?? "Ошибка" });
+        if (r.ok && r.flowers) {
+          // новые цветки получили номера в базе — без этого следующее сохранение создавало бы их второй раз
+          setRows(r.flowers.map(toRow));
+          router.refresh();
+        }
+      } catch {
+        // сеть или сервер недоступны — показываем ошибку, а введённое остаётся на экране
+        setMsg({ ok: false, text: "Не удалось сохранить: нет связи с сервером. Ничего не потеряно, нажмите «Сохранить» ещё раз." });
+      }
     });
   }
 
@@ -224,9 +236,13 @@ export function FlowersEditor({
                       onClick={() => {
                         if (!r.id) return setRows((rs) => rs.filter((x) => x.key !== r.key));
                         start(async () => {
-                          const res = await deleteFlower(r.id!);
-                          if (res.ok) setRows((rs) => rs.filter((x) => x.key !== r.key));
-                          else setMsg({ ok: false, text: res.error ?? "Ошибка" });
+                          try {
+                            const res = await deleteFlower(r.id!);
+                            if (res.ok) setRows((rs) => rs.filter((x) => x.key !== r.key));
+                            else setMsg({ ok: false, text: res.error ?? "Ошибка" });
+                          } catch {
+                            setMsg({ ok: false, text: "Не удалось удалить: нет связи с сервером" });
+                          }
                         });
                       }}
                     >

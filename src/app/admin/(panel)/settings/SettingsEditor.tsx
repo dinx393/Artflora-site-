@@ -66,10 +66,18 @@ export function SettingsEditor(props: {
 
   function save() {
     start(async () => {
-      const a = await saveSettings({ shop, delivery: d, districts, colors });
-      const b = a.ok ? await saveAddons(addons) : a;
-      setMsg(b.ok ? { ok: true, text: "Настройки сохранены" } : { ok: false, text: b.error ?? "Ошибка" });
-      if (b.ok) router.refresh();
+      try {
+        const a = await saveSettings({ shop, delivery: d, districts, colors });
+        if (!a.ok) return setMsg({ ok: false, text: a.error ?? "Ошибка" });
+        const b = await saveAddons(addons);
+        setMsg(b.ok ? { ok: true, text: "Настройки сохранены" } : { ok: false, text: b.error ?? "Ошибка" });
+        if (b.ok && b.addons) {
+          setAddons(b.addons); // новые дополнения получили номера в базе
+          router.refresh();
+        }
+      } catch {
+        setMsg({ ok: false, text: "Не удалось сохранить: нет связи с сервером. Ничего не потеряно, нажмите «Сохранить» ещё раз." });
+      }
     });
   }
 
