@@ -12,6 +12,7 @@ export type ShopSettings = {
   leadHours: number; // за сколько часов минимум принимаем заказ на сегодня
   promoLine: string; // строка над каталогом, например про День матери
   orderEmail: string; // куда присылать письма о новых заказах (через запятую можно несколько)
+  dayBouquet: string; // slug «Букета дня» на главной; пусто — первый хит
 };
 
 export type DistrictPreset = { name: string; lat: number; lng: number };
@@ -27,6 +28,7 @@ export const DEFAULT_SHOP: ShopSettings = {
   leadHours: 2,
   promoLine: "",
   orderEmail: "",
+  dayBouquet: "osenniy-vayb", // владелец попросила 2026-10-19
 };
 
 // Координаты приблизительные, их можно уточнить в настройках.

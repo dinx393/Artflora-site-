@@ -44,8 +44,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   const range = PRICE_RANGES.find((r) => r.slug === price);
   const hitsAll = all.filter((b) => b.isHit).length >= 4 ? all.filter((b) => b.isHit) : all;
   const hits = (range ? hitsAll.filter((b) => b.priceKop >= range.min && b.priceKop < range.max) : hitsAll).slice(0, 8);
-  const ofDay = all.find((b) => b.isHit) ?? all[0];
-  const tilePhoto = all.find((b) => b !== ofDay && b.photos[0] !== ofDay?.photos[0])?.photos[0] ?? "/demo/hero.jpg";
+  // «Букет дня» выбирают в админке → «Настройки»; если не выбран или скрыт — первый хит.
+  const ofDay = all.find((b) => b.slug === shop.dayBouquet) ?? all.find((b) => b.isHit) ?? all[0];
+  // Плитка «Весь каталог» — три разных букета рядом: вертикальные фото так обрезаются меньше, чем одно на всю ширину.
+  const tilePhotos = [...new Set(all.filter((b) => b !== ofDay).map((b) => b.photos[0]).filter((p) => p && p !== ofDay?.photos[0]))].slice(0, 3);
+  if (tilePhotos.length === 0) tilePhotos.push("/demo/hero.jpg");
   const exclusive = all.filter((b) => b.isExclusive).slice(0, 3);
   const minDelivery = formatByn(minDeliveryKop(delivery));
 
@@ -79,15 +82,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
               <img src={ofDay.photos[0]} alt={ofDay.name} />
               <span className="hero-day-body">
                 <span className="eyebrow muted">Букет дня · собран сегодня</span>
-                <span className="hero-day-row">
-                  <span className="hero-day-name">{ofDay.name}</span>
-                  <span className="price"><Byn kop={ofDay.priceKop} /></span>
-                </span>
+                <span className="hero-day-name">{ofDay.name}</span>
+                <span className="price"><Byn kop={ofDay.priceKop} /></span>
+                <span className="hero-day-more">Смотреть букет →</span>
               </span>
             </Link>
           )}
           <Link href="/catalog" className="hero-tile">
-            <img src={tilePhoto} alt="Букеты Артфлоры" />
+            <span className={`hero-tile-photos n${tilePhotos.length}`}>
+              {tilePhotos.map((p, i) => (
+                <img key={p} src={p} alt={i === 0 ? "Букеты Артфлоры" : ""} />
+              ))}
+            </span>
             <span className="hero-chip">Весь каталог ↗</span>
           </Link>
         </div>

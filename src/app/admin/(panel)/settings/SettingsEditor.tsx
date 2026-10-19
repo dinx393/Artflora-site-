@@ -29,7 +29,13 @@ function Money({ kop, onChange }: { kop: number; onChange: (k: number) => void }
   );
 }
 
-export function SettingsEditor(props: { shop: ShopSettings; delivery: DeliveryConfig; districts: DistrictPreset[]; addons: Addon[] }) {
+export function SettingsEditor(props: {
+  shop: ShopSettings;
+  delivery: DeliveryConfig;
+  districts: DistrictPreset[];
+  addons: Addon[];
+  bouquets: { slug: string; name: string }[];
+}) {
   const router = useRouter();
   const [shop, setShop] = useState(props.shop);
   const [d, setD] = useState(props.delivery);
@@ -73,6 +79,15 @@ export function SettingsEditor(props: { shop: ShopSettings; delivery: DeliveryCo
           {field("Почта для писем о заказах (можно несколько через запятую)", "orderEmail", "zakaz@artflora.by")}
         </div>
         {field("Строка над каталогом (акция)", "promoLine", "До Дня матери 14 октября · предзаказ −10%")}
+        <label className="field">
+          <span>«Букет дня» на главной (фото лучше вертикальное, букет по центру)</span>
+          <select className="input" value={shop.dayBouquet} onChange={(e) => setShop({ ...shop, dayBouquet: e.target.value })}>
+            <option value="">Сам выберет: первый хит</option>
+            {props.bouquets.map((b) => (
+              <option key={b.slug} value={b.slug}>{b.name}</option>
+            ))}
+          </select>
+        </label>
         <label className="field">
           <span>Реквизиты продавца в подвале (обязательно по закону РБ)</span>
           <textarea className="input" rows={2} value={shop.sellerDetails} onChange={(e) => setShop({ ...shop, sellerDetails: e.target.value })} />

@@ -364,6 +364,7 @@ export async function saveSettings(input: {
         .max(300)
         .default("")
         .refine((v) => v.split(",").every((e) => !e.trim() || z.string().email().safeParse(e.trim()).success), "Проверьте почту для заказов"),
+      dayBouquet: z.string().max(200).default(""),
     }),
     delivery: z.object({
       shops: z

@@ -9,11 +9,13 @@ export default async function Settings() {
     getSetting("districts"),
     db.addon.findMany({ orderBy: { sortOrder: "asc" } }),
   ]);
+  const bouquets = await db.bouquet.findMany({ where: { enabled: true }, select: { slug: true, name: true }, orderBy: { name: "asc" } });
   return (
     <SettingsEditor
       shop={shop}
       delivery={delivery}
       districts={districts}
+      bouquets={bouquets}
       addons={addons.map((a) => ({ id: a.id, code: a.code, name: a.name, priceKop: a.priceKop, included: a.included, active: a.active }))}
     />
   );

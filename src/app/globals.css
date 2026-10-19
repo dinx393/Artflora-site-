@@ -207,16 +207,18 @@ textarea.input { resize: vertical; min-height: 60px; }
 .hero-actions .btn { min-height: 52px; padding: 0 26px; }
 .hero-day {
   position: absolute; left: calc(53.8% + var(--river)); right: 0; top: 0; height: 360px; border-radius: var(--radius); overflow: hidden;
-  background: var(--blush); display: flex; flex-direction: column; text-decoration: none;
+  background: var(--blush); display: flex; text-decoration: none;
 }
-.hero-day img { width: 100%; flex: 1; min-height: 0; object-fit: cover; }
-.hero-day-body { display: flex; flex-direction: column; gap: 6px; padding: 16px 20px 18px; }
+/* Фото букета — вертикальное 3:4, как снимают на телефон: обрезается минимально. */
+.hero-day img { height: 100%; aspect-ratio: 3 / 4; flex: none; max-width: 55%; object-fit: cover; object-position: center 40%; }
+.hero-day-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; padding: 24px 24px 26px; }
 .hero-day .eyebrow { font-size: 11px; }
-.hero-day-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.hero-day-name { font-family: var(--serif); font-size: 24px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.hero-day .price { font-size: 24px; white-space: nowrap; }
+.hero-day-name { font-family: var(--serif); font-size: 28px; line-height: 1.15; font-weight: 500; }
+.hero-day .price { font-size: 28px; white-space: nowrap; }
+.hero-day-more { margin-top: 6px; font-size: 14px; font-weight: 700; color: var(--cherry); }
 .hero-tile { position: absolute; left: calc(40.37% + var(--river)); right: 0; top: calc(360px + var(--river)); bottom: 0; border-radius: var(--radius); overflow: hidden; }
-.hero-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero-tile-photos { position: absolute; inset: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
+.hero-tile-photos img { width: 100%; height: 100%; min-width: 0; object-fit: cover; object-position: center 40%; }
 .hero-chip { position: absolute; left: 20px; bottom: 20px; display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: var(--white); font-size: 13px; font-weight: 700; }
 
 .occasions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr)); gap: 24px; }
@@ -395,13 +397,14 @@ textarea.input { resize: vertical; min-height: 60px; }
   .hero-text p { font-size: 15px; }
   .hero-actions { flex-direction: column; }
   .hero-actions .btn { width: 100%; }
-  .hero-day { height: auto; }
-  .hero-day img { height: 150px; flex: none; }
+  .hero-day { height: auto; flex-direction: column; }
+  .hero-day img { width: 100%; height: auto; max-width: none; }
   .hero-day-body { padding: 12px 14px 14px; gap: 4px; }
   .hero-day .eyebrow { font-size: 10px; }
-  .hero-day-row { flex-direction: column; align-items: flex-start; gap: 2px; }
-  .hero-day-name { font-size: 17px; max-width: 100%; }
+  .hero-day-name { font-size: 17px; }
   .hero-day .price { font-size: 19px; }
+  .hero-day-more { display: none; }
+  .hero-tile-photos img:not(:first-child) { display: none; }
   .hero-tile { height: auto; min-height: 236px; }
   .hero-chip { left: 10px; right: 10px; bottom: 10px; justify-content: center; font-size: 12px; }
   .occasions { display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter) 4px; }
