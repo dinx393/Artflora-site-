@@ -193,3 +193,25 @@ async function sendEmail(orderId: number) {
     text: mail.text,
   });
 }
+
+// Пробное письмо из админки → «Настройки»: проверить, что почта настроена и письма доходят.
+export async function sendTestEmail(to: string): Promise<{ ok: boolean; error?: string }> {
+  if (!smtpConfigured()) {
+    return { ok: false, error: "Почта-отправитель не настроена: в файле .env нет SMTP_HOST, SMTP_USER или SMTP_PASS (см. README)" };
+  }
+  if (!to.trim()) return { ok: false, error: "Впишите выше, на какую почту присылать письма о заказах" };
+  try {
+    await mailer().sendMail({
+      from: { name: "Артфлора — заказы", address: process.env.SMTP_FROM || process.env.SMTP_USER! },
+      to,
+      subject: "Пробное письмо с сайта Артфлоры",
+      text: "Это пробное письмо. Раз оно дошло, письма о новых заказах будут приходить сюда же.",
+    });
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    // Самая частая ошибка — обычный пароль вместо «пароля приложения».
+    const hint = /auth|535|534|login|credentials/i.test(msg) ? " Проверьте SMTP_USER и пароль приложения (не обычный пароль от почты)." : "";
+    return { ok: false, error: `Письмо не ушло: ${msg.slice(0, 200)}.${hint}` };
+  }
+}

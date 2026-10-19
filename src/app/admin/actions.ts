@@ -12,6 +12,7 @@ import { db } from "@/lib/db";
 import { allow, clientIp, forget } from "@/lib/rateLimit";
 import type { DeliveryConfig } from "@/lib/delivery";
 import type { DistrictPreset, ShopSettings } from "@/lib/defaults";
+import { sendTestEmail } from "@/lib/notify";
 import { saveSetting } from "@/lib/settings";
 import { ALLOWED_TYPES, looksLikeImage, UPLOAD_DIR } from "@/lib/uploads";
 
@@ -418,4 +419,14 @@ export async function saveAddons(rows: z.input<typeof addonRow>[]): Promise<{ ok
   );
   refreshSite();
   return { ok: true };
+}
+
+// Кнопка «Отправить пробное письмо» в настройках: шлём на адреса из поля (даже если ещё не сохранены).
+export async function testOrderEmail(to: string): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  const list = to.split(",").map((e) => e.trim()).filter(Boolean);
+  if (list.length > 5 || list.some((e) => !z.string().email().safeParse(e).success)) {
+    return { ok: false, error: "Проверьте почту для заказов: адреса через запятую, не больше пяти" };
+  }
+  return sendTestEmail(list.join(", "));
 }

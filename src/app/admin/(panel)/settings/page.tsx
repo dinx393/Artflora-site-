@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { smtpConfigured } from "@/lib/notify";
 import { getSetting } from "@/lib/settings";
 import { SettingsEditor } from "./SettingsEditor";
 
@@ -16,6 +17,7 @@ export default async function Settings() {
       delivery={delivery}
       districts={districts}
       bouquets={bouquets}
+      smtpReady={smtpConfigured()}
       addons={addons.map((a) => ({ id: a.id, code: a.code, name: a.name, priceKop: a.priceKop, included: a.included, active: a.active }))}
     />
   );

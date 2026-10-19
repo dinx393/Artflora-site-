@@ -144,7 +144,8 @@ function scale(items: [string, number][], k: number): [string, number][] {
 const kop = (byn: number) => Math.round(byn * 100);
 
 async function main() {
-  if ((await db.flower.count()) > 0) {
+  // Дополнения остаются и после очистки (prisma/clean-demo.ts), поэтому очищенная база примерами не заполнится заново.
+  if ((await db.flower.count()) > 0 || (await db.addon.count()) > 0) {
     console.log("В базе уже есть данные, пропускаю заполнение.");
     return;
   }

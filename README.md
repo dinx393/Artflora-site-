@@ -56,6 +56,20 @@ docker compose up -d --build
 
 Другой порт или пароль: создайте рядом файл `.env` со строками `SITE_PORT=8080`, `ADMIN_PASSWORD=...`.
 
+### Письма о заказах на почту (Gmail)
+
+1. Заведите ящик для отправки, например artflora.zakaz@gmail.com, и включите в нём двухэтапную аутентификацию.
+2. Откройте https://myaccount.google.com/apppasswords, придумайте название («Сайт») и скопируйте пароль из 16 букв.
+3. В папке сайта откройте файл `.env` (`nano .env`) и допишите:
+   ```
+   SMTP_HOST="smtp.gmail.com"
+   SMTP_PORT="465"
+   SMTP_USER="artflora.zakaz@gmail.com"
+   SMTP_PASS="пароль-из-16-букв-без-пробелов"
+   ```
+4. `docker compose up -d` — сайт перезапустится с почтой.
+5. Админка → «Настройки» → «Почта для писем о заказах»: адреса админов через запятую → «Сохранить» → «Отправить пробное письмо».
+
 ### Вернуть прошлый дизайн («Ягодный сад»)
 
 19 октября 2026 сайт переведён на дизайн «Артфлора 3». Последняя версия со старым дизайном — коммит `639438a`.
@@ -97,6 +111,8 @@ docker compose up -d --build
 ```bash
 docker compose exec site node prisma/demo-catalog.js           # добавить
 docker compose exec site node prisma/demo-catalog.js --remove  # убрать
+docker compose exec site node prisma/clean-demo.js --yes       # убрать ВСЕ букеты, заказы и напоминания перед запуском
+                                                               # (справочник цветов остаётся; с --flowers уберёт и его)
 ```
 
 Фото букетов сохраняются в томе `uploads`, база — в томе `db`. Делайте их резервные копии.

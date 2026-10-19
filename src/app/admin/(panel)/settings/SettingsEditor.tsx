@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import type { DeliveryConfig } from "@/lib/delivery";
 import type { DistrictPreset, ShopSettings } from "@/lib/defaults";
 import { kopToInput, parseByn } from "@/lib/money";
-import { saveAddons, saveSettings } from "../../actions";
+import { saveAddons, saveSettings, testOrderEmail } from "../../actions";
 
 type Addon = { id?: number; code: string; name: string; priceKop: number; included: boolean; active: boolean };
 
@@ -35,6 +35,7 @@ export function SettingsEditor(props: {
   districts: DistrictPreset[];
   addons: Addon[];
   bouquets: { slug: string; name: string }[];
+  smtpReady: boolean;
 }) {
   const router = useRouter();
   const [shop, setShop] = useState(props.shop);
@@ -43,6 +44,15 @@ export function SettingsEditor(props: {
   const [addons, setAddons] = useState(props.addons);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
+  const [testing, startTest] = useTransition();
+  const [mailMsg, setMailMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  function testMail() {
+    startTest(async () => {
+      const r = await testOrderEmail(shop.orderEmail);
+      setMailMsg(r.ok ? { ok: true, text: `Письмо отправлено на ${shop.orderEmail}. Проверьте почту (и папку «Спам»).` } : { ok: false, text: r.error ?? "Ошибка" });
+    });
+  }
 
   function save() {
     start(async () => {
@@ -78,6 +88,15 @@ export function SettingsEditor(props: {
           {field("Ссылка Instagram", "instagram")}
           {field("Почта для писем о заказах (можно несколько через запятую)", "orderEmail", "zakaz@artflora.by")}
         </div>
+        <div className="row" style={{ gap: 12, alignItems: "center" }}>
+          <button type="button" className="btn btn-outline" disabled={testing} onClick={testMail}>
+            {testing ? "Отправляем…" : "Отправить пробное письмо"}
+          </button>
+          <span className="small muted">
+            {props.smtpReady ? "Почта-отправитель подключена." : "Почта-отправитель ещё не подключена (SMTP в файле .env, см. README)."}
+          </span>
+        </div>
+        {mailMsg && <p className={mailMsg.ok ? "pill ok" : "error"} style={{ alignSelf: "flex-start" }}>{mailMsg.text}</p>}
         {field("Строка над каталогом (акция)", "promoLine", "До Дня матери 14 октября · предзаказ −10%")}
         <label className="field">
           <span>«Букет дня» на главной (фото лучше вертикальное, букет по центру)</span>

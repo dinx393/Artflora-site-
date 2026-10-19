@@ -48,7 +48,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   const ofDay = all.find((b) => b.slug === shop.dayBouquet) ?? all.find((b) => b.isHit) ?? all[0];
   // Плитка «Весь каталог» — три разных букета рядом: вертикальные фото так обрезаются меньше, чем одно на всю ширину.
   const tilePhotos = [...new Set(all.filter((b) => b !== ofDay).map((b) => b.photos[0]).filter((p) => p && p !== ofDay?.photos[0]))].slice(0, 3);
-  if (tilePhotos.length === 0) tilePhotos.push("/demo/hero.jpg");
+  if (tilePhotos.length === 0) tilePhotos.push("/demo/autumn.jpg"); // каталог пока пуст — фото букета из магазина
   const exclusive = all.filter((b) => b.isExclusive).slice(0, 3);
   const minDelivery = formatByn(minDeliveryKop(delivery));
 
@@ -88,7 +88,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
               </span>
             </Link>
           )}
-          <Link href="/catalog" className="hero-tile">
+          <Link href="/catalog" className={`hero-tile ${ofDay ? "" : "hero-tile-full"}`}>
             <span className={`hero-tile-photos n${tilePhotos.length}`}>
               {tilePhotos.map((p, i) => (
                 <img key={p} src={p} alt={i === 0 ? "Букеты Артфлоры" : ""} />
@@ -115,43 +115,45 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
         </div>
       </section>
 
-      <section className="section">
-        <div className="row between sec-title" style={{ alignItems: "flex-end", gap: 16 }}>
-          <h2 className="h2">
-            Хиты <span className="script">этой недели</span>
-          </h2>
-          <div className="row chips-row" style={{ gap: 8 }}>
-            <Link href="/#hits" className={`chip ${!range ? "on" : ""}`} scroll={false}>
-              Все
-            </Link>
-            {PRICE_RANGES.map((r) => (
-              <Link
-                key={r.slug}
-                href={price === r.slug ? "/#hits" : `/?price=${r.slug}#hits`}
-                className={`chip ${price === r.slug ? "on" : ""}`}
-                scroll={false}
-              >
-                {r.label}
+      {all.length > 0 && (
+        <section className="section">
+          <div className="row between sec-title" style={{ alignItems: "flex-end", gap: 16 }}>
+            <h2 className="h2">
+              Хиты <span className="script">этой недели</span>
+            </h2>
+            <div className="row chips-row" style={{ gap: 8 }}>
+              <Link href="/#hits" className={`chip ${!range ? "on" : ""}`} scroll={false}>
+                Все
               </Link>
+              {PRICE_RANGES.map((r) => (
+                <Link
+                  key={r.slug}
+                  href={price === r.slug ? "/#hits" : `/?price=${r.slug}#hits`}
+                  className={`chip ${price === r.slug ? "on" : ""}`}
+                  scroll={false}
+                >
+                  {r.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-4" id="hits">
+            {hits.map((b) => (
+              <ProductCard key={b.id} b={b} />
             ))}
           </div>
-        </div>
-        <div className="grid grid-4" id="hits">
-          {hits.map((b) => (
-            <ProductCard key={b.id} b={b} />
-          ))}
-        </div>
-        {hits.length === 0 && (
-          <p className="muted">
-            В этом диапазоне хитов нет. <Link href="/catalog">Смотреть весь каталог →</Link>
-          </p>
-        )}
-        <div className="more">
-          <Link href="/catalog" className="btn btn-outline btn-lg">
-            Смотреть весь каталог →
-          </Link>
-        </div>
-      </section>
+          {hits.length === 0 && (
+            <p className="muted">
+              В этом диапазоне хитов нет. <Link href="/catalog">Смотреть весь каталог →</Link>
+            </p>
+          )}
+          <div className="more">
+            <Link href="/catalog" className="btn btn-outline btn-lg">
+              Смотреть весь каталог →
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="section">
         <div className="band">
