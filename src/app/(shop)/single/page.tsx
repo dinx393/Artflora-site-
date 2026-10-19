@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { formatByn } from "@/lib/money";
 import { getSetting } from "@/lib/settings";
+import { Byn } from "@/components/Byn";
 
 export const metadata: Metadata = { title: "Цветы поштучно" };
 
@@ -22,7 +23,7 @@ export default async function Single() {
         {flowers.map((f) => (
           <div key={f.id} className="card stack" style={{ gap: 4 }}>
             <b>{f.name}</b>
-            <span className="price" style={{ fontSize: 24 }}>{formatByn(f.priceKop)}</span>
+            <span className="price" style={{ fontSize: 24 }}><Byn kop={f.priceKop} /></span>
             <span className="small muted">{f.unit === "STEM" ? "за ветку" : "за штуку"}</span>
           </div>
         ))}

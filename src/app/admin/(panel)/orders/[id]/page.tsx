@@ -7,6 +7,7 @@ import { getSetting } from "@/lib/settings";
 import { SLOTS } from "@/lib/slots";
 import { setOrderAddress, updateOrder } from "../../../actions";
 import { PAY_LABEL, STATUS_LABEL } from "../status";
+import { Byn } from "@/components/Byn";
 
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -95,7 +96,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               <span>{o.addressUnknown && o.deliveryKop === 0 ? "ещё не назначена" : formatByn(o.deliveryKop)}</span>
             </div>
           )}
-          <div className="sum-row" style={{ alignItems: "baseline" }}><b>Итого</b><span className="sum-total">{formatByn(o.totalKop)}</span></div>
+          <div className="sum-row" style={{ alignItems: "baseline" }}><b>Итого</b><span className="sum-total"><Byn kop={o.totalKop} /></span></div>
           <div className="sum-row"><span>Оплата</span><span>{PAY_LABEL[o.paymentMethod]} · {o.paid ? "оплачен" : "не оплачен"}</span></div>
           <form key={`${o.status}-${o.paid}`} action={updateOrder} className="stack" style={{ gap: 8 }}>
             <input type="hidden" name="id" value={o.id} />

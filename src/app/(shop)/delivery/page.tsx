@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { formatByn } from "@/lib/money";
 import { getSetting } from "@/lib/settings";
+import { Byn } from "@/components/Byn";
 
 export const metadata: Metadata = { title: "Доставка и оплата" };
 
@@ -9,7 +10,7 @@ export default async function DeliveryPage() {
   const [shop, d] = await Promise.all([getSetting("shop"), getSetting("delivery")]);
   const zones = d.zones.map((z, i) => ({
     label: i === d.zones.length - 1 ? `Дальше, в пределах МКАД` : `До ${z.maxKm} км от магазина`,
-    price: formatByn(z.priceKop),
+    priceKop: z.priceKop,
   }));
   return (
     <div className="section stack" style={{ gap: 40 }}>
@@ -41,7 +42,7 @@ export default async function DeliveryPage() {
           {zones.map((z) => (
             <div key={z.label} className="sum-row zone-row">
               <span>{z.label}</span>
-              <b className="price" style={{ fontSize: 22 }}>{z.price}</b>
+              <b className="price" style={{ fontSize: 22 }}><Byn kop={z.priceKop} /></b>
             </div>
           ))}
           <div className="sum-row zone-row">

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { formatByn } from "@/lib/money";
 import { orderToken } from "@/lib/orderToken";
 import { getSetting } from "@/lib/settings";
+import { Byn } from "@/components/Byn";
 
 export const metadata: Metadata = { title: "Заказ принят", robots: { index: false } };
 
@@ -98,7 +99,7 @@ export default async function OrderDone({
         )}
         <div className="sum-row"><span>Оплата</span><span>{PAY[order.paymentMethod]}</span></div>
         <div className="sum-row" style={{ borderTop: "1px solid var(--line)", paddingTop: 10, alignItems: "baseline" }}>
-          <b>Итого</b><span className="sum-total">{formatByn(order.totalKop)}</span>
+          <b>Итого</b><span className="sum-total"><Byn kop={order.totalKop} /></span>
         </div>
       </div>
       <div className="panel row between" style={{ flex: "1 1 100%", gap: 16 }}>

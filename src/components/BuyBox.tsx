@@ -5,6 +5,7 @@ import { useCart } from "./CartProvider";
 import { AddToCartButton } from "./AddToCartButton";
 import { LeafIcon } from "./icons";
 import { formatByn, percentOff } from "@/lib/money";
+import { Byn } from "@/components/Byn";
 
 type Size = { code: "S" | "M" | "L"; note: string; priceKop: number };
 type Addon = { id: number; name: string; priceKop: number; included: boolean };
@@ -46,7 +47,7 @@ export function BuyBox({
   return (
     <>
       <div className="row" style={{ alignItems: "baseline", gap: 14 }}>
-        <span className="price" style={{ fontSize: 40 }}>{formatByn(current.priceKop)}</span>
+        <span className="price" style={{ fontSize: 40 }}><Byn kop={current.priceKop} /></span>
         <span className="small muted">Самовывоз: {formatByn(current.priceKop - percentOff(current.priceKop, pickupPct))}</span>
       </div>
 

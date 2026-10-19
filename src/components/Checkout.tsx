@@ -11,6 +11,7 @@ import { SUBSTITUTION_NOTE } from "./BuyBox";
 import { useCart } from "./CartProvider";
 import { fetchQuote, type QuoteResponse } from "./DeliveryEstimate";
 import { LeafIcon } from "./icons";
+import { Byn } from "@/components/Byn";
 
 type ShopLite = { code: string; name: string; address: string };
 
@@ -307,7 +308,7 @@ export function Checkout({
                       </button>
                     </div>
                   </div>
-                  <span className="price line-price">{formatByn(l.priceKop * l.qty)}</span>
+                  <span className="price line-price"><Byn kop={l.priceKop * l.qty} /></span>
                 </div>
               ))}
               {totals?.priced.addons.map((a) => (
@@ -408,7 +409,7 @@ export function Checkout({
                     <div className="row between">
                       <b>Зона {quote.zone}</b>
                       <span className="price" style={{ fontSize: 24 }}>
-                        {totals && totals.deliveryKop === 0 ? "Бесплатно" : formatByn(totals?.deliveryKop ?? quote.priceKop)}
+                        {totals && totals.deliveryKop === 0 ? "Бесплатно" : <Byn kop={totals?.deliveryKop ?? quote.priceKop} />}
                       </span>
                     </div>
                     <span className="small muted">
@@ -471,7 +472,7 @@ export function Checkout({
               )}
               <div className="sum-row" style={{ alignItems: "baseline" }}>
                 <b>Итого</b>
-                <span className="price" style={{ fontSize: 24 }}>{formatByn(totals?.totalKop ?? 0)}</span>
+                <span className="price" style={{ fontSize: 24 }}><Byn kop={totals?.totalKop ?? 0} /></span>
               </div>
             </div>
           </section>
@@ -546,7 +547,7 @@ export function Checkout({
           )}
           <div className="sum-row" style={{ alignItems: "baseline", borderTop: "1px solid var(--line)", paddingTop: 12 }}>
             <b>Итого</b>
-            <span className="sum-total">{formatByn(totals?.totalKop ?? 0)}</span>
+            <span className="sum-total"><Byn kop={totals?.totalKop ?? 0} /></span>
           </div>
           <div className="notice">
             <span style={{ color: "var(--olive)" }}><LeafIcon /></span>
@@ -573,7 +574,7 @@ export function Checkout({
         {step > 1 && (
           <button type="button" className="btn btn-outline" style={{ flex: "0 0 auto" }} onClick={() => setStep(step - 1)}>←</button>
         )}
-        <span className="price" style={{ fontSize: 24 }}>{formatByn(totals?.totalKop ?? 0)}</span>
+        <span className="price" style={{ fontSize: 24 }}><Byn kop={totals?.totalKop ?? 0} /></span>
         {step < 2 ? (
           <button type="button" className="btn" disabled={!canNext1 || !canNext2} onClick={() => { setStep(2); window.scrollTo({ top: 0 }); }}>
             Далее

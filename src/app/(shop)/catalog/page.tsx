@@ -8,6 +8,7 @@ import { minDeliveryKop } from "@/lib/delivery";
 import { formatByn } from "@/lib/money";
 import { COLORS, FORMATS, OCCASIONS, PRICE_RANGES } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
+import { Byn } from "@/components/Byn";
 
 type SP = {
   occasion?: string;
@@ -248,7 +249,7 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
               {addons.map((a) => (
                 <div key={a.id} className="addon">
                   <b>{a.name}</b>
-                  {a.priceKop === 0 ? <span className="gift">В подарок</span> : <span className="price" style={{ fontSize: 18 }}>{formatByn(a.priceKop)}</span>}
+                  {a.priceKop === 0 ? <span className="gift">В подарок</span> : <span className="price" style={{ fontSize: 18 }}><Byn kop={a.priceKop} /></span>}
                 </div>
               ))}
             </div>

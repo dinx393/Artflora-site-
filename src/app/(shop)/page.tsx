@@ -6,6 +6,7 @@ import { minDeliveryKop } from "@/lib/delivery";
 import { formatByn } from "@/lib/money";
 import { OCCASIONS, PRICE_RANGES } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
+import { Byn } from "@/components/Byn";
 
 // Вырез в вишнёвом блоке главной: справа сверху встаёт «Букет дня», снизу — фото.
 const HERO_NOTCH =
@@ -30,7 +31,7 @@ function ExclusiveCard({ b }: { b: BouquetView }) {
         {script && <span className="story-script">{script}</span>}
         <span className="story-text">{text}</span>
       </span>
-      <span className="story-price">{formatByn(b.priceKop).replace(" BYN", " р")}</span>
+      <span className="story-price"><Byn kop={b.priceKop} /></span>
       {size?.note && <span className="story-note">{size.note}</span>}
     </Link>
   );
@@ -79,7 +80,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
                 <span className="eyebrow muted">Букет дня · собран сегодня</span>
                 <span className="hero-day-row">
                   <span className="hero-day-name">{ofDay.name}</span>
-                  <span className="price">{formatByn(ofDay.priceKop)}</span>
+                  <span className="price"><Byn kop={ofDay.priceKop} /></span>
                 </span>
               </span>
             </Link>

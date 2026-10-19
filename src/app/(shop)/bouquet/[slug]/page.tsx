@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { formatByn } from "@/lib/money";
 import { FORMATS, occasionLabel } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
+import { Byn } from "@/components/Byn";
 
 type Params = { slug: string };
 
@@ -98,7 +99,7 @@ export default async function BouquetPage({ params }: { params: Promise<Params> 
               <span className="ph"><img src={s.photos[0]} alt={s.name} /></span>
               <span className="t stack" style={{ gap: 2 }}>
                 <b className="forms-name">{s.name}</b>
-                <span className="price" style={{ fontSize: 15 }}>{formatByn(s.priceKop)}</span>
+                <span className="price" style={{ fontSize: 15 }}><Byn kop={s.priceKop} /></span>
               </span>
             </Link>
           ))}

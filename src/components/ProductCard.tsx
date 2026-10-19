@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { BouquetView } from "@/lib/catalog";
 import { formatByn } from "@/lib/money";
 import { AddToCartButton } from "./AddToCartButton";
+import { Byn } from "@/components/Byn";
 
 export function ProductCard({ b, note }: { b: BouquetView; note?: string }) {
   return (
@@ -16,7 +17,7 @@ export function ProductCard({ b, note }: { b: BouquetView; note?: string }) {
         </Link>
         {note && <span className="small muted">{note}</span>}
         <div className="pcard-buy">
-          <span className="price">{formatByn(b.priceKop)}</span>
+          <span className="price"><Byn kop={b.priceKop} /></span>
           <AddToCartButton bouquetId={b.id} size={b.defaultSize} card />
         </div>
       </div>
