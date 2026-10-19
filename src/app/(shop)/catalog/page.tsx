@@ -9,6 +9,7 @@ import { formatByn } from "@/lib/money";
 import { FORMATS, OCCASIONS, PRICE_RANGES, parseColors, toggleColor } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
 import { Byn } from "@/components/Byn";
+import { CatalogFilters } from "@/components/CatalogFilters";
 
 type SP = {
   occasion?: string;
@@ -86,6 +87,8 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
   const colorLabels = colorList.filter((c) => colors.includes(c.slug)).map((c) => c.label.toLowerCase());
   const activeFilters = [range?.label, sp.flower, colorLabels.length ? `цвет: ${colorLabels.join(", ")}` : undefined].filter(Boolean) as string[];
   const allBouquets = !sp.occasion && !sp.flower && !sp.format && !sp.collection && !sp.q;
+  const format = sp.format ? FORMATS[sp.format as keyof typeof FORMATS] : undefined;
+  const activeCount = [range, occ, sp.flower, format].filter(Boolean).length + colors.length;
   const sortHrefs = { "": href(sp, { sort: undefined }), cheap: href(sp, { sort: "cheap" }), expensive: href(sp, { sort: "expensive" }) };
 
   return (
@@ -135,34 +138,44 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
       </section>
 
       <div className="wrap catalog">
-        <aside className="filters">
-          <div>
-            <h3>Цена</h3>
+        <CatalogFilters active={activeCount} found={list.length}>
+          <details className="fgroup" open={!!range}>
+            <summary>
+              <h3>Цена</h3>
+              {range && <span className="fgroup-val">{range.label}</span>}
+            </summary>
             {PRICE_RANGES.map((r) => (
-              <Link key={r.slug} href={href(sp, { price: sp.price === r.slug ? undefined : r.slug })} className={`radio ${sp.price === r.slug ? "on" : ""}`}>
+              <Link key={r.slug} href={href(sp, { price: sp.price === r.slug ? undefined : r.slug })} scroll={false} className={`radio ${sp.price === r.slug ? "on" : ""}`}>
                 {r.label}
               </Link>
             ))}
-          </div>
-          <div>
-            <h3>Кому</h3>
+          </details>
+          <details className="fgroup" open={!!occ}>
+            <summary>
+              <h3>Кому</h3>
+              {occ && <span className="fgroup-val">{occ.label}</span>}
+            </summary>
             <div className="chips-wrap">
               {OCCASIONS.filter((o) => ["mom", "love", "colleague", "birthday", "nothing"].includes(o.slug)).map((o) => (
-                <Link key={o.slug} href={href(sp, { occasion: sp.occasion === o.slug ? undefined : o.slug })} className={`chip chip-sm ${sp.occasion === o.slug ? "on" : ""}`}>
+                <Link key={o.slug} href={href(sp, { occasion: sp.occasion === o.slug ? undefined : o.slug })} scroll={false} className={`chip chip-sm ${sp.occasion === o.slug ? "on" : ""}`}>
                   {o.label}
                 </Link>
               ))}
             </div>
-          </div>
+          </details>
           {palette.length > 0 && (
-            <div>
-              <h3>Цвет</h3>
+            <details className="fgroup" open={colors.length > 0}>
+              <summary>
+                <h3>Цвет</h3>
+                {colorLabels.length > 0 && <span className="fgroup-val">{colorLabels.join(", ")}</span>}
+              </summary>
               <p className="small muted" style={{ marginTop: -6, marginBottom: 10 }}>Можно выбрать несколько</p>
               <div className="chips-wrap">
                 {palette.map((c) => (
                   <Link
                     key={c.slug}
                     href={href(sp, { color: toggleColor(colors, c.slug, colorList) })}
+                    scroll={false}
                     className={`swatch-btn ${colors.includes(c.slug) ? "on" : ""}`}
                     title={c.label}
                     aria-label={colors.includes(c.slug) ? `${c.label}, выбран` : c.label}
@@ -174,31 +187,37 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
               {colorLabels.length > 0 && (
                 <p className="small" style={{ marginTop: 10 }}>
                   {colorLabels.join(", ")} ·{" "}
-                  <Link href={href(sp, { color: undefined })} style={{ fontWeight: 700 }}>
+                  <Link href={href(sp, { color: undefined })} scroll={false} style={{ fontWeight: 700 }}>
                     сбросить
                   </Link>
                 </p>
               )}
-            </div>
+            </details>
           )}
-          <div>
-            <h3>Цветок</h3>
+          <details className="fgroup" open={!!sp.flower}>
+            <summary>
+              <h3>Цветок</h3>
+              {sp.flower && <span className="fgroup-val">{sp.flower}</span>}
+            </summary>
             <div className="chips-wrap">
               {flowers.map((f) => (
-                <Link key={f.id} href={href(sp, { flower: sp.flower === f.name ? undefined : f.name })} className={`chip chip-sm ${sp.flower === f.name ? "on" : ""}`}>
+                <Link key={f.id} href={href(sp, { flower: sp.flower === f.name ? undefined : f.name })} scroll={false} className={`chip chip-sm ${sp.flower === f.name ? "on" : ""}`}>
                   {f.name}
                 </Link>
               ))}
             </div>
-          </div>
-          <div>
-            <h3>Формат</h3>
+          </details>
+          <details className="fgroup" open={!!format}>
+            <summary>
+              <h3>Формат</h3>
+              {format && <span className="fgroup-val">{format.label}</span>}
+            </summary>
             {Object.entries(FORMATS).map(([code, f]) => (
-              <Link key={code} href={href(sp, { format: sp.format === code ? undefined : code })} className={`box ${sp.format === code ? "on" : ""}`}>
+              <Link key={code} href={href(sp, { format: sp.format === code ? undefined : code })} scroll={false} className={`box ${sp.format === code ? "on" : ""}`}>
                 {f.label}
               </Link>
             ))}
-          </div>
+          </details>
           <div className="help">
             <b>Нужна подсказка?</b>
             <span className="small muted">Флорист поможет выбрать в Viber.</span>
@@ -206,9 +225,9 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
               Написать флористу →
             </a>
           </div>
-        </aside>
+        </CatalogFilters>
 
-      <div className="stack" style={{ gap: 28, minWidth: 0 }}>
+      <div id="catalog-list" className="stack" style={{ gap: 28, minWidth: 0 }}>
         <div className="catalog-bar">
           <span>
             Сегодня по Минску из ближайшего магазина. Доставка от {formatByn(minDeliveryKop(delivery))}, от {formatByn(delivery.freeFromKop)}{" "}
