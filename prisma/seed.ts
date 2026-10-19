@@ -143,10 +143,29 @@ function scale(items: [string, number][], k: number): [string, number][] {
 
 const kop = (byn: number) => Math.round(byn * 100);
 
+// Без чего сайт не работает: открытка и подкормка в подарок, остальные дополнения выключены.
+// Добавляем только те, которых нет, — то, что поменяли в админке, не трогаем.
+async function ensureAddons() {
+  // Цены конфет, шара и вазы в макетах не указаны: заданы нулём и выключены.
+  // Укажите цену в админке → «Настройки» → «Дополнения» и включите.
+  const addons = [
+    { code: "card", name: "Открытка", priceKop: 0, included: true, active: true },
+    { code: "feed", name: "Подкормка, 2 шт", priceKop: 0, included: true, active: true },
+    { code: "candy", name: "Конфеты", priceKop: 0, included: false, active: false },
+    { code: "balloon", name: "Воздушный шар", priceKop: 0, included: false, active: false },
+    { code: "vase", name: "Ваза", priceKop: 0, included: false, active: false },
+  ];
+  const have = new Set((await db.addon.findMany({ select: { code: true } })).map((a) => a.code));
+  for (const [i, a] of addons.entries()) if (!have.has(a.code)) await db.addon.create({ data: { ...a, sortOrder: i } });
+}
+
+// Запуск: при каждом старте сайта (Dockerfile) — только нужное для работы.
+// Цветы и букеты-примеры — только с SEED_DEMO=1 (или --demo) и только в пустой базе.
 async function main() {
-  // Дополнения остаются и после очистки (prisma/clean-demo.ts), поэтому очищенная база примерами не заполнится заново.
-  if ((await db.flower.count()) > 0 || (await db.addon.count()) > 0) {
-    console.log("В базе уже есть данные, пропускаю заполнение.");
+  await ensureAddons();
+  if (process.env.SEED_DEMO !== "1" && !process.argv.includes("--demo")) return;
+  if ((await db.flower.count()) > 0) {
+    console.log("В базе уже есть цветы, примеры не добавляю.");
     return;
   }
 
@@ -197,18 +216,9 @@ async function main() {
     });
   }
 
-  // Цены конфет, шара и вазы в макетах не указаны: заданы нулём и выключены.
-  // Укажите цену в админке → «Настройки» → «Дополнения» и включите.
-  const addons = [
-    { code: "card", name: "Открытка", priceKop: 0, included: true, active: true },
-    { code: "feed", name: "Подкормка, 2 шт", priceKop: 0, included: true, active: true },
-    { code: "candy", name: "Конфеты", priceKop: 0, included: false, active: false },
-    { code: "balloon", name: "Воздушный шар", priceKop: 0, included: false, active: false },
-    { code: "vase", name: "Ваза", priceKop: 0, included: false, active: false },
-  ];
-  for (const [i, a] of addons.entries()) await db.addon.create({ data: { ...a, sortOrder: i } });
 
-  console.log(`Готово: ${FLOWERS.length} цветов, ${BOUQUETS.length} букетов, ${addons.length} дополнений.`);
+
+  console.log(`Примеры добавлены: ${FLOWERS.length} цветов, ${BOUQUETS.length} букетов.`);
 }
 
 main()

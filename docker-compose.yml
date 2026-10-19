@@ -31,8 +31,9 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-artflora}
       SESSION_SECRET: ${SESSION_SECRET:-local-only-secret-change-me-on-server}
       SITE_URL: ${SITE_URL:-http://localhost:8000}
-      # 1 — при первом запуске заполнить пустую базу цветами и букетами из макетов
-      SEED_DEMO: ${SEED_DEMO:-1}
+      # 1 — заполнить пустую базу цветами и букетами-примерами. По умолчанию выключено:
+      # магазин заводит свои букеты сам (решение владельца 2026-10-19)
+      SEED_DEMO: ${SEED_DEMO:-0}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
       SMTP_HOST: ${SMTP_HOST:-}

@@ -10,7 +10,7 @@
     "test": "vitest run",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "tsx prisma/seed.ts --demo",
     "db:demo-catalog": "tsx prisma/demo-catalog.ts",
     "db:clean-demo": "tsx prisma/clean-demo.ts",
     "db:reset": "prisma migrate reset --force"

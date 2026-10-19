@@ -32,8 +32,8 @@ RUN mkdir -p /data/uploads && chown -R node:node /app/.next
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1
-# При каждом запуске применяем новые изменения схемы базы, при SEED_DEMO=1 заполняем
-# пустую базу примерами (непустую не трогаем), потом стартуем сайт
+# При каждом запуске применяем новые изменения схемы базы, добавляем недостающие дополнения
+# (открытка, подкормка), при SEED_DEMO=1 заполняем пустую базу примерами, потом стартуем сайт
 # Папку с фото отдаём пользователю node (у старых установок она принадлежит root),
 # и сам сайт работает уже от node, а не от администратора контейнера
-CMD ["sh", "-c", "chown -R node:node /data/uploads && exec su node -s /bin/sh -c 'node prisma/migrate.js && if [ \"$SEED_DEMO\" = 1 ]; then node prisma/seed.js; fi && exec node server.js'"]
+CMD ["sh", "-c", "chown -R node:node /data/uploads && exec su node -s /bin/sh -c 'node prisma/migrate.js && node prisma/seed.js && exec node server.js'"]
