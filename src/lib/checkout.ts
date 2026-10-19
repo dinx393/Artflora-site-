@@ -4,6 +4,7 @@ import { db } from "./db";
 import { bouquetInclude } from "./catalog";
 import type { CartState } from "./cart";
 import { pickupDiscountKop, quoteDelivery, type DeliveryQuote } from "./delivery";
+import { fullAddress } from "./address";
 import { geocode } from "./geocode";
 import { bouquetVisibility, compositionText, sizeAvailable, sizePriceKop } from "./pricing";
 import { getSetting } from "./settings";
@@ -104,7 +105,10 @@ export const orderSchema = z
       cardText: z.string().max(500),
     }),
     method: z.enum(["DELIVERY", "PICKUP"]),
-    address: z.string().max(300).default(""),
+    address: z.string().max(300).default(""), // улица и дом: по ним считаем доставку
+    apartment: z.string().trim().max(20).default(""),
+    entrance: z.string().trim().max(20).default(""),
+    floor: z.string().trim().max(20).default(""),
     // Клиент не знает адрес: уточним у получателя, сейчас платит только за букет.
     addressUnknown: z.boolean().default(false),
     point: z.object({ lat: z.number(), lng: z.number() }).nullable().default(null),
@@ -132,6 +136,7 @@ export const orderSchema = z
   });
 
 export type OrderInput = z.input<typeof orderSchema>;
+
 
 export type OrderTotals = {
   priced: PricedCart;
@@ -184,14 +189,12 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
     return { ok: false, error: unknown ? "На этот день уже не успеваем, выберите другой" : "Это время уже недоступно, выберите другое", field: "slot" };
   }
 
-  let point = unknown ? null : o.point;
+  // Зону доставки считаем только по адресу, который ввёл покупатель: свою точку или район он прислать не может,
+  // иначе адрес за МКАД можно было бы оплатить как ближний район (решение владельца 2026-10-19).
+  let point: { lat: number; lng: number } | null = null;
   if (o.method === "DELIVERY" && !unknown) {
-    // Точку из браузера принимаем, только если это один из районов из настроек (кнопки «или выберите район»):
-    // иначе можно было бы прислать любую точку рядом с магазином и занизить цену доставки.
-    const districts = await getSetting("districts");
-    const preset = o.point && districts.find((d) => Math.abs(d.lat - o.point!.lat) < 1e-6 && Math.abs(d.lng - o.point!.lng) < 1e-6);
-    point = (await geocode(o.address)) ?? (preset ? { lat: preset.lat, lng: preset.lng } : null);
-    if (!point) return { ok: false, error: "Не нашли адрес. Уточните улицу и дом или выберите район", field: "address" };
+    point = await geocode(o.address);
+    if (!point) return { ok: false, error: "Не нашли адрес. Проверьте улицу и номер дома", field: "address" };
   }
 
   const totals = await computeTotals({ cart: o.cart, method: o.method, point });
@@ -229,7 +232,7 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
         cardText: o.cart.cardText,
         comment: o.comment,
         deliveryMethod: o.method,
-        address: o.method === "DELIVERY" && !unknown ? o.address : "",
+        address: o.method === "DELIVERY" && !unknown ? fullAddress(o) : "",
         addressUnknown: unknown,
         shop: shopCode,
         deliveryZone: totals.quote?.ok ? totals.quote.zone : null,

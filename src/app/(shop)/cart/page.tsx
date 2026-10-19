@@ -5,11 +5,10 @@ import { getSetting } from "@/lib/settings";
 export const metadata: Metadata = { title: "Корзина", robots: { index: false } };
 
 export default async function CartPage() {
-  const [shop, delivery, districts] = await Promise.all([getSetting("shop"), getSetting("delivery"), getSetting("districts")]);
+  const [shop, delivery] = await Promise.all([getSetting("shop"), getSetting("delivery")]);
   return (
     <Checkout
       shops={delivery.shops.map((s) => ({ code: s.code, name: s.name, address: s.address }))}
-      districts={districts}
       pickupPct={delivery.pickupDiscountPct}
       freeFromKop={delivery.freeFromKop}
       leadHours={shop.leadHours}

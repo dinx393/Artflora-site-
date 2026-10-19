@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { quoteDelivery } from "@/lib/delivery";
-import { geocode } from "@/lib/geocode";
+import { geocodeDetailed } from "@/lib/geocode";
 import { allow, clientIp } from "@/lib/rateLimit";
 import { getSetting } from "@/lib/settings";
 
-// Расчёт доставки для подсказки на сайте. Окончательную цену считает сервер при оформлении.
+// Расчёт доставки для подсказки на сайте. Окончательную цену считает сервер при оформлении,
+// и только по адресу (точку из браузера при заказе не принимаем).
 const body = z.object({
   address: z.string().max(300).optional(),
   point: z.object({ lat: z.number(), lng: z.number() }).optional(),
@@ -19,8 +20,9 @@ export async function POST(req: Request) {
   if (!parsed.data.point && address && !allow("geocode", clientIp(req.headers))) {
     return NextResponse.json({ ok: false, reason: "busy" }, { status: 429 });
   }
-  const point = parsed.data.point ?? (address ? await geocode(address) : null);
+  const found = address ? await geocodeDetailed(address) : null;
+  const point = found?.point ?? parsed.data.point ?? null;
   if (!point) return NextResponse.json({ ok: false, reason: "not-found" });
   const cfg = await getSetting("delivery");
-  return NextResponse.json({ ...quoteDelivery(point, subtotalKop, cfg), point });
+  return NextResponse.json({ ...quoteDelivery(point, subtotalKop, cfg), point, label: found?.label ?? "", area: found?.area ?? "" });
 }

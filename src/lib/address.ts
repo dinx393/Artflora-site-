@@ -18,3 +18,15 @@ export function normalizeAddress(address: string): string {
   for (const [re, to] of ABBREVIATIONS) s = s.replace(re, to);
   return s;
 }
+
+// «ул. Немига, 5, кв. 12, подъезд 2, этаж 4» — так адрес видит флорист и курьер.
+export function fullAddress(o: { address: string; apartment?: string; entrance?: string; floor?: string }): string {
+  return [
+    o.address.trim(),
+    o.apartment?.trim() && `кв. ${o.apartment.trim()}`,
+    o.entrance?.trim() && `подъезд ${o.entrance.trim()}`,
+    o.floor?.trim() && `этаж ${o.floor.trim()}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}

@@ -16,6 +16,8 @@ export type QuoteResponse =
       free: boolean;
       leftToFreeKop: number;
       point: { lat: number; lng: number };
+      label?: string; // какой адрес нашли: «улица Немига, 5»
+      area?: string; // «Центральный район, Минск»
     }
   | { ok: false; reason: string };
 

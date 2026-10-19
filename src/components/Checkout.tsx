@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CartState } from "@/lib/cart";
-import type { DistrictPreset } from "@/lib/defaults";
 import { formatByn } from "@/lib/money";
 import { addDays, availableSlots, minskNow, SLOTS } from "@/lib/slots";
 import { SUBSTITUTION_NOTE } from "./BuyBox";
@@ -55,13 +54,11 @@ function newKey(): string {
 
 export function Checkout({
   shops,
-  districts,
   pickupPct,
   freeFromKop,
   leadHours,
 }: {
   shops: ShopLite[];
-  districts: DistrictPreset[];
   pickupPct: number;
   freeFromKop: number;
   leadHours: number;
@@ -75,7 +72,11 @@ export function Checkout({
   const [address, setAddress] = useState("");
   // Адрес и время не знает клиент: уточним у получателя, доставку доплатят потом.
   const [addressUnknown, setAddressUnknown] = useState(false);
-  const [district, setDistrict] = useState<string | null>(null);
+  const latestAddress = useRef("");
+  latestAddress.current = address;
+  const [apartment, setApartment] = useState("");
+  const [entrance, setEntrance] = useState("");
+  const [floor, setFloor] = useState("");
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [point, setPoint] = useState<{ lat: number; lng: number } | null>(null);
   const [quoting, setQuoting] = useState(false);
@@ -141,12 +142,28 @@ export function Checkout({
     setQuoting(true);
     try {
       const q = await fetchQuote({ ...input, subtotalKop: totals?.priced.bouquetsKop ?? 0 });
+      // Пока считали, адрес успели поменять — этот ответ уже не про него.
+      if (input.address && input.address.trim() !== latestAddress.current.trim()) return;
       setQuote(q);
       setPoint(q.ok ? q.point : null);
     } finally {
       setQuoting(false);
     }
   }
+
+  // Адрес вводят — через секунду после последней буквы сами находим его и считаем зону.
+  // Ждём номер дома: по одной улице цена может быть разной.
+  useEffect(() => {
+    if (method !== "DELIVERY" || addressUnknown) return;
+    const a = address.trim();
+    if (a.length < 4 || !/\d/.test(a)) {
+      setQuote(null);
+      setPoint(null);
+      return;
+    }
+    const t = setTimeout(() => runQuote({ address: a }), 900);
+    return () => clearTimeout(t);
+  }, [address, method, addressUnknown]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Подписи «До бесплатной доставки …» пересчитываем при изменении суммы.
   const leftToFree = Math.max(0, freeFromKop - (totals?.priced.bouquetsKop ?? 0));
@@ -166,6 +183,9 @@ export function Checkout({
           cart,
           method,
           address: method === "DELIVERY" && !addressUnknown ? address : "",
+          apartment,
+          entrance,
+          floor,
           addressUnknown: method === "DELIVERY" && addressUnknown,
           point: method === "DELIVERY" && !addressUnknown ? point : null,
           shop: method === "PICKUP" ? pickupShop : "",
@@ -363,50 +383,57 @@ export function Checkout({
             ) : method === "DELIVERY" ? (
               <div className="stack">
                 <label className="field">
-                  <span>Адрес доставки</span>
+                  <span>Улица и дом</span>
                   <input
                     className="input"
                     value={address}
                     onChange={(e) => {
                       setAddress(e.target.value);
-                      setDistrict(null);
+                      setQuote(null);
+                      setPoint(null);
                     }}
-                    onBlur={() => address.trim().length > 3 && runQuote({ address })}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
-                        runQuote({ address });
+                        if (address.trim().length > 3) runQuote({ address });
                       }
                     }}
-                    placeholder="Улица, дом, квартира"
+                    placeholder="Например, пр. Независимости, 180"
+                    autoComplete="street-address"
                     aria-invalid={error?.field === "address"}
                   />
                 </label>
-                <div className="small muted">Или выберите район, а точный адрес напишите выше:</div>
-                <div className="row" style={{ gap: 6 }}>
-                  {districts.map((d) => (
-                    <button
-                      key={d.name}
-                      type="button"
-                      className={`chip ${district === d.name ? "on" : ""}`}
-                      style={{ fontSize: 14 }}
-                      onClick={() => {
-                        setDistrict(d.name);
-                        runQuote({ point: { lat: d.lat, lng: d.lng } });
-                      }}
-                    >
-                      {d.name}
-                    </button>
-                  ))}
+                <div className="addr-extra">
+                  <label className="field">
+                    <span>Квартира / офис</span>
+                    <input className="input" value={apartment} maxLength={20} onChange={(e) => setApartment(e.target.value)} inputMode="numeric" />
+                  </label>
+                  <label className="field">
+                    <span>Подъезд</span>
+                    <input className="input" value={entrance} maxLength={20} onChange={(e) => setEntrance(e.target.value)} inputMode="numeric" />
+                  </label>
+                  <label className="field">
+                    <span>Этаж</span>
+                    <input className="input" value={floor} maxLength={20} onChange={(e) => setFloor(e.target.value)} inputMode="numeric" />
+                  </label>
                 </div>
+                {!quote && !quoting && address.trim().length > 3 && !/\d/.test(address) && (
+                  <p className="small muted">Допишите номер дома, и мы посчитаем доставку.</p>
+                )}
                 {quoting && <p className="small muted">Считаем доставку…</p>}
                 {quote && !quote.ok && (
                   <p className="error">
-                    {quote.reason === "too-far" ? "Так далеко мы не возим, позвоните нам." : quote.reason === "busy" ? "Слишком много запросов, попробуйте через минуту или выберите район." : "Не нашли такой адрес. Уточните улицу и дом или выберите район."}
+                    {quote.reason === "too-far" ? "Так далеко мы не возим, позвоните нам." : quote.reason === "busy" ? "Слишком много запросов, попробуйте через минуту." : "Не нашли такой адрес. Проверьте улицу и номер дома или отметьте «Не знаю адрес» выше."}
                   </p>
                 )}
                 {quote?.ok && (
                   <div className="zone">
+                    {quote.label && (
+                      <span className="small">
+                        Нашли: <b>{quote.label}</b>
+                        {quote.area ? `, ${quote.area}` : ""}
+                      </span>
+                    )}
                     <div className="row between">
                       <b>Зона {quote.zone}</b>
                       <span className="price" style={{ fontSize: 24 }}>
