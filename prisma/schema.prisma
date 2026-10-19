@@ -90,6 +90,7 @@ model BouquetSize {
   bouquet    Bouquet       @relation(fields: [bouquetId], references: [id], onDelete: Cascade)
   code       SizeCode
   note       String        @default("") // «Как на фото, 11 цветков»
+  packagingKop Int         @default(0) // упаковка у каждого размера своя
   items      BouquetItem[]
 
   @@unique([bouquetId, code])

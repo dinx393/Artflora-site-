@@ -13,8 +13,7 @@ export default async function Flowers() {
         id: b.id,
         name: b.name,
         enabled: b.enabled,
-        packagingKop: b.packagingKop,
-        sizes: b.sizes.map((s) => ({ code: s.code, items: s.items.map((i) => ({ flowerId: i.flowerId, qty: i.qty })) })),
+        sizes: b.sizes.map((s) => ({ code: s.code, packagingKop: s.packagingKop, items: s.items.map((i) => ({ flowerId: i.flowerId, qty: i.qty })) })),
       }))}
     />
   );

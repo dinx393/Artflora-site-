@@ -139,6 +139,7 @@ export async function toggleBouquet(id: number, enabled: boolean) {
 const sizeInput = z.object({
   code: z.enum(SIZE_ORDER),
   note: z.string().max(120),
+  packagingKop: z.number().int().min(0).max(1_000_000),
   items: z.array(z.object({ flowerId: z.number().int(), qty: z.number().int().min(1).max(500) })).max(40),
 });
 
@@ -152,7 +153,6 @@ const bouquetInput = z.object({
     .max(100),
   description: z.string().max(2000),
   format: z.enum(["BOUQUET", "BAG", "HATBOX", "BASKET"]),
-  packagingKop: z.number().int().min(0).max(1_000_000),
   enabled: z.boolean(),
   isHit: z.boolean(),
   isExclusive: z.boolean(),
@@ -185,7 +185,8 @@ export async function saveBouquet(input: BouquetInput): Promise<{ ok: boolean; e
           slug: b.slug,
           description: b.description,
           format: b.format,
-          packagingKop: b.packagingKop,
+          // упаковка размера «на фото» — её же подставляем новым размерам
+          packagingKop: (sizes.find((s) => s.code === b.photoSize) ?? sizes[0]).packagingKop,
           enabled: b.enabled,
           isHit: b.isHit,
           isExclusive: b.isExclusive,
@@ -206,6 +207,7 @@ export async function saveBouquet(input: BouquetInput): Promise<{ ok: boolean; e
             bouquetId: b.id,
             code: s.code,
             note: s.note,
+            packagingKop: s.packagingKop,
             items: { create: [...merged].map(([flowerId, qty]) => ({ flowerId, qty })) },
           },
         });
@@ -285,6 +287,7 @@ export async function cloneToFormat(sourceId: number, format: "BOUQUET" | "BAG" 
         create: src.sizes.map((s) => ({
           code: s.code,
           note: s.note,
+          packagingKop: s.packagingKop,
           items: { create: s.items.map((i) => ({ flowerId: i.flowerId, qty: i.qty })) },
         })),
       },

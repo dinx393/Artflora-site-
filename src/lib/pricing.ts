@@ -1,11 +1,11 @@
-// Цена букета = Σ (розничная цена цветка × количество) + упаковка.
+// Цена размера = Σ (розничная цена цветка × количество) + упаковка этого размера.
 // Размер доступен, только если все его цветы есть в наличии.
 // Букет показываем, если он включён и у него остался хотя бы один доступный размер.
 
 export type PricedFlower = { id: number; name: string; priceKop: number; inStock: boolean };
 export type PricedItem = { qty: number; flower: PricedFlower };
-export type PricedSize = { code: SizeCode; note: string; items: PricedItem[] };
-export type PricedBouquet = { enabled: boolean; packagingKop: number; sizes: PricedSize[] };
+export type PricedSize = { code: SizeCode; note: string; packagingKop: number; items: PricedItem[] };
+export type PricedBouquet = { enabled: boolean; sizes: PricedSize[] };
 
 // Размеры по порядку. Незаполненные (без цветов) на сайте не показываются.
 export const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"] as const;
@@ -15,8 +15,8 @@ export function flowersKop(items: PricedItem[]): number {
   return items.reduce((sum, i) => sum + i.flower.priceKop * i.qty, 0);
 }
 
-export function sizePriceKop(size: PricedSize, packagingKop: number): number {
-  return flowersKop(size.items) + packagingKop;
+export function sizePriceKop(size: Pick<PricedSize, "items" | "packagingKop">): number {
+  return flowersKop(size.items) + size.packagingKop;
 }
 
 export function missingFlowers(size: PricedSize): string[] {

@@ -13,7 +13,7 @@ type Flower = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM"
 type Initial = Omit<BouquetInput, "sizes" | "photoSize"> & {
   format: FormatCode;
   photoSize: SizeCode;
-  sizes: { code: SizeCode; note: string; items: { flowerId: number; qty: number }[] }[];
+  sizes: { code: SizeCode; note: string; packagingKop: number; items: { flowerId: number; qty: number }[] }[];
 };
 
 export function BouquetEditor({
@@ -32,7 +32,9 @@ export function BouquetEditor({
   const router = useRouter();
   const [b, setB] = useState(initial);
   const [sizeCode, setSizeCode] = useState<SizeCode>(initial.photoSize);
-  const [packagingText, setPackagingText] = useState(kopToInput(initial.packagingKop));
+  // упаковка у каждого размера своя; текст поля храним отдельно, чтобы можно было стереть и набрать
+  const packagingTexts = (x: Initial) => Object.fromEntries(x.sizes.map((s) => [s.code, kopToInput(s.packagingKop)])) as Record<SizeCode, string>;
+  const [packagingText, setPackagingText] = useState(() => packagingTexts(initial));
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
   const [uploading, setUploading] = useState(false);
@@ -41,7 +43,7 @@ export function BouquetEditor({
 
   const size = b.sizes.find((s) => s.code === sizeCode)!;
   const flowersKop = (s: Initial["sizes"][number]) => s.items.reduce((sum, i) => sum + (byId.get(i.flowerId)?.priceKop ?? 0) * i.qty, 0);
-  const priceOf = (s: Initial["sizes"][number]) => (s.items.length ? flowersKop(s) + b.packagingKop : null);
+  const priceOf = (s: Initial["sizes"][number]) => (s.items.length ? flowersKop(s) + s.packagingKop : null);
   const missing = (s: Initial["sizes"][number]) => s.items.filter((i) => !byId.get(i.flowerId)?.inStock).map((i) => byId.get(i.flowerId)?.name);
 
   function patchSize(fn: (s: Initial["sizes"][number]) => Initial["sizes"][number]) {
@@ -67,14 +69,15 @@ export function BouquetEditor({
   }
 
   function save() {
-    const pkg = parseByn(packagingText);
-    if (pkg === null) {
-      setMsg({ ok: false, text: "Проверьте стоимость упаковки" });
+    const bad = b.sizes.find((s) => parseByn(packagingText[s.code]) === null);
+    if (bad) {
+      setSizeCode(bad.code);
+      setMsg({ ok: false, text: `Проверьте стоимость упаковки в размере ${bad.code}` });
       return;
     }
     start(async () => {
       try {
-        const r = await saveBouquet({ ...b, packagingKop: pkg });
+        const r = await saveBouquet(b);
         setMsg(r.ok ? { ok: true, text: "Сохранено, сайт обновлён" } : { ok: false, text: r.error ?? "Ошибка" });
         if (r.ok) router.refresh();
       } catch {
@@ -104,7 +107,7 @@ export function BouquetEditor({
             <button type="button" className={`switch ${b.enabled ? "on" : ""}`} onClick={() => setB({ ...b, enabled: !b.enabled })} aria-label="Показывать на сайте" />
             {b.enabled ? "На сайте" : "Выключен"}
           </span>
-          <button type="button" className="btn btn-outline" onClick={() => { setB(initial); setPackagingText(kopToInput(initial.packagingKop)); setMsg(null); }}>Отменить</button>
+          <button type="button" className="btn btn-outline" onClick={() => { setB(initial); setPackagingText(packagingTexts(initial)); setMsg(null); }}>Отменить</button>
           <button type="button" className="btn" disabled={pending} onClick={save}>{pending ? "Сохраняем…" : "Сохранить"}</button>
         </div>
       </div>
@@ -286,23 +289,23 @@ export function BouquetEditor({
           <div className="card stack" style={{ gap: 10 }}>
             <div className="sum-row"><span>Цветы ({sizeCode})</span><b>{formatByn(sum)}</b></div>
             <label className="sum-row" style={{ alignItems: "center" }}>
-              <span>Упаковка, BYN</span>
+              <span>Упаковка ({sizeCode}), BYN</span>
               <input
                 className="num"
-                value={packagingText}
+                value={packagingText[sizeCode]}
                 inputMode="decimal"
                 onChange={(e) => {
-                  setPackagingText(e.target.value);
+                  setPackagingText((t) => ({ ...t, [sizeCode]: e.target.value }));
                   const k = parseByn(e.target.value);
-                  if (k !== null) setB({ ...b, packagingKop: k });
+                  if (k !== null) patchSize((s) => ({ ...s, packagingKop: k }));
                 }}
               />
             </label>
             <div className="sum-row" style={{ borderTop: "1px solid var(--line)", paddingTop: 10, alignItems: "baseline" }}>
               <b>Цена на сайте</b>
-              <span className="sum-total">{size.items.length ? formatByn(sum + b.packagingKop) : "—"}</span>
+              <span className="sum-total">{size.items.length ? formatByn(sum + size.packagingKop) : "—"}</span>
             </div>
-            <span className="small muted">Цветы {formatByn(sum)} + упаковка {formatByn(b.packagingKop)}</span>
+            <span className="small muted">Цветы {formatByn(sum)} + упаковка {formatByn(size.packagingKop)}. У каждого размера своя упаковка: переключите размер слева.</span>
           </div>
 
           <div className="card stack" style={{ gap: 10 }}>

@@ -44,7 +44,7 @@ async function main() {
         photos: b.photos,
         occasions: b.occasions,
         sortOrder: start + i,
-        sizes: { create: [{ code: "M", note: "Как на фото", items: { create: [{ flowerId: flower.id, qty }] } }] },
+        sizes: { create: [{ code: "M", note: "Как на фото", packagingKop, items: { create: [{ flowerId: flower.id, qty }] } }] },
       },
     });
     added++;

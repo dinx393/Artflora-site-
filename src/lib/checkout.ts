@@ -59,9 +59,9 @@ export async function priceCart(cart: CartState): Promise<PricedCart> {
       size: size.code,
       sizes: b.sizes
         .filter(sizeAvailable)
-        .map((s) => ({ code: s.code, priceKop: sizePriceKop(s, b.packagingKop) })),
+        .map((s) => ({ code: s.code, priceKop: sizePriceKop(s) })),
       qty: Math.max(1, Math.min(20, Math.floor(l.qty))),
-      priceKop: sizePriceKop(size, b.packagingKop),
+      priceKop: sizePriceKop(size),
       composition: compositionText(size.items),
     });
   }

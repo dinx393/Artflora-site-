@@ -54,7 +54,7 @@ export function toView(b: BouquetRow): BouquetView | null {
   const sizes = availableSizes(b).map<SizeView>((s) => ({
     code: s.code,
     note: s.note,
-    priceKop: sizePriceKop(s, b.packagingKop),
+    priceKop: sizePriceKop(s),
     available: true,
     composition: compositionText(s.items),
     flowers: flowerCount(s.items),
@@ -79,7 +79,7 @@ export function toView(b: BouquetRow): BouquetView | null {
     flowerNames: [...names],
     sizes,
     defaultSize: def.code,
-    priceKop: sizePriceKop(def, b.packagingKop),
+    priceKop: sizePriceKop(def),
   };
 }
 

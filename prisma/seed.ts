@@ -208,6 +208,7 @@ async function main() {
             return {
               code: s.code,
               note: `${s.note}, ${count} ${count % 10 === 1 && count % 100 !== 11 ? "цветок" : count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20) ? "цветка" : "цветков"}`,
+              packagingKop: kop(b.packaging),
               items: { create: s.items.map(([n, q]) => ({ flowerId: fid(n), qty: q })) },
             };
           }),

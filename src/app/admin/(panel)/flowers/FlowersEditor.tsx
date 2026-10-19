@@ -20,16 +20,15 @@ type BouquetLite = {
   id: number;
   name: string;
   enabled: boolean;
-  packagingKop: number;
-  sizes: { code: SizeCode; items: { flowerId: number; qty: number }[] }[];
+  sizes: { code: SizeCode; packagingKop: number; items: { flowerId: number; qty: number }[] }[];
 };
 
 function toPriced(b: BouquetLite, flowers: Map<number, { name: string; priceKop: number; inStock: boolean }>): PricedBouquet {
   return {
     enabled: b.enabled,
-    packagingKop: b.packagingKop,
     sizes: b.sizes.map((s) => ({
       code: s.code,
+      packagingKop: s.packagingKop,
       note: "",
       items: s.items.map((i) => {
         const f = flowers.get(i.flowerId) ?? { name: "?", priceKop: 0, inStock: false };
@@ -42,7 +41,7 @@ function toPriced(b: BouquetLite, flowers: Map<number, { name: string; priceKop:
 function summary(b: PricedBouquet) {
   const vis = bouquetVisibility(b);
   const s = defaultSize(b);
-  return { vis, price: s ? sizePriceKop(s, b.packagingKop) : null };
+  return { vis, price: s ? sizePriceKop(s) : null };
 }
 
 type FlowerData = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; prevPriceKop: number | null; inStock: boolean };

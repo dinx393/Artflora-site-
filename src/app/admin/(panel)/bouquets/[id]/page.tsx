@@ -26,7 +26,6 @@ export default async function EditBouquet({ params }: { params: Promise<{ id: st
         slug: b.slug,
         description: b.description,
         format: b.format,
-        packagingKop: b.packagingKop,
         enabled: b.enabled,
         isHit: b.isHit,
         isExclusive: b.isExclusive,
@@ -37,7 +36,7 @@ export default async function EditBouquet({ params }: { params: Promise<{ id: st
         collectionId: b.collectionId,
         sizes: SIZE_ORDER.map((code) => {
           const s = b.sizes.find((x) => x.code === code);
-          return { code, note: s?.note ?? "", items: s?.items.map((i) => ({ flowerId: i.flowerId, qty: i.qty })) ?? [] };
+          return { code, note: s?.note ?? "", packagingKop: s?.packagingKop ?? b.packagingKop, items: s?.items.map((i) => ({ flowerId: i.flowerId, qty: i.qty })) ?? [] };
         }),
       }}
       flowers={flowers.map((f) => ({ id: f.id, name: f.name, kind: f.kind, unit: f.unit, priceKop: f.priceKop, inStock: f.inStock }))}

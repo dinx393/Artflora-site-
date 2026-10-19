@@ -15,7 +15,7 @@ export default async function Bouquets({ searchParams }: { searchParams: Promise
   const list = rows.map((b) => {
     const vis = bouquetVisibility(b);
     const main = defaultSize(b) ?? sortSizes(b.sizes).find((s) => s.code === "M") ?? b.sizes[0];
-    return { b, vis, main, price: main ? sizePriceKop(main, b.packagingKop) : 0 };
+    return { b, vis, main, price: main ? sizePriceKop(main) : 0 };
   });
   const counts = {
     all: list.length,
@@ -70,7 +70,7 @@ export default async function Bouquets({ searchParams }: { searchParams: Promise
                   </div>
                 </td>
                 <td className="small muted" style={{ maxWidth: 320 }}>{main ? compositionText(main.items) : "—"}</td>
-                <td>{formatByn(b.packagingKop)}</td>
+                <td>{main ? formatByn(main.packagingKop) : "—"}</td>
                 <td style={{ fontWeight: 800 }}>{formatByn(price)}</td>
                 <td>
                   {vis.visible ? (
