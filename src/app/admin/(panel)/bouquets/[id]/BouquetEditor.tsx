@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { formatByn, kopToInput, parseByn } from "@/lib/money";
-import { FORMATS, OCCASIONS, type FormatCode } from "@/lib/occasions";
+import { COLORS, FORMATS, OCCASIONS, type FormatCode } from "@/lib/occasions";
 import { cloneToFormat, deleteBouquet, saveBouquet, uploadPhoto, type BouquetInput } from "../../../actions";
 
 type Flower = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; inStock: boolean };
@@ -144,6 +144,20 @@ export function BouquetEditor({
               })}
             </div>
           </div>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="label">Цвет букета <span className="small muted">(для фильтра в каталоге, можно несколько)</span></span>
+            <div className="row" style={{ gap: 6 }}>
+              {COLORS.map((c) => {
+                const on = b.colors.includes(c.slug);
+                return (
+                  <button key={c.slug} type="button" className={`chip ${on ? "on" : ""}`} onClick={() => setB({ ...b, colors: on ? b.colors.filter((x) => x !== c.slug) : [...b.colors, c.slug] })}>
+                    <i className="swatch" style={{ background: c.swatch }} aria-hidden="true" />
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="row" style={{ gap: 12 }}>
             <label className="field" style={{ flex: "1 1 200px" }}>
               <span>Формат</span>
@@ -153,6 +167,9 @@ export function BouquetEditor({
             </label>
             <label className="check" style={{ marginTop: 22 }}>
               <input type="checkbox" checked={b.isHit} onChange={(e) => setB({ ...b, isHit: e.target.checked })} /> Хит недели
+            </label>
+            <label className="check" style={{ marginTop: 22 }}>
+              <input type="checkbox" checked={b.isExclusive} onChange={(e) => setB({ ...b, isExclusive: e.target.checked })} /> Эксклюзив недели
             </label>
           </div>
 

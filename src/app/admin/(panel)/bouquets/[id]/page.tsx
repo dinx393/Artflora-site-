@@ -26,6 +26,8 @@ export default async function EditBouquet({ params }: { params: Promise<{ id: st
         packagingKop: b.packagingKop,
         enabled: b.enabled,
         isHit: b.isHit,
+        isExclusive: b.isExclusive,
+        colors: b.colors,
         occasions: b.occasions,
         photos: b.photos,
         collectionId: b.collectionId,

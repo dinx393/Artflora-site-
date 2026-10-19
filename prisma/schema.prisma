@@ -61,6 +61,8 @@ model Bouquet {
   packagingKop  Int           @default(0) // стоимость упаковки
   enabled       Boolean       @default(true) // включён вручную
   isHit         Boolean       @default(false) // «Хит недели»
+  isExclusive   Boolean       @default(false) // «Эксклюзив этой недели» внизу главной
+  colors        String[]      @default([]) // слаги цветов для фильтра: white, pink, red, burgundy, yellow, lilac, mix
   occasions     String[] // слаги поводов: mom, love, birthday, colleague, nothing, wedding, exotic
   photos        String[] // пути к фото, первое — главное
   sortOrder     Int           @default(0)

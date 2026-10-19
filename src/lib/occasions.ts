@@ -28,3 +28,14 @@ export const PRICE_RANGES = [
   { slug: "80-150", label: "80–150 BYN", min: 8000, max: 15000 },
   { slug: "from150", label: "От 150 BYN", min: 15000, max: Infinity },
 ] as const;
+
+// Цвета для фильтра каталога. swatch — как кружок выглядит на сайте.
+export const COLORS = [
+  { slug: "white", label: "Белые", swatch: "#ffffff" },
+  { slug: "pink", label: "Нежно-розовые", swatch: "#f2c9d4" },
+  { slug: "red", label: "Красные", swatch: "#b3122e" },
+  { slug: "burgundy", label: "Бордовые", swatch: "#7e1f3c" },
+  { slug: "yellow", label: "Жёлтые", swatch: "#f2c94c" },
+  { slug: "lilac", label: "Сиреневые", swatch: "#b9a3d6" },
+  { slug: "mix", label: "Микс", swatch: "conic-gradient(#f2c9d4, #b3122e, #f2c94c, #b9a3d6, #ffffff, #f2c9d4)" },
+] as const;

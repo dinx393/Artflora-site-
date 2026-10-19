@@ -34,6 +34,8 @@ export type BouquetView = {
   description: string;
   format: BouquetRow["format"];
   isHit: boolean;
+  isExclusive: boolean;
+  colors: string[];
   occasions: string[];
   photos: string[];
   collectionId: number | null;
@@ -66,6 +68,8 @@ export function toView(b: BouquetRow): BouquetView | null {
     description: b.description,
     format: b.format,
     isHit: b.isHit,
+    isExclusive: b.isExclusive,
+    colors: b.colors,
     occasions: b.occasions,
     photos: b.photos.length ? b.photos : ["/demo/placeholder.svg"],
     collectionId: b.collectionId,
@@ -96,6 +100,7 @@ export type CatalogFilter = {
   occasion?: string;
   price?: { min: number; max: number };
   flower?: string;
+  color?: string;
   format?: string;
   collection?: string;
   q?: string;
@@ -105,6 +110,7 @@ export function filterBouquets(list: BouquetView[], f: CatalogFilter): BouquetVi
   const q = f.q?.trim().toLowerCase();
   return list.filter((b) => {
     if (f.occasion && !b.occasions.includes(f.occasion)) return false;
+    if (f.color && !b.colors.includes(f.color)) return false;
     if (f.price && (b.priceKop < f.price.min || b.priceKop >= f.price.max)) return false;
     if (f.flower && !b.flowerNames.some((n) => n.toLowerCase().includes(f.flower!.toLowerCase())))
       return false;

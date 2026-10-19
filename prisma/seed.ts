@@ -29,12 +29,15 @@ type Seed = {
   composition: [string, number][]; // размер M
   enabled?: boolean;
   isHit?: boolean;
+  isExclusive?: boolean;
+  colors?: string[];
   collection?: string;
 };
 
 const BOUQUETS: Seed[] = [
   {
     slug: "sumka-rose",
+    colors: ["pink"],
     name: "Сумка с цветами «rose»",
     format: "BAG",
     packaging: 15,
@@ -47,6 +50,7 @@ const BOUQUETS: Seed[] = [
   },
   {
     slug: "buket-rose",
+    colors: ["pink"],
     name: "Букет «rose»",
     format: "BOUQUET",
     packaging: 8,
@@ -58,6 +62,8 @@ const BOUQUETS: Seed[] = [
   },
   {
     slug: "osenniy-vayb",
+    colors: ["yellow", "mix"],
+    isExclusive: true,
     name: "Осенний вайб",
     format: "BOUQUET",
     packaging: 8,
@@ -69,6 +75,7 @@ const BOUQUETS: Seed[] = [
   },
   {
     slug: "25-keniyskih-roz",
+    colors: ["red"],
     name: "25 кенийских роз",
     format: "BOUQUET",
     packaging: 10,
@@ -80,6 +87,8 @@ const BOUQUETS: Seed[] = [
   },
   {
     slug: "sumochka-eustoma-alstromeriya",
+    colors: ["pink", "white"],
+    isExclusive: true,
     name: "Сумочка с эустомой и альстромерией",
     format: "BAG",
     packaging: 15,
@@ -90,6 +99,7 @@ const BOUQUETS: Seed[] = [
   },
   {
     slug: "alstromeriya-11",
+    colors: ["pink", "mix"],
     name: "Альстромерия 11 веток",
     format: "BOUQUET",
     packaging: 8,
@@ -101,6 +111,8 @@ const BOUQUETS: Seed[] = [
   },
   {
     slug: "ekzoticheskiy-akcent",
+    colors: ["burgundy", "mix"],
+    isExclusive: true,
     name: "Экзотический акцент",
     format: "BASKET",
     packaging: 30,
@@ -112,6 +124,7 @@ const BOUQUETS: Seed[] = [
   },
   {
     slug: "solnechnyy-luchik",
+    colors: ["yellow"],
     name: "Солнечный лучик",
     format: "BOUQUET",
     packaging: 8,
@@ -165,6 +178,8 @@ async function main() {
         description: b.description,
         enabled: b.enabled ?? true,
         isHit: b.isHit ?? false,
+        isExclusive: b.isExclusive ?? false,
+        colors: b.colors ?? [],
         sortOrder: i,
         collectionId: b.collection === "rose" ? rose.id : null,
         sizes: {
