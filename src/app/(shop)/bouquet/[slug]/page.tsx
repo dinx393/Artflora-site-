@@ -150,7 +150,7 @@ export default async function BouquetPage({ params }: { params: Promise<Params> 
             afterSizes={variants}
           />
 
-          <DeliveryEstimate subtotalKop={def.priceKop} districts={districts} freeFromKop={delivery.freeFromKop} leadHours={shop.leadHours} />
+          <DeliveryEstimate subtotalKop={def.priceKop} districts={districts} freeFromKop={delivery.freeFromKop} maxOutsideKm={delivery.maxOutsideMkadKm} leadHours={shop.leadHours} />
 
           <div className="acc">
             <details open>

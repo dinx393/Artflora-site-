@@ -104,7 +104,7 @@ export function SettingsEditor(props: { shop: ShopSettings; delivery: DeliveryCo
           <label className="sum-row" style={{ justifyContent: "flex-start", gap: 12 }}><span>Бесплатная доставка от, BYN</span><Money kop={d.freeFromKop} onChange={(k) => setD({ ...d, freeFromKop: k })} /></label>
           <label className="sum-row" style={{ justifyContent: "flex-start", gap: 12 }}><span>За МКАД, BYN за км</span><Money kop={d.outsideMkadPerKmKop} onChange={(k) => setD({ ...d, outsideMkadPerKmKop: k })} /></label>
           <label className="sum-row" style={{ justifyContent: "flex-start", gap: 12 }}><span>Скидка за самовывоз, %</span><Num value={d.pickupDiscountPct} onChange={(n) => setD({ ...d, pickupDiscountPct: n })} /></label>
-          <label className="sum-row" style={{ justifyContent: "flex-start", gap: 12 }}><span>Дальше этого не возим, км</span><Num value={d.maxDistanceKm} onChange={(n) => setD({ ...d, maxDistanceKm: n })} /></label>
+          <label className="sum-row" style={{ justifyContent: "flex-start", gap: 12 }}><span>Возим не дальше, км за МКАД</span><Num value={d.maxOutsideMkadKm} onChange={(n) => setD({ ...d, maxOutsideMkadKm: n })} /></label>
           <label className="sum-row" style={{ justifyContent: "flex-start", gap: 12 }}><span>Радиус МКАД от центра, км</span><Num value={d.mkadRadiusKm} step={0.1} onChange={(n) => setD({ ...d, mkadRadiusKm: n })} /></label>
         </div>
       </div>

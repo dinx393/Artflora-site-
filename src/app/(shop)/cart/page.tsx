@@ -11,6 +11,7 @@ export default async function CartPage() {
       shops={delivery.shops.map((s) => ({ code: s.code, name: s.name, address: s.address }))}
       pickupPct={delivery.pickupDiscountPct}
       freeFromKop={delivery.freeFromKop}
+      maxOutsideKm={delivery.maxOutsideMkadKm}
       leadHours={shop.leadHours}
     />
   );

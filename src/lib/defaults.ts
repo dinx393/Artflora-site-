@@ -58,7 +58,7 @@ export const DEFAULT_DELIVERY: DeliveryConfig = {
   outsideMkadPerKmKop: 100,
   freeFromKop: 20000,
   pickupDiscountPct: 10,
-  maxDistanceKm: 40,
+  maxOutsideMkadKm: 30,
 };
 
 // Быстрые кнопки «или выберите район» в корзине.

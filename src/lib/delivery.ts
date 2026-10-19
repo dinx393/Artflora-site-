@@ -27,7 +27,7 @@ export type DeliveryConfig = {
   outsideMkadPerKmKop: number;
   freeFromKop: number;
   pickupDiscountPct: number;
-  maxDistanceKm: number; // дальше не возим
+  maxOutsideMkadKm: number; // дальше этого за МКАД не возим (владелец: до 30 км от Минска)
 };
 
 export function distanceKm(a: LatLng, b: LatLng): number {
@@ -61,14 +61,13 @@ export type DeliveryQuote =
       free: boolean;
       leftToFreeKop: number; // сколько не хватает до бесплатной доставки
     }
-  | { ok: false; reason: "too-far"; km: number };
+  | { ok: false; reason: "too-far"; km: number }; // km — сколько за МКАД
 
 export function quoteDelivery(point: LatLng, subtotalKop: number, cfg: DeliveryConfig): DeliveryQuote {
   const { shop, km } = nearestShop(point, cfg.shops);
-  if (km > cfg.maxDistanceKm) return { ok: false, reason: "too-far", km };
-
   const fromCenter = distanceKm(point, cfg.mkadCenter);
   const outsideMkadKm = Math.max(0, Math.ceil(fromCenter - cfg.mkadRadiusKm));
+  if (outsideMkadKm > cfg.maxOutsideMkadKm) return { ok: false, reason: "too-far", km: outsideMkadKm };
   const last = cfg.zones.length - 1;
 
   let zoneIdx = cfg.zones.findIndex((z) => km <= z.maxKm);

@@ -18,11 +18,23 @@ export type QuoteResponse =
       point: { lat: number; lng: number };
       label?: string; // какой адрес нашли: «улица Немига, 5»
       area?: string; // «Центральный район, Минск»
+      placeId?: number;
     }
-  | { ok: false; reason: string };
+  | { ok: false; reason: "choose"; choices: AddressOption[] }
+  | { ok: false; reason: "not-found" | "too-far" | "busy" | "unavailable" | "bad-request" };
+
+// Один из похожих адресов («Садовая, 5» в Минске и в деревне рядом) с ценой доставки туда.
+export type AddressOption = {
+  placeId: number;
+  label: string;
+  area: string;
+  minsk: boolean;
+  quote: { ok: true; zone: number; priceKop: number; free: boolean } | { ok: false; reason: string };
+};
 
 export async function fetchQuote(input: {
   address?: string;
+  placeId?: number;
   point?: { lat: number; lng: number };
   subtotalKop: number;
 }): Promise<QuoteResponse> {
@@ -39,11 +51,13 @@ export function DeliveryEstimate({
   subtotalKop,
   districts,
   freeFromKop,
+  maxOutsideKm,
   leadHours,
 }: {
   subtotalKop: number;
   districts: DistrictPreset[];
   freeFromKop: number;
+  maxOutsideKm: number;
   leadHours: number;
 }) {
   const [address, setAddress] = useState("");
@@ -51,7 +65,7 @@ export function DeliveryEstimate({
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function run(input: { address?: string; point?: { lat: number; lng: number } }) {
+  async function run(input: { address?: string; placeId?: number; point?: { lat: number; lng: number } }) {
     setBusy(true);
     try {
       setQuote(await fetchQuote({ ...input, subtotalKop }));
@@ -102,9 +116,23 @@ export function DeliveryEstimate({
           </button>
         ))}
       </div>
-      {quote && !quote.ok && (
+      {quote && !quote.ok && quote.reason === "choose" && (
+        <div className="addr-choices">
+          <span className="small">Таких адресов несколько, выберите свой:</span>
+          {quote.choices.map((c) => (
+            <button key={c.placeId} type="button" className="addr-choice" onClick={() => run({ address, placeId: c.placeId })}>
+              <span>
+                <b>{c.label || address}</b>
+                <span className="small muted">{c.area}</span>
+              </span>
+              <span className="small">{c.quote.ok ? (c.quote.free ? "бесплатно" : `Зона ${c.quote.zone} · ${formatByn(c.quote.priceKop)}`) : "не возим"}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {quote && !quote.ok && quote.reason !== "choose" && (
         <div className="error">
-          {quote.reason === "too-far" ? "Так далеко мы не возим, позвоните нам." : quote.reason === "busy" ? "Слишком много запросов, попробуйте через минуту или выберите район." : "Не нашли такой адрес. Уточните улицу и дом."}
+          {quote.reason === "too-far" ? `Это дальше ${maxOutsideKm} км за МКАД, туда мы не возим. Позвоните нам.` : quote.reason === "busy" ? "Слишком много запросов, попробуйте через минуту или выберите район." : "Не нашли такой адрес. Уточните улицу и дом."}
         </div>
       )}
       {quote?.ok && (
@@ -114,7 +142,7 @@ export function DeliveryEstimate({
         </div>
       )}
       <div className="small muted">
-        Бесплатно от {formatByn(freeFromKop)}. Привезём от {leadHours} часов. Точную цену посчитаем по адресу в корзине.
+        Возим по Минску и до {maxOutsideKm} км за МКАД. Бесплатно от {formatByn(freeFromKop)}. Привезём от {leadHours} часов. Точную цену посчитаем по адресу в корзине.
       </div>
     </div>
   );

@@ -8,6 +8,11 @@ const at = (name: string) => {
 };
 
 describe("доставка", () => {
+  it("возим до 30 км за МКАД, дальше — нет", () => {
+    // Борисов ~ 60 км за МКАД, Смолевичи ~ 26 км
+    expect(quoteDelivery({ lat: 54.2279, lng: 28.505 }, 13000, DEFAULT_DELIVERY).ok).toBe(false);
+    expect(quoteDelivery({ lat: 54.0285, lng: 28.0886 }, 13000, DEFAULT_DELIVERY).ok).toBe(true);
+  });
   it("рядом с магазином — первая зона, 6 BYN", () => {
     const q = quoteDelivery(at("Уручье"), 13000, DEFAULT_DELIVERY);
     expect(q.ok && q.zone).toBe(1);

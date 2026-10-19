@@ -56,11 +56,13 @@ export function Checkout({
   shops,
   pickupPct,
   freeFromKop,
+  maxOutsideKm,
   leadHours,
 }: {
   shops: ShopLite[];
   pickupPct: number;
   freeFromKop: number;
+  maxOutsideKm: number;
   leadHours: number;
 }) {
   const router = useRouter();
@@ -79,6 +81,8 @@ export function Checkout({
   const [floor, setFloor] = useState("");
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [point, setPoint] = useState<{ lat: number; lng: number } | null>(null);
+  // Какой из похожих адресов выбрал покупатель (сервер проверит его сам).
+  const [placeId, setPlaceId] = useState<number | null>(null);
   const [quoting, setQuoting] = useState(false);
   const [pickupShop, setPickupShop] = useState(shops[0]?.code ?? "");
 
@@ -138,7 +142,7 @@ export function Checkout({
     setCart((c) => ({ ...c, lines: c.lines.filter((l) => keep.has(`${l.bouquetId}:${l.size}`)) }));
   }, [totals, setCart]);
 
-  async function runQuote(input: { address?: string; point?: { lat: number; lng: number } }) {
+  async function runQuote(input: { address?: string; placeId?: number }) {
     setQuoting(true);
     try {
       const q = await fetchQuote({ ...input, subtotalKop: totals?.priced.bouquetsKop ?? 0 });
@@ -146,6 +150,7 @@ export function Checkout({
       if (input.address && input.address.trim() !== latestAddress.current.trim()) return;
       setQuote(q);
       setPoint(q.ok ? q.point : null);
+      setPlaceId(q.ok ? (q.placeId ?? null) : null);
     } finally {
       setQuoting(false);
     }
@@ -159,6 +164,7 @@ export function Checkout({
     if (a.length < 4 || !/\d/.test(a)) {
       setQuote(null);
       setPoint(null);
+      setPlaceId(null);
       return;
     }
     const t = setTimeout(() => runQuote({ address: a }), 900);
@@ -188,6 +194,7 @@ export function Checkout({
           floor,
           addressUnknown: method === "DELIVERY" && addressUnknown,
           point: method === "DELIVERY" && !addressUnknown ? point : null,
+          placeId: method === "DELIVERY" && !addressUnknown ? placeId : null,
           shop: method === "PICKUP" ? pickupShop : "",
           date,
           slot,
@@ -391,6 +398,7 @@ export function Checkout({
                       setAddress(e.target.value);
                       setQuote(null);
                       setPoint(null);
+                      setPlaceId(null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
@@ -402,6 +410,7 @@ export function Checkout({
                     autoComplete="street-address"
                     aria-invalid={error?.field === "address"}
                   />
+                  <span className="small muted">Возим по Минску и до {maxOutsideKm} км за МКАД. Цена зависит от адреса.</span>
                 </label>
                 <div className="addr-extra">
                   <label className="field">
@@ -421,9 +430,32 @@ export function Checkout({
                   <p className="small muted">Допишите номер дома, и мы посчитаем доставку.</p>
                 )}
                 {quoting && <p className="small muted">Считаем доставку…</p>}
-                {quote && !quote.ok && (
+                {quote && !quote.ok && quote.reason === "choose" && (
+                  <div className="addr-choices" role="group" aria-label="Какой адрес ваш?">
+                    <b>Таких адресов несколько. Какой ваш?</b>
+                    {quote.choices.map((c) => (
+                      <button key={c.placeId} type="button" className="addr-choice" onClick={() => runQuote({ address, placeId: c.placeId })}>
+                        <span>
+                          <b>{c.label || address}</b>
+                          <span className="small muted">{c.area}</span>
+                        </span>
+                        <span className="small">
+                          {c.quote.ok ? (c.quote.free ? "бесплатно" : <>Зона {c.quote.zone} · <Byn kop={c.quote.priceKop} /></>) : "не возим"}
+                        </span>
+                      </button>
+                    ))}
+                    <span className="small muted">Нет вашего? Допишите город или деревню, например «Боровляны, Садовая 5».</span>
+                  </div>
+                )}
+                {quote && !quote.ok && quote.reason !== "choose" && (
                   <p className="error">
-                    {quote.reason === "too-far" ? "Так далеко мы не возим, позвоните нам." : quote.reason === "busy" ? "Слишком много запросов, попробуйте через минуту." : "Не нашли такой адрес. Проверьте улицу и номер дома или отметьте «Не знаю адрес» выше."}
+                    {quote.reason === "too-far"
+                      ? `Этот адрес дальше ${maxOutsideKm} км за МКАД, туда мы не возим. Позвоните нам, что-нибудь придумаем.`
+                      : quote.reason === "busy"
+                        ? "Слишком много запросов, попробуйте через минуту."
+                        : quote.reason === "unavailable"
+                          ? "Не получилось проверить адрес. Попробуйте ещё раз через минуту."
+                          : "Не нашли такой адрес. Проверьте улицу и номер дома или отметьте «Не знаю адрес» выше."}
                   </p>
                 )}
                 {quote?.ok && (
@@ -444,6 +476,11 @@ export function Checkout({
                       Ближайший магазин {quote.shop.name}, ~{quote.km} км{quote.outsideMkadKm > 0 ? `, ${quote.outsideMkadKm} км за МКАД` : ""}
                     </span>
                     <span className="small muted">Привезём от {leadHours} часов</span>
+                    {placeId && quote.ok && (
+                      <button type="button" className="link-btn small" onClick={() => runQuote({ address })}>
+                        Другой адрес с таким названием
+                      </button>
+                    )}
                     {leftToFree > 0 && <span className="small" style={{ color: "var(--olive)", fontWeight: 700 }}>До бесплатной доставки {formatByn(leftToFree)}</span>}
                   </div>
                 )}

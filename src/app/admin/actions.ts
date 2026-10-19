@@ -375,7 +375,7 @@ export async function saveSettings(input: {
       outsideMkadPerKmKop: z.number().int().min(0),
       freeFromKop: z.number().int().min(0),
       pickupDiscountPct: z.number().min(0).max(50),
-      maxDistanceKm: z.number().positive().max(200),
+      maxOutsideMkadKm: z.number().min(0).max(200),
     }),
     districts: z.array(z.object({ name: z.string().min(1).max(40), lat: z.number(), lng: z.number() })).max(20),
   });

@@ -54,8 +54,12 @@ export default async function DeliveryPage() {
             <span>За МКАД</span>
             <b>+{formatByn(d.outsideMkadPerKmKop)} за каждый км</b>
           </div>
+          <div className="sum-row zone-row">
+            <span>Как далеко возим</span>
+            <b>до {d.maxOutsideMkadKm} км за МКАД</b>
+          </div>
         </div>
-        <p className="small muted">Точную цену корзина покажет сразу, как вы введёте адрес.</p>
+        <p className="small muted">Зону определяем по адресу сами: введите улицу и дом в корзине, и цена появится сразу. Если такой адрес есть и в Минске, и в деревне рядом, предложим выбрать свой.</p>
       </div>
 
       <div className="stack" style={{ gap: 14 }}>
