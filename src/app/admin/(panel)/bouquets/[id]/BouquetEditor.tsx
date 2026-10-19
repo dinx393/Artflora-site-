@@ -4,13 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { formatByn, kopToInput, parseByn } from "@/lib/money";
-import { COLORS, FORMATS, OCCASIONS, type FormatCode } from "@/lib/occasions";
+import type { SizeCode } from "@/lib/pricing";
+import { FORMATS, OCCASIONS, type ColorOption, type FormatCode } from "@/lib/occasions";
 import { cloneToFormat, deleteBouquet, saveBouquet, uploadPhoto, type BouquetInput } from "../../../actions";
 
 type Flower = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; inStock: boolean };
-type SizeCode = "S" | "M" | "L";
-type Initial = Omit<BouquetInput, "sizes"> & {
+
+type Initial = Omit<BouquetInput, "sizes" | "photoSize"> & {
   format: FormatCode;
+  photoSize: SizeCode;
   sizes: { code: SizeCode; note: string; items: { flowerId: number; qty: number }[] }[];
 };
 
@@ -19,15 +21,17 @@ export function BouquetEditor({
   flowers,
   collections,
   siblings,
+  colors,
 }: {
   initial: Initial;
   flowers: Flower[];
   collections: { id: number; name: string }[];
   siblings: { id: number; name: string; format: FormatCode }[];
+  colors: ColorOption[];
 }) {
   const router = useRouter();
   const [b, setB] = useState(initial);
-  const [sizeCode, setSizeCode] = useState<SizeCode>("M");
+  const [sizeCode, setSizeCode] = useState<SizeCode>(initial.photoSize);
   const [packagingText, setPackagingText] = useState(kopToInput(initial.packagingKop));
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
@@ -145,9 +149,9 @@ export function BouquetEditor({
             </div>
           </div>
           <div className="stack" style={{ gap: 8 }}>
-            <span className="label">Цвет букета <span className="small muted">(для фильтра в каталоге, можно несколько)</span></span>
+            <span className="label">Цвет букета <span className="small muted">(для фильтра в каталоге, можно несколько; свои цвета — в «Настройках»)</span></span>
             <div className="row" style={{ gap: 6 }}>
-              {COLORS.map((c) => {
+              {colors.map((c) => {
                 const on = b.colors.includes(c.slug);
                 return (
                   <button key={c.slug} type="button" className={`chip ${on ? "on" : ""}`} onClick={() => setB({ ...b, colors: on ? b.colors.filter((x) => x !== c.slug) : [...b.colors, c.slug] })}>
@@ -182,11 +186,20 @@ export function BouquetEditor({
                   {b.sizes.map((s) => (
                     <button key={s.code} type="button" className={s.code === sizeCode ? "on" : ""} onClick={() => setSizeCode(s.code)}>
                       {s.code} · {priceOf(s) === null ? "пусто" : formatByn(priceOf(s)!)}
+                      {s.code === b.photoSize ? " · на фото" : ""}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={b.photoSize === sizeCode}
+                onChange={() => setB({ ...b, photoSize: sizeCode })}
+              />{" "}
+              На фото размер {sizeCode}: его цена в каталоге, он выбран на странице букета
+            </label>
             <label className="field">
               <span>Подпись размера на сайте</span>
               <input className="input" value={size.note} placeholder="Как на фото, 11 цветков" onChange={(e) => patchSize((s) => ({ ...s, note: e.target.value }))} />

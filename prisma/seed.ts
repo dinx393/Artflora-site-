@@ -182,7 +182,7 @@ async function main() {
   const rose = await db.collection.create({ data: { slug: "rose", name: "rose" } });
 
   for (const [i, b] of BOUQUETS.entries()) {
-    const sizes: { code: "S" | "M" | "L"; note: string; items: [string, number][] }[] = [
+    const sizes: { code: "S" | "M" | "L" | "XS" | "XL" | "XXL"; note: string; items: [string, number][] }[] = [
       { code: "S", note: "Компактнее", items: scale(b.composition, 0.65) },
       { code: "M", note: "Как на фото", items: b.composition },
       { code: "L", note: "Пышнее", items: scale(b.composition, 1.4) },

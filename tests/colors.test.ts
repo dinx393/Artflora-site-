@@ -3,7 +3,7 @@ import { parseColors, toggleColor } from "@/lib/occasions";
 
 describe("цвета в фильтре каталога", () => {
   it("читает несколько цветов и отбрасывает неизвестные и повторы", () => {
-    expect(parseColors("pink,red,blue,pink")).toEqual(["pink", "red"]);
+    expect(parseColors("pink,red,nope,pink")).toEqual(["pink", "red"]);
     expect(parseColors(undefined)).toEqual([]);
   });
 

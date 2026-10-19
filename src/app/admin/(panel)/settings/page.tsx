@@ -4,11 +4,12 @@ import { getSetting } from "@/lib/settings";
 import { SettingsEditor } from "./SettingsEditor";
 
 export default async function Settings() {
-  const [shop, delivery, districts, addons] = await Promise.all([
+  const [shop, delivery, districts, addons, colors] = await Promise.all([
     getSetting("shop"),
     getSetting("delivery"),
     getSetting("districts"),
     db.addon.findMany({ orderBy: { sortOrder: "asc" } }),
+    getSetting("colors"),
   ]);
   const bouquets = await db.bouquet.findMany({ where: { enabled: true }, select: { slug: true, name: true }, orderBy: { name: "asc" } });
   return (
@@ -17,6 +18,7 @@ export default async function Settings() {
       delivery={delivery}
       districts={districts}
       bouquets={bouquets}
+      colors={colors}
       smtpReady={smtpConfigured()}
       addons={addons.map((a) => ({ id: a.id, code: a.code, name: a.name, priceKop: a.priceKop, included: a.included, active: a.active }))}
     />

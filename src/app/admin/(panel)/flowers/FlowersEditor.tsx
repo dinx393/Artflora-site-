@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { formatByn, kopToInput, parseByn } from "@/lib/money";
-import { bouquetVisibility, defaultSize, sizePriceKop, type PricedBouquet } from "@/lib/pricing";
+import { bouquetVisibility, defaultSize, sizePriceKop, type PricedBouquet, type SizeCode } from "@/lib/pricing";
 import { deleteFlower, saveFlowers } from "../../actions";
 
 type Row = {
@@ -21,7 +21,7 @@ type BouquetLite = {
   name: string;
   enabled: boolean;
   packagingKop: number;
-  sizes: { code: "S" | "M" | "L"; items: { flowerId: number; qty: number }[] }[];
+  sizes: { code: SizeCode; items: { flowerId: number; qty: number }[] }[];
 };
 
 function toPriced(b: BouquetLite, flowers: Map<number, { name: string; priceKop: number; inStock: boolean }>): PricedBouquet {
@@ -104,12 +104,34 @@ export function FlowersEditor({
 
   const shown = rows.filter((r) => filter === "all" || r.kind === filter);
 
+  // Порядок строк меняют перетаскиванием (за ⠿) или стрелками; сохраняется кнопкой «Сохранить».
+  const [dragKey, setDragKey] = useState<string | null>(null);
+  function moveBefore(from: string, to: string) {
+    if (from === to) return;
+    setRows((rs) => {
+      const item = rs.find((r) => r.key === from)!;
+      const rest = rs.filter((r) => r.key !== from);
+      const at = rest.findIndex((r) => r.key === to);
+      const fromIdx = rs.findIndex((r) => r.key === from);
+      const toIdx = rs.findIndex((r) => r.key === to);
+      // тянем вниз — ставим после цели, вверх — перед ней
+      rest.splice(fromIdx < toIdx ? at + 1 : at, 0, item);
+      return rest;
+    });
+  }
+  function step(key: string, dir: -1 | 1) {
+    const i = shown.findIndex((r) => r.key === key);
+    const other = shown[i + dir];
+    if (other) moveBefore(key, other.key);
+  }
+
   return (
     <>
       <div className="row between">
         <div className="stack" style={{ gap: 4 }}>
           <h1>Цветы</h1>
           <span className="muted">Розничная цена за штуку или ветку. Меняете цену здесь, и все букеты с этим цветком пересчитаются сами.</span>
+          <span className="small muted">Порядок меняется перетаскиванием за ⠿ (или стрелками ▲▼), потом «Сохранить».</span>
         </div>
         <button
           type="button"
@@ -131,11 +153,41 @@ export function FlowersEditor({
         <div className="table-wrap">
           <table className="table">
             <thead>
-              <tr><th>Цветок</th><th>Цена, BYN</th><th>Было</th><th>Наличие</th><th>Букетов</th><th /></tr>
+              <tr><th aria-label="Порядок" /><th>Цветок</th><th>Цена, BYN</th><th>Было</th><th>Наличие</th><th>Букетов</th><th /></tr>
             </thead>
             <tbody>
               {shown.map((r) => (
-                <tr key={r.key} className={r.inStock ? "" : "off"}>
+                <tr
+                  key={r.key}
+                  className={`${r.inStock ? "" : "off"} ${dragKey === r.key ? "dragging" : ""}`}
+                  onDragOver={(e) => {
+                    if (!dragKey) return;
+                    e.preventDefault();
+                    if (dragKey !== r.key) moveBefore(dragKey, r.key);
+                  }}
+                  onDrop={(e) => e.preventDefault()}
+                >
+                  <td className="drag-cell">
+                    <span
+                      className="drag-handle"
+                      draggable
+                      title="Перетащите, чтобы поменять порядок"
+                      onDragStart={(e) => {
+                        setDragKey(r.key);
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", r.key);
+                        const tr = (e.currentTarget as HTMLElement).closest("tr");
+                        if (tr) e.dataTransfer.setDragImage(tr, 20, 20);
+                      }}
+                      onDragEnd={() => setDragKey(null)}
+                    >
+                      ⠿
+                    </span>
+                    <span className="drag-steps">
+                      <button type="button" aria-label="Выше" onClick={() => step(r.key, -1)}>▲</button>
+                      <button type="button" aria-label="Ниже" onClick={() => step(r.key, 1)}>▼</button>
+                    </span>
+                  </td>
                   <td>
                     <input className="input" style={{ padding: "8px 10px", fontWeight: 700 }} value={r.name} placeholder="Название" onChange={(e) => patch(r.key, { name: e.target.value })} />
                     <div className="row small muted" style={{ gap: 6, marginTop: 4 }}>

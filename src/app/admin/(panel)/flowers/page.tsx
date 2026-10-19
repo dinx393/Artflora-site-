@@ -3,7 +3,7 @@ import { FlowersEditor } from "./FlowersEditor";
 
 export default async function Flowers() {
   const [flowers, bouquets] = await Promise.all([
-    db.flower.findMany({ orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }] }),
+    db.flower.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }), // порядок задаёт владелец перетаскиванием
     db.bouquet.findMany({ include: { sizes: { include: { items: true } } }, orderBy: { id: "asc" } }),
   ]);
   return (

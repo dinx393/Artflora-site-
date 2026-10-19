@@ -5,7 +5,7 @@ import { bouquetInclude } from "./catalog";
 import type { CartState } from "./cart";
 import { pickupDiscountKop, quoteDelivery, type DeliveryQuote } from "./delivery";
 import { fullAddress } from "./address";
-import { bouquetVisibility, compositionText, sizeAvailable, sizePriceKop } from "./pricing";
+import { bouquetVisibility, compositionText, SIZE_ORDER, sizeAvailable, sizePriceKop, type SizeCode } from "./pricing";
 import { getSetting } from "./settings";
 import { isDateAllowed, isSlotAllowed } from "./slots";
 import { notifyNewOrder } from "./notify";
@@ -16,8 +16,8 @@ export type PricedLine = {
   slug: string;
   name: string;
   photo: string;
-  size: "S" | "M" | "L";
-  sizes: { code: "S" | "M" | "L"; priceKop: number }[];
+  size: SizeCode;
+  sizes: { code: SizeCode; priceKop: number }[];
   qty: number;
   priceKop: number;
   composition: string;
@@ -65,9 +65,8 @@ export async function priceCart(cart: CartState): Promise<PricedCart> {
       composition: compositionText(size.items),
     });
   }
-  // S, M, L по порядку
-  const order = { S: 0, M: 1, L: 2 } as const;
-  lines.forEach((l) => l.sizes.sort((a, c) => order[a.code] - order[c.code]));
+  // размеры по порядку: XS, S, M, L, XL, XXL
+  lines.forEach((l) => l.sizes.sort((a, c) => SIZE_ORDER.indexOf(a.code) - SIZE_ORDER.indexOf(c.code)));
 
   const addonRows = await db.addon.findMany({
     where: { id: { in: cart.addons.map((a) => a.addonId) }, active: true, included: false },
@@ -97,7 +96,7 @@ export const orderSchema = z
   .object({
     cart: z.object({
       lines: z
-        .array(z.object({ bouquetId: z.number().int(), size: z.enum(["S", "M", "L"]), qty: z.number().int().min(1).max(20) }))
+        .array(z.object({ bouquetId: z.number().int(), size: z.enum(SIZE_ORDER), qty: z.number().int().min(1).max(20) }))
         .min(1, "Корзина пуста")
         .max(30),
       addons: z.array(z.object({ addonId: z.number().int(), qty: z.number().int().min(1).max(10) })).max(20),

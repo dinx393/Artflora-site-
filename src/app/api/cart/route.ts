@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { computeTotals } from "@/lib/checkout";
+import { SIZE_ORDER } from "@/lib/pricing";
 
 // Корзина по актуальным ценам: браузер присылает только id и размеры.
 const body = z.object({
   cart: z.object({
-    lines: z.array(z.object({ bouquetId: z.number().int(), size: z.enum(["S", "M", "L"]), qty: z.number().int().min(1).max(20) })).max(30),
+    lines: z.array(z.object({ bouquetId: z.number().int(), size: z.enum(SIZE_ORDER), qty: z.number().int().min(1).max(20) })).max(30),
     addons: z.array(z.object({ addonId: z.number().int(), qty: z.number().int().min(1).max(10) })).max(20),
     cardText: z.string().max(500),
   }),

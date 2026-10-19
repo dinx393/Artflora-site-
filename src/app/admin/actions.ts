@@ -12,7 +12,9 @@ import { db } from "@/lib/db";
 import { allow, clientIp, forget } from "@/lib/rateLimit";
 import type { DeliveryConfig } from "@/lib/delivery";
 import type { DistrictPreset, ShopSettings } from "@/lib/defaults";
+import type { ColorOption } from "@/lib/occasions";
 import { sendTestEmail } from "@/lib/notify";
+import { SIZE_ORDER } from "@/lib/pricing";
 import { saveSetting } from "@/lib/settings";
 import { ALLOWED_TYPES, looksLikeImage, UPLOAD_DIR } from "@/lib/uploads";
 
@@ -99,7 +101,7 @@ export async function toggleBouquet(id: number, enabled: boolean) {
 }
 
 const sizeInput = z.object({
-  code: z.enum(["S", "M", "L"]),
+  code: z.enum(SIZE_ORDER),
   note: z.string().max(120),
   items: z.array(z.object({ flowerId: z.number().int(), qty: z.number().int().min(1).max(500) })).max(40),
 });
@@ -118,11 +120,12 @@ const bouquetInput = z.object({
   enabled: z.boolean(),
   isHit: z.boolean(),
   isExclusive: z.boolean(),
+  photoSize: z.enum(SIZE_ORDER).default("M"),
   colors: z.array(z.string().max(20)).max(10),
   occasions: z.array(z.string().max(30)).max(10),
   photos: z.array(z.string().max(300)).max(12),
   collectionId: z.number().int().nullable(),
-  sizes: z.array(sizeInput).max(3),
+  sizes: z.array(sizeInput).max(SIZE_ORDER.length),
 });
 
 export type BouquetInput = z.input<typeof bouquetInput>;
@@ -149,6 +152,7 @@ export async function saveBouquet(input: BouquetInput): Promise<{ ok: boolean; e
         enabled: b.enabled,
         isHit: b.isHit,
         isExclusive: b.isExclusive,
+        photoSize: b.photoSize,
         colors: b.colors,
         occasions: b.occasions,
         photos: b.photos,
@@ -347,6 +351,7 @@ export async function saveSettings(input: {
   shop: ShopSettings;
   delivery: DeliveryConfig;
   districts: DistrictPreset[];
+  colors: ColorOption[];
 }): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
   const latLng = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
@@ -383,6 +388,18 @@ export async function saveSettings(input: {
       .array(z.object({ name: z.string().trim().min(1).max(40), lat: z.number(), lng: z.number() }))
       .max(80)
       .refine((l) => new Set(l.map((d) => d.name)).size === l.length, "Два района с одинаковым названием"),
+    colors: z
+      .array(
+        z.object({
+          slug: z.string().regex(/^[a-z0-9-]+$/).max(30),
+          label: z.string().trim().min(1, "Проверьте названия цветов").max(30),
+          // свой цвет — #rrggbb из палитры; «Микс» — разноцветный кружок
+          swatch: z.string().regex(/^#[0-9a-f]{6}$|^conic-gradient\([#0-9a-f, ]+\)$/i).max(200),
+        }),
+      )
+      .min(1)
+      .max(40)
+      .refine((l) => new Set(l.map((c) => c.slug)).size === l.length),
   });
   const parsed = schema.safeParse(input);
   if (!parsed.success) {
@@ -393,6 +410,7 @@ export async function saveSettings(input: {
   await saveSetting("shop", parsed.data.shop);
   await saveSetting("delivery", { ...parsed.data.delivery, zones });
   await saveSetting("districts", parsed.data.districts);
+  await saveSetting("colors", parsed.data.colors);
   refreshSite();
   return { ok: true };
 }

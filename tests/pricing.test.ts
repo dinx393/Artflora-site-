@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bouquetVisibility, defaultSize, sizePriceKop, type PricedBouquet } from "@/lib/pricing";
+import { availableSizes, bouquetVisibility, defaultSize, sizePriceKop, type PricedBouquet } from "@/lib/pricing";
 
 const rose = { id: 1, name: "Роза кустовая 60 см", priceKop: 1000, inStock: true };
 const eustoma = { id: 2, name: "Эустома", priceKop: 1300, inStock: true };
@@ -22,6 +22,15 @@ describe("цена букета", () => {
   it("размер с отсутствующим цветком не предлагается", () => {
     expect(defaultSize(bag)?.code).toBe("M");
     expect(bouquetVisibility(bag)).toEqual({ visible: true });
+  });
+  it("по умолчанию — размер, отмеченный «на фото»; если его не собрать — M", () => {
+    const small = { ...bag, sizes: [{ code: "S" as const, note: "", items: [{ qty: 3, flower: rose }] }, ...bag.sizes] };
+    expect(defaultSize({ ...small, photoSize: "S" })?.code).toBe("S");
+    expect(defaultSize({ ...small, photoSize: "L" })?.code).toBe("M"); // в L нет пиона
+  });
+  it("размеры от XS до XXL идут по порядку", () => {
+    const one = (code: "XS" | "XXL" | "M") => ({ code, note: "", items: [{ qty: 1, flower: rose }] });
+    expect(availableSizes({ sizes: [one("XXL"), one("M"), one("XS")] }).map((s) => s.code)).toEqual(["XS", "M", "XXL"]);
   });
   it("букет скрывается, если ни один размер не собрать", () => {
     const sunny: PricedBouquet = { enabled: true, packagingKop: 800, sizes: [{ code: "M", note: "", items: [{ qty: 7, flower: peony }] }] };

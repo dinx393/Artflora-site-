@@ -1,8 +1,10 @@
+import type { SizeCode } from "./pricing";
+
 // Общие типы корзины: используются и в браузере, и на сервере.
 
 export type CartLine = {
   bouquetId: number;
-  size: "S" | "M" | "L";
+  size: SizeCode;
   qty: number;
 };
 

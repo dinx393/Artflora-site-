@@ -62,6 +62,7 @@ model Bouquet {
   enabled       Boolean       @default(true) // включён вручную
   isHit         Boolean       @default(false) // «Хит недели»
   isExclusive   Boolean       @default(false) // «Эксклюзив этой недели» внизу главной
+  photoSize     SizeCode      @default(M) // какой размер на фото: его цена в каталоге, он выбран на странице букета
   colors        String[]      @default([]) // слаги цветов для фильтра: white, pink, red, burgundy, yellow, lilac, mix
   occasions     String[] // слаги поводов: mom, love, birthday, colleague, nothing, wedding, exotic
   photos        String[] // пути к фото, первое — главное
@@ -74,9 +75,12 @@ model Bouquet {
 }
 
 enum SizeCode {
+  XS
   S
   M
   L
+  XL
+  XXL
 }
 
 // У каждого размера свой состав.

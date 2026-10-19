@@ -355,7 +355,19 @@ textarea.input { resize: vertical; min-height: 60px; }
 .qty { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; }
 .qty button { width: 40px; height: 40px; border: 0; background: none; cursor: pointer; font-size: 18px; }
 .qty span { min-width: 24px; text-align: center; font-weight: 700; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
+.drag-cell { width: 34px; padding-right: 0 !important; vertical-align: top; }
+.drag-handle { display: block; cursor: grab; font-size: 20px; line-height: 1; color: var(--muted); padding: 8px 4px 2px; user-select: none; }
+.drag-handle:active { cursor: grabbing; }
+.drag-steps { display: flex; flex-direction: column; }
+.drag-steps button { border: 0; background: none; color: var(--muted); font-size: 10px; padding: 2px 4px; cursor: pointer; }
+.drag-steps button:hover { color: var(--cherry); }
+tr.dragging { opacity: .45; }
+.color-pick { width: 40px; height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: none; cursor: pointer; overflow: hidden; }
+.color-pick::-webkit-color-swatch-wrapper { padding: 0; }
+.color-pick::-webkit-color-swatch { border: 0; border-radius: 50%; }
+.color-pick::-moz-color-swatch { border: 0; border-radius: 50%; }
+.size-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
 .seg button { border: 0; background: none; border-radius: 999px; padding: 8px 14px; cursor: pointer; font-weight: 700; }
 .seg button.on { background: var(--cherry); color: var(--white); }
 .zone { background: var(--blush); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }

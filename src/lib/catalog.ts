@@ -9,6 +9,7 @@ import {
   flowerCount,
   sizePriceKop,
   sortSizes,
+  type SizeCode,
 } from "./pricing";
 
 export const bouquetInclude = {
@@ -19,7 +20,7 @@ export const bouquetInclude = {
 export type BouquetRow = Prisma.BouquetGetPayload<{ include: typeof bouquetInclude }>;
 
 export type SizeView = {
-  code: "S" | "M" | "L";
+  code: SizeCode;
   note: string;
   priceKop: number;
   available: boolean;
@@ -42,8 +43,8 @@ export type BouquetView = {
   collectionSlug: string | null;
   collectionName: string | null;
   flowerNames: string[];
-  sizes: SizeView[]; // только доступные, по порядку S, M, L
-  defaultSize: "S" | "M" | "L";
+  sizes: SizeView[]; // только доступные, по порядку XS…XXL
+  defaultSize: SizeCode;
   priceKop: number; // цена размера по умолчанию
 };
 

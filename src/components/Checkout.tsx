@@ -12,6 +12,7 @@ import { useCart } from "./CartProvider";
 import { Guarantee } from "./Guarantee";
 import { LeafIcon } from "./icons";
 import { Byn } from "@/components/Byn";
+import type { SizeCode } from "@/lib/pricing";
 
 type ShopLite = { code: string; name: string; address: string };
 
@@ -23,8 +24,8 @@ type Totals = {
       slug: string;
       name: string;
       photo: string;
-      size: "S" | "M" | "L";
-      sizes: { code: "S" | "M" | "L"; priceKop: number }[];
+      size: SizeCode;
+      sizes: { code: SizeCode; priceKop: number }[];
       qty: number;
       priceKop: number;
     }[];

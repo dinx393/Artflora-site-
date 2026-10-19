@@ -4,10 +4,12 @@
 
 export type PricedFlower = { id: number; name: string; priceKop: number; inStock: boolean };
 export type PricedItem = { qty: number; flower: PricedFlower };
-export type PricedSize = { code: "S" | "M" | "L"; note: string; items: PricedItem[] };
+export type PricedSize = { code: SizeCode; note: string; items: PricedItem[] };
 export type PricedBouquet = { enabled: boolean; packagingKop: number; sizes: PricedSize[] };
 
-export const SIZE_ORDER = ["S", "M", "L"] as const;
+// Размеры по порядку. Незаполненные (без цветов) на сайте не показываются.
+export const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"] as const;
+export type SizeCode = (typeof SIZE_ORDER)[number];
 
 export function flowersKop(items: PricedItem[]): number {
   return items.reduce((sum, i) => sum + i.flower.priceKop * i.qty, 0);
@@ -35,10 +37,10 @@ export function availableSizes<T extends PricedSize>(b: { sizes: T[] }): T[] {
   return sortSizes(b.sizes.filter(sizeAvailable));
 }
 
-// Размер «по умолчанию» — M (как на фото), иначе первый доступный.
-export function defaultSize<T extends PricedSize>(b: { sizes: T[] }): T | undefined {
+// Размер «по умолчанию» — тот, что на фото (владелец отмечает в админке), иначе M, иначе первый доступный.
+export function defaultSize<T extends PricedSize>(b: { sizes: T[]; photoSize?: string }): T | undefined {
   const av = availableSizes(b);
-  return av.find((s) => s.code === "M") ?? av[0];
+  return av.find((s) => s.code === b.photoSize) ?? av.find((s) => s.code === "M") ?? av[0];
 }
 
 export type Visibility =

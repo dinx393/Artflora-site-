@@ -6,7 +6,7 @@ import { filterBouquets, visibleBouquets } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { minDeliveryKop } from "@/lib/delivery";
 import { formatByn } from "@/lib/money";
-import { COLORS, FORMATS, OCCASIONS, PRICE_RANGES, parseColors, toggleColor } from "@/lib/occasions";
+import { FORMATS, OCCASIONS, PRICE_RANGES, parseColors, toggleColor } from "@/lib/occasions";
 import { getSetting } from "@/lib/settings";
 import { Byn } from "@/components/Byn";
 
@@ -57,15 +57,18 @@ function href(sp: SP, patch: Partial<SP>): string {
 
 export default async function Catalog({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
-  const [all, flowers, addons, shop, delivery] = await Promise.all([
+  const [all, flowers, addons, shop, delivery, colorList] = await Promise.all([
     visibleBouquets(),
     db.flower.findMany({ where: { kind: "FLOWER" }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     db.addon.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
     getSetting("shop"),
     getSetting("delivery"),
+    getSetting("colors"),
   ]);
   const range = PRICE_RANGES.find((r) => r.slug === sp.price);
-  const colors = parseColors(sp.color);
+  const colors = parseColors(sp.color, colorList);
+  // В фильтре только цвета, которые есть хотя бы у одного букета (и уже выбранные).
+  const palette = colorList.filter((c) => colors.includes(c.slug) || all.some((b) => b.colors.includes(c.slug)));
   const list = filterBouquets(all, {
     occasion: sp.occasion,
     price: range ? { min: range.min, max: range.max } : undefined,
@@ -80,7 +83,7 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
   const shown = Math.max(PAGE, Math.floor(Number(sp.n) || 0));
   const occ = OCCASIONS.find((o) => o.slug === sp.occasion);
   const deliveryNote = `Доставка от ${formatByn(minDeliveryKop(delivery))}`;
-  const colorLabels = COLORS.filter((c) => colors.includes(c.slug)).map((c) => c.label.toLowerCase());
+  const colorLabels = colorList.filter((c) => colors.includes(c.slug)).map((c) => c.label.toLowerCase());
   const activeFilters = [range?.label, sp.flower, colorLabels.length ? `цвет: ${colorLabels.join(", ")}` : undefined].filter(Boolean) as string[];
   const allBouquets = !sp.occasion && !sp.flower && !sp.format && !sp.collection && !sp.q;
   const sortHrefs = { "": href(sp, { sort: undefined }), cheap: href(sp, { sort: "cheap" }), expensive: href(sp, { sort: "expensive" }) };
@@ -151,31 +154,33 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
               ))}
             </div>
           </div>
-          <div>
-            <h3>Цвет</h3>
-            <p className="small muted" style={{ marginTop: -6, marginBottom: 10 }}>Можно выбрать несколько</p>
-            <div className="chips-wrap">
-              {COLORS.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={href(sp, { color: toggleColor(colors, c.slug) })}
-                  className={`swatch-btn ${colors.includes(c.slug) ? "on" : ""}`}
-                  title={c.label}
-                  aria-label={colors.includes(c.slug) ? `${c.label}, выбран` : c.label}
-                >
-                  <i className="swatch" style={{ background: c.swatch }} />
-                </Link>
-              ))}
+          {palette.length > 0 && (
+            <div>
+              <h3>Цвет</h3>
+              <p className="small muted" style={{ marginTop: -6, marginBottom: 10 }}>Можно выбрать несколько</p>
+              <div className="chips-wrap">
+                {palette.map((c) => (
+                  <Link
+                    key={c.slug}
+                    href={href(sp, { color: toggleColor(colors, c.slug, colorList) })}
+                    className={`swatch-btn ${colors.includes(c.slug) ? "on" : ""}`}
+                    title={c.label}
+                    aria-label={colors.includes(c.slug) ? `${c.label}, выбран` : c.label}
+                  >
+                    <i className="swatch" style={{ background: c.swatch }} />
+                  </Link>
+                ))}
+              </div>
+              {colorLabels.length > 0 && (
+                <p className="small" style={{ marginTop: 10 }}>
+                  {colorLabels.join(", ")} ·{" "}
+                  <Link href={href(sp, { color: undefined })} style={{ fontWeight: 700 }}>
+                    сбросить
+                  </Link>
+                </p>
+              )}
             </div>
-            {colorLabels.length > 0 && (
-              <p className="small" style={{ marginTop: 10 }}>
-                {colorLabels.join(", ")} ·{" "}
-                <Link href={href(sp, { color: undefined })} style={{ fontWeight: 700 }}>
-                  сбросить
-                </Link>
-              </p>
-            )}
-          </div>
+          )}
           <div>
             <h3>Цветок</h3>
             <div className="chips-wrap">

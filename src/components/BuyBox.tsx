@@ -7,8 +7,9 @@ import { Guarantee } from "./Guarantee";
 import { LeafIcon } from "./icons";
 import { formatByn, percentOff } from "@/lib/money";
 import { Byn } from "@/components/Byn";
+import type { SizeCode } from "@/lib/pricing";
 
-type Size = { code: "S" | "M" | "L"; note: string; priceKop: number };
+type Size = { code: SizeCode; note: string; priceKop: number };
 type Addon = { id: number; name: string; priceKop: number; included: boolean };
 
 export const SUBSTITUTION_NOTE =
@@ -26,7 +27,7 @@ export function BuyBox({
 }: {
   bouquetId: number;
   sizes: Size[];
-  defaultSize: "S" | "M" | "L";
+  defaultSize: SizeCode;
   addons: Addon[];
   pickupPct: number;
   viber: string;
@@ -55,7 +56,7 @@ export function BuyBox({
       {sizes.length > 1 && (
         <div className="stack" style={{ gap: 8 }}>
           <div className="label">Размер</div>
-          <div className="row" style={{ gap: 8, flexWrap: "nowrap" }}>
+          <div className="size-grid">
             {sizes.map((s) => (
               <button
                 key={s.code}

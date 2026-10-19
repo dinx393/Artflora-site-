@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "./CartProvider";
 import { BagIcon } from "./icons";
+import type { SizeCode } from "@/lib/pricing";
 
 export function AddToCartButton({
   bouquetId,
@@ -14,7 +15,7 @@ export function AddToCartButton({
   card,
 }: {
   bouquetId: number;
-  size: "S" | "M" | "L";
+  size: SizeCode;
   cardText?: string;
   large?: boolean;
   compact?: boolean;

@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import type { DeliveryConfig } from "@/lib/delivery";
 import type { DistrictPreset, ShopSettings } from "@/lib/defaults";
 import { kopToInput, parseByn } from "@/lib/money";
+import type { ColorOption } from "@/lib/occasions";
 import { saveAddons, saveSettings, testOrderEmail } from "../../actions";
 
 type Addon = { id?: number; code: string; name: string; priceKop: number; included: boolean; active: boolean };
@@ -29,6 +30,13 @@ function Money({ kop, onChange }: { kop: number; onChange: (k: number) => void }
   );
 }
 
+function moveItem<T>(list: T[], from: number, to: number): T[] {
+  const next = [...list];
+  const [x] = next.splice(from, 1);
+  next.splice(to, 0, x);
+  return next;
+}
+
 export function SettingsEditor(props: {
   shop: ShopSettings;
   delivery: DeliveryConfig;
@@ -36,11 +44,13 @@ export function SettingsEditor(props: {
   addons: Addon[];
   bouquets: { slug: string; name: string }[];
   smtpReady: boolean;
+  colors: ColorOption[];
 }) {
   const router = useRouter();
   const [shop, setShop] = useState(props.shop);
   const [d, setD] = useState(props.delivery);
   const [districts, setDistricts] = useState(props.districts);
+  const [colors, setColors] = useState(props.colors);
   const [addons, setAddons] = useState(props.addons);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
@@ -56,7 +66,7 @@ export function SettingsEditor(props: {
 
   function save() {
     start(async () => {
-      const a = await saveSettings({ shop, delivery: d, districts });
+      const a = await saveSettings({ shop, delivery: d, districts, colors });
       const b = a.ok ? await saveAddons(addons) : a;
       setMsg(b.ok ? { ok: true, text: "Настройки сохранены" } : { ok: false, text: b.error ?? "Ошибка" });
       if (b.ok) router.refresh();
@@ -158,6 +168,39 @@ export function SettingsEditor(props: {
             </div>
           );
         })}
+      </div>
+
+      <div className="card stack" style={{ gap: 12 }}>
+        <span className="label" style={{ fontSize: 18 }}>Цвета букетов</span>
+        <span className="small muted">
+          Из них выбирают цвет в карточке букета, и по ним фильтрует каталог. Нажмите на кружок, чтобы выбрать оттенок. В каталоге видны
+          только цвета, которые есть хотя бы у одного букета.
+        </span>
+        {colors.map((c, i) => {
+          const set = (p: Partial<ColorOption>) => setColors(colors.map((x, j) => (j === i ? { ...x, ...p } : x)));
+          const hex = /^#[0-9a-f]{6}$/i.test(c.swatch);
+          return (
+            <div key={c.slug} className="row" style={{ gap: 8, alignItems: "center" }}>
+              {hex ? (
+                <input type="color" className="color-pick" value={c.swatch} onChange={(e) => set({ swatch: e.target.value })} aria-label={`Оттенок: ${c.label}`} />
+              ) : (
+                <i className="swatch" style={{ background: c.swatch, width: 36, height: 36 }} title="Микс — разноцветный кружок" />
+              )}
+              <input className="input" style={{ width: 220 }} value={c.label} maxLength={30} onChange={(e) => set({ label: e.target.value })} />
+              <button type="button" className="btn-ghost" disabled={i === 0} onClick={() => setColors(moveItem(colors, i, i - 1))} aria-label="Выше">▲</button>
+              <button type="button" className="btn-ghost" disabled={i === colors.length - 1} onClick={() => setColors(moveItem(colors, i, i + 1))} aria-label="Ниже">▼</button>
+              <button type="button" className="btn-ghost" onClick={() => setColors(colors.filter((_, j) => j !== i))} aria-label="Убрать">×</button>
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          className="btn-ghost small"
+          style={{ alignSelf: "flex-start" }}
+          onClick={() => setColors([...colors, { slug: `c${Date.now().toString(36)}`, label: "Новый цвет", swatch: "#88aa66" }])}
+        >
+          + Добавить цвет
+        </button>
       </div>
 
       <div className="card stack" style={{ gap: 12 }}>
