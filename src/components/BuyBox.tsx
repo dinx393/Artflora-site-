@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCart } from "./CartProvider";
 import { AddToCartButton } from "./AddToCartButton";
+import { Guarantee } from "./Guarantee";
 import { LeafIcon } from "./icons";
 import { formatByn, percentOff } from "@/lib/money";
 import { Byn } from "@/components/Byn";
@@ -117,6 +118,8 @@ export function BuyBox({
       </div>
 
       <AddToCartButton bouquetId={bouquetId} size={size} cardText={cardText} large />
+
+      <Guarantee />
 
       <div className="notice">
         <span style={{ color: "var(--olive)", marginTop: 1 }}>

@@ -10,6 +10,7 @@ import { addDays, availableSlots, minskNow, SLOTS } from "@/lib/slots";
 import { SUBSTITUTION_NOTE } from "./BuyBox";
 import { useCart } from "./CartProvider";
 import { fetchQuote, type QuoteResponse } from "./DeliveryEstimate";
+import { Guarantee } from "./Guarantee";
 import { LeafIcon } from "./icons";
 import { Byn } from "@/components/Byn";
 
@@ -549,6 +550,7 @@ export function Checkout({
             <b>Итого</b>
             <span className="sum-total"><Byn kop={totals?.totalKop ?? 0} /></span>
           </div>
+          <Guarantee compact />
           <div className="notice">
             <span style={{ color: "var(--olive)" }}><LeafIcon /></span>
             <span>{SUBSTITUTION_NOTE}</span>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { CameraIcon, CardIcon, ClockIcon, BagIcon, OccasionIcon } from "@/components/icons";
+import { GUARANTEE_TITLE, GUARANTEE_TEXT } from "@/components/Guarantee";
+import { CameraIcon, CardIcon, ClockIcon, ShieldIcon, OccasionIcon } from "@/components/icons";
 import { visibleBouquets, type BouquetView } from "@/lib/catalog";
 import { minDeliveryKop } from "@/lib/delivery";
 import { formatByn } from "@/lib/money";
@@ -165,10 +166,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
           Важно <span className="script">знать</span>
         </h2>
         <div className="cards-4">
+          <div className="info-card info-accent">
+            <i><ShieldIcon /></i>
+            <h3>{GUARANTEE_TITLE.replace("Гарантия свежести", "Гарантия")}</h3>
+            <p>{GUARANTEE_TEXT}</p>
+          </div>
           <div className="info-card">
             <i><ClockIcon /></i>
             <h3>В день заказа</h3>
-            <p>Везём из ближайшего магазина, доставка от {minDelivery}.</p>
+            <p>Везём из ближайшего магазина, доставка от {minDelivery}. Самовывоз −{delivery.pickupDiscountPct}%.</p>
           </div>
           <div className="info-card">
             <i><CameraIcon /></i>
@@ -182,11 +188,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
               Кладём <span className="gift">в подарок</span> к каждому букету.
             </p>
           </div>
-          <div className="info-card">
-            <i><BagIcon size={24} /></i>
-            <h3>Самовывоз −{delivery.pickupDiscountPct}%</h3>
-            <p>В Уручье и Малиновке, к выбранному времени.</p>
-          </div>
+
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GUARANTEE_TEXT, GUARANTEE_TITLE } from "@/components/Guarantee";
 import { formatByn } from "@/lib/money";
 import { getSetting } from "@/lib/settings";
 import { Byn } from "@/components/Byn";
@@ -29,6 +30,10 @@ export default async function DeliveryPage() {
         <div className="info-card">
           <h3>Самовывоз −{d.pickupDiscountPct}%</h3>
           <p>{d.shops.map((s) => `${s.name}, ${s.address}, ${s.hours}`).join(". ")}.</p>
+        </div>
+        <div className="info-card info-accent">
+          <h3>{GUARANTEE_TITLE}</h3>
+          <p>{GUARANTEE_TEXT}</p>
         </div>
         <div className="info-card">
           <h3>Фото до отправки</h3>

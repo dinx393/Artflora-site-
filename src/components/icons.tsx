@@ -87,6 +87,15 @@ export function CardIcon({ size = 24 }: P) {
   );
 }
 
+export function ShieldIcon({ size = 24 }: P) {
+  return (
+    <svg {...base(size)} viewBox="0 0 24 24" strokeWidth={1.4} aria-hidden>
+      <path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z" />
+      <path d="M8.8 12.2l2.2 2.2 4.2-4.4" />
+    </svg>
+  );
+}
+
 const OCC: Record<string, React.ReactNode> = {
   mom: (
     <>

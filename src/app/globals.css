@@ -236,6 +236,17 @@ textarea.input { resize: vertical; min-height: 60px; }
 .info-card > i { width: 52px; height: 52px; margin-bottom: 8px; border-radius: 50%; background: var(--white); display: flex; align-items: center; justify-content: center; }
 .info-card h3 { font-size: 23px; }
 .info-card p { font-size: 15px; line-height: 1.55; color: var(--muted); }
+/* Гарантия свежести 24 часа: вишнёвая карточка, чтобы её было видно сразу */
+.info-accent { background: var(--cherry); color: var(--white); }
+.info-accent p { color: var(--blush); }
+.info-accent > i { color: var(--cherry); }
+.guarantee { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: 18px; background: var(--cherry); color: var(--white); font-size: 14px; line-height: 1.5; }
+.guarantee > i { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; background: var(--white); color: var(--cherry); display: flex; align-items: center; justify-content: center; }
+.guarantee b { font-size: 16px; }
+.guarantee span span { color: var(--blush); }
+.guarantee.compact { padding: 12px 14px; gap: 10px; font-size: 13px; }
+.guarantee.compact > i { flex-basis: 32px; width: 32px; height: 32px; }
+.guarantee.compact b { font-size: 15px; }
 .perks { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; background: var(--blush); border-radius: var(--radius); padding: 28px; }
 .perks b { font-weight: 700; display: block; margin-bottom: 4px; }
 
