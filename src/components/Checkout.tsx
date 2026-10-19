@@ -187,8 +187,8 @@ export function Checkout({
         return;
       }
       setError({ text: r.error ?? "Не получилось оформить заказ", field: r.field });
-      if (r.field === "address" || r.field === "slot") setStep(2);
-      if (r.field?.startsWith("customer") || r.field === "recipientPhone") setStep(3);
+      if (r.field === "address" || r.field === "slot") setStep(1);
+      if (r.field?.startsWith("customer") || r.field === "recipientPhone") setStep(2);
     } catch {
       setError({ text: "Нет связи с сайтом. Проверьте интернет и попробуйте ещё раз" });
     } finally {
@@ -226,12 +226,11 @@ export function Checkout({
   return (
     <div className="wrap">
       <div className="steps desktop-only" style={{ paddingTop: 24 }}>
-        <span className="on">1 Корзина</span>—<span className={step >= 2 ? "on" : ""}>2 Доставка</span>—
-        <span className={step >= 3 ? "on" : ""}>3 Получатель и оплата</span>
+        <span className="on">1 Корзина</span>—<span className="on">2 Доставка</span>—<span className="on">3 Получатель и оплата</span>
       </div>
       <div className="mobile-only row between" style={{ paddingTop: 20 }}>
-        <h1 style={{ fontSize: 34 }}>{["Корзина", "Доставка", "Получатель"][step - 1]}</h1>
-        <span className="small muted">Шаг {step} из 3</span>
+        <h1 style={{ fontSize: 30 }}>{step === 1 ? "Корзина и доставка" : "Получатель и оплата"}</h1>
+        <span className="small muted">Шаг {step} из 2</span>
       </div>
 
       <div className="checkout" data-step={step}>
@@ -459,6 +458,22 @@ export function Checkout({
               )}
               {error?.field === "slot" && <p className="error">{error.text}</p>}
             </div>
+            {/* На телефоне первый шаг сразу показывает, сколько выйдет с доставкой */}
+            <div className="mobile-only zone stack" style={{ gap: 8 }}>
+              <div className="sum-row"><span>Букеты</span><span>{formatByn((totals?.priced.bouquetsKop ?? 0) + (totals?.priced.addonsKop ?? 0))}</span></div>
+              {method === "PICKUP" ? (
+                <div className="sum-row"><span>Скидка за самовывоз</span><span>{formatByn(-(totals?.discountKop ?? 0))}</span></div>
+              ) : (
+                <div className="sum-row">
+                  <span>Доставка</span>
+                  <span>{unknown ? "после уточнения" : quote?.ok ? (totals?.deliveryKop ? formatByn(totals.deliveryKop) : <span className="gift">бесплатно</span>) : "по адресу"}</span>
+                </div>
+              )}
+              <div className="sum-row" style={{ alignItems: "baseline" }}>
+                <b>Итого</b>
+                <span className="price" style={{ fontSize: 24 }}>{formatByn(totals?.totalKop ?? 0)}</span>
+              </div>
+            </div>
           </section>
 
           {/* Шаг 3. Получатель и оплата */}
@@ -516,11 +531,11 @@ export function Checkout({
         </div>
 
         {/* Итог */}
-        <aside className={`summary card ${step < 3 ? "desktop-only" : ""}`}>
+        <aside className={`summary card ${step < 2 ? "desktop-only" : ""}`}>
           <h3 style={{ fontSize: 28 }}>Ваш заказ</h3>
           <div className="sum-row"><span>Букеты × {lines.reduce((s, l) => s + l.qty, 0)}</span><span>{formatByn(totals?.priced.bouquetsKop ?? 0)}</span></div>
           {(totals?.priced.addonsKop ?? 0) > 0 && <div className="sum-row"><span>Дополнения</span><span>{formatByn(totals!.priced.addonsKop)}</span></div>}
-          <div className="sum-row"><span>Открытка и подкормка</span><span style={{ color: "var(--olive)", fontWeight: 700 }}>в подарок</span></div>
+          <div className="sum-row"><span>Открытка и подкормка</span><span className="gift">в подарок</span></div>
           {method === "PICKUP" ? (
             <div className="sum-row"><span>Скидка за самовывоз</span><span>{formatByn(-(totals?.discountKop ?? 0))}</span></div>
           ) : (
@@ -559,8 +574,8 @@ export function Checkout({
           <button type="button" className="btn btn-outline" style={{ flex: "0 0 auto" }} onClick={() => setStep(step - 1)}>←</button>
         )}
         <span className="price" style={{ fontSize: 24 }}>{formatByn(totals?.totalKop ?? 0)}</span>
-        {step < 3 ? (
-          <button type="button" className="btn" disabled={step === 1 ? !canNext1 : !canNext2} onClick={() => { setStep(step + 1); window.scrollTo({ top: 0 }); }}>
+        {step < 2 ? (
+          <button type="button" className="btn" disabled={!canNext1 || !canNext2} onClick={() => { setStep(2); window.scrollTo({ top: 0 }); }}>
             Далее
           </button>
         ) : (
