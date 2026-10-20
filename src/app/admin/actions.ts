@@ -391,14 +391,10 @@ export async function setOrderAddress(formData: FormData) {
 
 // ---------- Настройки ----------
 
-export async function saveSettings(input: {
-  shop: ShopSettings;
-  delivery: DeliveryConfig;
-  districts: DistrictPreset[];
-  colors: ColorOption[];
-}): Promise<{ ok: boolean; error?: string }> {
+const latLng = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+
+export async function saveSettings(input: { shop: ShopSettings; colors: ColorOption[] }): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
-  const latLng = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
   const schema = z.object({
     shop: z.object({
       phone: z.string().max(40),
@@ -416,22 +412,6 @@ export async function saveSettings(input: {
         .refine((v) => v.split(",").every((e) => !e.trim() || z.string().email().safeParse(e.trim()).success), "Проверьте почту для заказов"),
       dayBouquet: z.string().max(200).default(""),
     }),
-    delivery: z.object({
-      shops: z
-        .array(z.object({ code: z.string().regex(/^[a-z0-9-]+$/), name: z.string().min(1).max(60), address: z.string().max(200), hours: z.string().max(60), location: latLng }))
-        .min(1),
-      zones: z.array(z.object({ maxKm: z.number().positive(), priceKop: z.number().int().min(0) })).min(1).max(10),
-      mkadCenter: latLng,
-      mkadRadiusKm: z.number().positive().max(50),
-      outsideMkadPerKmKop: z.number().int().min(0),
-      freeFromKop: z.number().int().min(0),
-      pickupDiscountPct: z.number().min(0).max(50),
-      maxOutsideMkadKm: z.number().min(0).max(200),
-    }),
-    districts: z
-      .array(z.object({ name: z.string().trim().min(1).max(40), lat: z.number(), lng: z.number() }))
-      .max(80)
-      .refine((l) => new Set(l.map((d) => d.name)).size === l.length, "Два района с одинаковым названием"),
     colors: z
       .array(
         z.object({
@@ -450,11 +430,41 @@ export async function saveSettings(input: {
     const issue = parsed.error.issues[0];
     return { ok: false, error: issue.message.startsWith("Проверьте") ? issue.message : "Проверьте поля: " + issue.path.join(" → ") };
   }
-  const zones = [...parsed.data.delivery.zones].sort((a, b) => a.maxKm - b.maxKm);
   await saveSetting("shop", parsed.data.shop);
+  await saveSetting("colors", parsed.data.colors);
+  refreshSite();
+  return { ok: true };
+}
+
+// Раздел «Доставка»: зоны, магазины и районы с карты.
+export async function saveDelivery(input: { delivery: DeliveryConfig; districts: DistrictPreset[] }): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  const schema = z.object({
+    delivery: z.object({
+      shops: z
+        .array(z.object({ code: z.string().regex(/^[a-z0-9-]+$/), name: z.string().min(1).max(60), address: z.string().max(200), hours: z.string().max(60), location: latLng }))
+        .min(1),
+      zones: z.array(z.object({ maxKm: z.number().positive("Проверьте расстояние у зон"), priceKop: z.number().int().min(0) })).min(1).max(10),
+      mkadCenter: latLng,
+      mkadRadiusKm: z.number().positive().max(50),
+      outsideMkadPerKmKop: z.number().int().min(0),
+      freeFromKop: z.number().int().min(0),
+      pickupDiscountPct: z.number().min(0).max(50),
+      maxOutsideMkadKm: z.number().min(0).max(200),
+    }),
+    districts: z
+      .array(z.object({ name: z.string().trim().min(1, "Проверьте названия районов").max(40), lat: z.number(), lng: z.number() }))
+      .max(80)
+      .refine((l) => new Set(l.map((d) => d.name)).size === l.length, "Проверьте районы: два с одинаковым названием"),
+  });
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return { ok: false, error: issue.message.startsWith("Проверьте") ? issue.message : "Проверьте поля: " + issue.path.join(" → ") };
+  }
+  const zones = [...parsed.data.delivery.zones].sort((a, b) => a.maxKm - b.maxKm);
   await saveSetting("delivery", { ...parsed.data.delivery, zones });
   await saveSetting("districts", parsed.data.districts);
-  await saveSetting("colors", parsed.data.colors);
   refreshSite();
   return { ok: true };
 }

@@ -8,6 +8,7 @@ const ITEMS = [
   { href: "/admin/flowers", label: "Цветы" },
   { href: "/admin/collections", label: "Коллекции" },
   { href: "/admin/orders", label: "Заказы" },
+  { href: "/admin/delivery", label: "Доставка" },
   { href: "/admin/settings", label: "Настройки" },
 ];
 
