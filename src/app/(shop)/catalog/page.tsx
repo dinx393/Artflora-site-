@@ -10,6 +10,7 @@ import { FORMATS, OCCASIONS, PRICE_RANGES, parseColors, toggleColor } from "@/li
 import { getSetting } from "@/lib/settings";
 import { Byn } from "@/components/Byn";
 import { CatalogFilters } from "@/components/CatalogFilters";
+import { ScrollRow } from "@/components/ScrollRow";
 
 type SP = {
   occasion?: string;
@@ -119,7 +120,7 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
           </h1>
           <span className="muted">{shop.promoLine || "Перед отправкой пришлём фото именно вашего букета"}</span>
         </div>
-        <div className="row chips-row" style={{ gap: 8 }}>
+        <ScrollRow>
           <Link href="/catalog" className={`chip ${allBouquets ? "on" : ""}`}>
             Все букеты
           </Link>
@@ -134,7 +135,7 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
               </Link>
             ),
           )}
-        </div>
+        </ScrollRow>
       </section>
 
       <div className="wrap catalog">

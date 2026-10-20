@@ -360,7 +360,7 @@ export function Checkout({
                 </span>
               </div>
             ) : method === "DELIVERY" ? (
-              <div className="stack">
+              <div className="stack" style={{ gap: 18 }}>
                 <label className="field">
                   <span>Район</span>
                   <select

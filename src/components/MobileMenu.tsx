@@ -33,7 +33,8 @@ export function MobileMenu({ phone, contacts, instagram, shops }: { phone: strin
         <MenuIcon />
       </button>
       {open && (
-        <div className="mmenu" role="dialog" aria-modal="true" aria-label="Меню">
+        // Любая ссылка в меню (и корзина в его шапке) закрывает меню: иначе оно остаётся поверх новой страницы.
+        <div className="mmenu" role="dialog" aria-modal="true" aria-label="Меню" onClickCapture={(e) => (e.target as HTMLElement).closest("a") && setOpen(false)}>
           <div className="mmenu-top">
             <button type="button" className="icon-btn" aria-label="Закрыть меню" onClick={() => setOpen(false)}>
               <CloseIcon />

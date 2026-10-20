@@ -102,6 +102,11 @@ main > .section:last-child { padding-bottom: 0; }
 }
 .input:focus { border-color: var(--cherry); }
 textarea.input { resize: vertical; min-height: 60px; }
+/* Выпадающие списки: своя стрелка с тем же отступом справа, что и текст слева */
+select.input {
+  appearance: none; -webkit-appearance: none; padding-right: 44px; cursor: pointer;
+  background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%237E1F3C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 18px center;
+}
 .check { display: flex; gap: 10px; align-items: center; cursor: pointer; }
 .check input { width: 20px; height: 20px; accent-color: var(--cherry); }
 .error { color: var(--danger); font-size: 14px; font-weight: 600; }
@@ -317,7 +322,7 @@ textarea.input { resize: vertical; min-height: 60px; }
 .help b { font-family: var(--serif); font-size: 19px; font-weight: 500; }
 .catalog-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 22px; border-radius: 18px; background: var(--blush); font-size: 14px; }
 .sort { display: flex; align-items: center; gap: 8px; font-weight: 600; }
-.sort .input { width: auto; font-size: 14px; padding: 8px 12px; border-radius: 999px; }
+.sort .input { width: auto; font-size: 14px; padding: 9px 40px 9px 16px; border-radius: 999px; background-position: right 16px center; }
 .addons { display: flex; flex-direction: column; gap: 16px; padding: 28px; border-radius: var(--radius); border: 1px solid var(--line-soft); }
 .addons h2 { font-size: 26px; }
 .addons-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 12px; }
@@ -435,6 +440,14 @@ tr.dragging { opacity: .45; }
   .occasion span { width: 64px; height: 64px; }
   .occasion svg { width: 30px; height: 30px; }
   .chips-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+  .chips-row::-webkit-scrollbar { display: none; }
+  /* Подсказка, что ряд листается: затухание справа и тонкий ползунок снизу */
+  .scroll-row { position: relative; min-width: 0; }
+  .scroll-row.has-more::after { content: ""; position: absolute; top: 0; right: 0; width: 48px; height: 44px; pointer-events: none; background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--white)); }
+  .scroll-track { position: relative; height: 3px; margin: 10px auto 0; width: 72px; border-radius: 2px; background: var(--line); }
+  .scroll-track i { position: absolute; top: 0; height: 100%; border-radius: 2px; background: var(--cherry); }
+  .h1 { line-height: 1.05; }
+  .h1 .script { line-height: 1.15; }
   .band { padding: 28px 22px; gap: 14px; }
   .band h2 { font-size: 28px; line-height: 1.1; }
   .band p { font-size: 14px; }
@@ -473,14 +486,15 @@ tr.dragging { opacity: .45; }
   .buy h1 { font-size: 36px; }
   .forms { overflow-x: auto; }
   .forms a { flex: 0 0 110px; }
-  .checkout { grid-template-columns: 1fr; padding-bottom: 110px; }
+  .checkout { grid-template-columns: 1fr; }
   .summary { position: static; }
   /* Корзина на телефоне — два шага: 1) букеты, адрес и цена доставки, 2) получатель и оплата */
   .checkout[data-step="1"] .step-3,
   .checkout[data-step="2"] .step-1, .checkout[data-step="2"] .step-2 { display: none; }
   .desktop-only { display: none !important; }
   .mobile-bar {
-    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; gap: 12px; align-items: center;
+    /* Прилипает к низу экрана, пока листаете, а в конце страницы встаёт на своё место над подвалом */
+    display: flex; position: sticky; bottom: 0; z-index: 30; gap: 12px; align-items: center; margin: 24px calc(-1 * var(--gutter)) 0;
     padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--line);
   }
   .mobile-bar .btn { flex: 1; }
