@@ -494,7 +494,7 @@ tr.dragging { opacity: .45; }
   .desktop-only { display: none !important; }
   .mobile-bar {
     /* Прилипает к низу экрана, пока листаете, а в конце страницы встаёт на своё место над подвалом */
-    display: flex; position: sticky; bottom: 0; z-index: 30; gap: 12px; align-items: center; margin: 24px calc(-1 * var(--gutter)) 0;
+    display: flex; position: sticky; bottom: 0; z-index: 15; /* ниже шапки (20): меню из шапки открывается поверх панели */ gap: 12px; align-items: center; margin: 24px calc(-1 * var(--gutter)) 0;
     padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--line);
   }
   .mobile-bar .btn { flex: 1; }
