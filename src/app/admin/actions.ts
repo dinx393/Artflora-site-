@@ -392,6 +392,7 @@ export async function setOrderAddress(formData: FormData) {
 // ---------- Настройки ----------
 
 const latLng = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i);
 
 export async function saveSettings(input: { shop: ShopSettings; colors: ColorOption[] }): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
@@ -444,13 +445,29 @@ export async function saveDelivery(input: { delivery: DeliveryConfig; districts:
       shops: z
         .array(z.object({ code: z.string().regex(/^[a-z0-9-]+$/), name: z.string().min(1).max(60), address: z.string().max(200), hours: z.string().max(60), location: latLng }))
         .min(1),
-      zones: z.array(z.object({ maxKm: z.number().positive("Проверьте расстояние у зон"), priceKop: z.number().int().min(0) })).min(1).max(10),
+      zones: z
+        .array(z.object({ maxKm: z.number().positive("Проверьте расстояние у зон"), priceKop: z.number().int().min(0), color: hexColor.optional() }))
+        .min(1)
+        .max(10),
+      areas: z
+        .array(
+          z.object({
+            name: z.string().trim().min(1, "Проверьте названия участков").max(40),
+            color: hexColor,
+            priceKop: z.number().int().min(0),
+            noDelivery: z.boolean(),
+            points: z.array(latLng).min(3, "Проверьте участки: нужно хотя бы 3 точки").max(300),
+          }),
+        )
+        .max(40)
+        .default([]),
       mkadCenter: latLng,
       mkadRadiusKm: z.number().positive().max(50),
       outsideMkadPerKmKop: z.number().int().min(0),
       freeFromKop: z.number().int().min(0),
       pickupDiscountPct: z.number().min(0).max(50),
       maxOutsideMkadKm: z.number().min(0).max(200),
+      outsideColor: hexColor.optional(),
     }),
     districts: z
       .array(z.object({ name: z.string().trim().min(1, "Проверьте названия районов").max(40), lat: z.number(), lng: z.number() }))

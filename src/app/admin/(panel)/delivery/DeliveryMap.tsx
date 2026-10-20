@@ -5,7 +5,7 @@ import type * as Leaflet from "leaflet";
 import { useEffect, useRef } from "react";
 import type { DistrictPreset } from "@/lib/defaults";
 import { quoteDelivery, type DeliveryConfig, type LatLng } from "@/lib/delivery";
-import { OUTSIDE_COLOR, zoneColor } from "@/lib/zoneColors";
+import { quoteColor } from "@/lib/zoneColors";
 
 type Props = {
   cfg: DeliveryConfig;
@@ -14,6 +14,12 @@ type Props = {
   onSelect: (i: number) => void;
   onMoveDistrict: (i: number, p: LatLng) => void;
   onMoveShop: (i: number, p: LatLng) => void;
+  // свои участки: выбранный можно править (тянуть точки), а в режиме рисования клик по карте ставит точку
+  selectedArea: number | null;
+  onSelectArea: (i: number) => void;
+  onAreaPoints: (i: number, points: LatLng[]) => void;
+  draft: LatLng[] | null;
+  onDraftPoint: (p: LatLng) => void;
   // отдаём наружу «где сейчас центр карты» — туда ставим новый район
   centerRef: React.MutableRefObject<(() => LatLng) | null>;
 };
@@ -47,6 +53,9 @@ export function DeliveryMap(props: Props) {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(m);
       marks.current = lf.layerGroup().addTo(m);
+      m.on("click", (e: Leaflet.LeafletMouseEvent) => {
+        if (latest.current.draft) latest.current.onDraftPoint(round(e.latlng));
+      });
       latest.current.centerRef.current = () => {
         const c = m.getCenter();
         return { lat: Math.round(c.lat * 10000) / 10000, lng: Math.round(c.lng * 10000) / 10000 };
@@ -66,7 +75,26 @@ export function DeliveryMap(props: Props) {
   useEffect(() => {
     draw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.cfg, props.districts, props.selected]);
+  }, [props.cfg, props.districts, props.selected, props.selectedArea, props.draft]);
+
+  // В режиме рисования — курсор-крестик, двойной клик не приближает карту
+  useEffect(() => {
+    const m = map.current;
+    box.current?.classList.toggle("drawing", !!props.draft);
+    if (!m) return;
+    if (props.draft) m.doubleClickZoom.disable();
+    else m.doubleClickZoom.enable();
+  }, [props.draft]);
+
+  // Выбранный участок — показываем целиком
+  useEffect(() => {
+    const a = props.selectedArea === null ? null : props.cfg.areas?.[props.selectedArea];
+    if (a && a.points.length >= 3 && map.current && L.current) {
+      const b = L.current.latLngBounds(a.points.map((p) => [p.lat, p.lng] as [number, number]));
+      if (!map.current.getBounds().contains(b)) map.current.fitBounds(b.pad(0.4));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.selectedArea]);
 
   // Выбранный район — показываем на карте
   useEffect(() => {
@@ -79,7 +107,7 @@ export function DeliveryMap(props: Props) {
     const lf = L.current;
     const m = map.current;
     if (!lf || !m || !marks.current) return;
-    const { cfg, districts, selected } = latest.current;
+    const { cfg, districts, selected, selectedArea, draft } = latest.current;
 
     // Цветные зоны: каждую клеточку 4×4 px красим цветом зоны, в которую попадает эта точка
     zones.current?.remove();
@@ -95,8 +123,8 @@ export function DeliveryMap(props: Props) {
         for (let x = 0; x < size.x; x += step) {
           const ll = m.unproject([coords.x * size.x + x + step / 2, coords.y * size.y + y + step / 2], coords.z);
           const q = quoteDelivery({ lat: ll.lat, lng: ll.lng }, 0, cfg);
-          if (!q.ok) continue;
-          ctx.fillStyle = q.outsideMkadKm > 0 ? rgba(OUTSIDE_COLOR, 0.28) : rgba(zoneColor(q.zone), 0.38);
+          if (!q.ok && !q.area) continue;
+          ctx.fillStyle = rgba(quoteColor(q, cfg.zones, cfg.outsideColor), q.ok && q.outsideMkadKm > 0 ? 0.28 : 0.38);
           ctx.fillRect(x, y, step, step);
         }
       }
@@ -119,6 +147,46 @@ export function DeliveryMap(props: Props) {
       interactive: false,
     }).addTo(g);
 
+    // Свои участки: контур, подпись; у выбранного — точки, которые можно тянуть
+    (cfg.areas ?? []).forEach((a, i) => {
+      if (a.points.length < 3) return;
+      const ll = a.points.map((p) => [p.lat, p.lng] as [number, number]);
+      const on = selectedArea === i;
+      const poly = lf.polygon(ll, { color: a.color, weight: on ? 3 : 2, dashArray: a.noDelivery ? "6 4" : undefined, fillOpacity: 0, bubblingMouseEvents: false }).addTo(g);
+      poly.bindTooltip(`${esc(a.name)} · ${a.noDelivery ? "не возим" : (a.priceKop / 100).toLocaleString("ru-RU") + " BYN"}`, { permanent: true, direction: "center", className: "map-area-label" });
+      poly.on("click", (e: Leaflet.LeafletMouseEvent) => {
+        if (latest.current.draft) return latest.current.onDraftPoint(round(e.latlng));
+        latest.current.onSelectArea(i);
+      });
+      if (!on || draft) return;
+      const pts = [...a.points];
+      const commit = (next: LatLng[]) => latest.current.onAreaPoints(i, next);
+      pts.forEach((p, k) => {
+        const v = lf.marker([p.lat, p.lng], { icon: lf.divIcon({ className: "map-vertex", iconSize: [14, 14], iconAnchor: [7, 7] }), draggable: true, zIndexOffset: 1200, title: "Тяните точку. Двойной клик — убрать" }).addTo(g);
+        v.on("drag", () => {
+          pts[k] = round(v.getLatLng());
+          poly.setLatLngs(pts.map((q) => [q.lat, q.lng]));
+        });
+        v.on("dragend", () => commit(pts));
+        v.on("dblclick", () => {
+          if (pts.length > 3) commit(pts.filter((_, j) => j !== k));
+        });
+      });
+      // полупрозрачные точки посередине сторон: потянули — появилась новая вершина
+      pts.forEach((p, k) => {
+        const n = pts[(k + 1) % pts.length];
+        const mid = lf.marker([(p.lat + n.lat) / 2, (p.lng + n.lng) / 2], { icon: lf.divIcon({ className: "map-vertex mid", iconSize: [12, 12], iconAnchor: [6, 6] }), draggable: true, zIndexOffset: 1100, title: "Потяните, чтобы добавить точку" }).addTo(g);
+        mid.on("dragend", () => commit([...pts.slice(0, k + 1), round(mid.getLatLng()), ...pts.slice(k + 1)]));
+      });
+    });
+
+    // Участок, который сейчас рисуют
+    if (draft) {
+      if (draft.length > 1) lf.polyline(draft.map((p) => [p.lat, p.lng] as [number, number]), { color: "#7E1F3C", weight: 2, dashArray: "4 4", interactive: false }).addTo(g);
+      if (draft.length > 2) lf.polygon(draft.map((p) => [p.lat, p.lng] as [number, number]), { color: "#7E1F3C", weight: 0, fillOpacity: 0.15, interactive: false }).addTo(g);
+      draft.forEach((p) => lf.marker([p.lat, p.lng], { icon: lf.divIcon({ className: "map-vertex", iconSize: [14, 14], iconAnchor: [7, 7] }), interactive: false }).addTo(g));
+    }
+
     cfg.shops.forEach((s, i) => {
       const icon = lf.divIcon({ className: "map-shop", html: `<span>⌂</span><b>${esc(s.name)}</b>`, iconSize: [34, 34], iconAnchor: [17, 17] });
       const mk = lf.marker([s.location.lat, s.location.lng], { icon, draggable: true, zIndexOffset: 1000, title: `${s.name}: перетащите, если точка не та` }).addTo(g);
@@ -130,7 +198,7 @@ export function DeliveryMap(props: Props) {
 
     districts.forEach((d, i) => {
       const q = quoteDelivery(d, 0, cfg);
-      const color = !q.ok ? "#999999" : q.outsideMkadKm > 0 ? OUTSIDE_COLOR : zoneColor(q.zone);
+      const color = quoteColor(q, cfg.zones, cfg.outsideColor);
       const icon = lf.divIcon({
         className: `map-district ${selected === i ? "on" : ""} ${q.ok ? "" : "far"}`,
         html: `<i style="background:${color}"></i><span>${esc(d.name)}</span>`,

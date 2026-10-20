@@ -61,6 +61,7 @@ export const DEFAULT_DELIVERY: DeliveryConfig = {
   freeFromKop: 20000,
   pickupDiscountPct: 10,
   maxOutsideMkadKm: 30,
+  areas: [],
 };
 
 // Районы доставки: покупатель выбирает свой в корзине, цена считается по точке района

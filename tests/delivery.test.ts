@@ -49,4 +49,24 @@ describe("доставка", () => {
     expect(q.ok).toBe(false);
   });
   it("самовывоз −10% на букеты", () => expect(pickupDiscountKop(13000, DEFAULT_DELIVERY)).toBe(1300));
+  it("свой участок важнее кругов: своя цена или «не возим»", () => {
+    const box = (lat: number, lng: number, d = 0.05) => [
+      { lat: lat - d, lng: lng - d },
+      { lat: lat - d, lng: lng + d },
+      { lat: lat + d, lng: lng + d },
+      { lat: lat + d, lng: lng - d },
+    ];
+    const cfg = {
+      ...DEFAULT_DELIVERY,
+      areas: [
+        { name: "Смолевичи", color: "#00aa00", priceKop: 3500, noDelivery: false, points: box(54.0285, 28.0886) },
+        { name: "Центр — не возим", color: "#999999", priceKop: 0, noDelivery: true, points: box(at("Центр").lat, at("Центр").lng, 0.01) },
+      ],
+    };
+    const smol = quoteDelivery({ lat: 54.0285, lng: 28.0886 }, 30000, cfg);
+    expect(smol.ok && smol.priceKop).toBe(3500); // и при сумме больше 200 BYN — цена участка
+    expect(smol.ok && smol.area?.name).toBe("Смолевичи");
+    expect(quoteDelivery(at("Центр"), 13000, cfg).ok).toBe(false);
+    expect(quoteDelivery(at("Уручье"), 13000, cfg).ok && quoteDelivery(at("Уручье"), 13000, cfg)).toMatchObject({ zone: 1, priceKop: 600 });
+  });
 });

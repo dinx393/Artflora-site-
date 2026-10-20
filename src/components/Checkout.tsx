@@ -389,7 +389,7 @@ export function Checkout({
                       </span>
                     </div>
                     <span className="small muted">Привезём из магазина {district.shopName}, от {leadHours} часов</span>
-                    {leftToFree > 0 && <span className="small" style={{ color: "var(--olive)", fontWeight: 700 }}>До бесплатной доставки {formatByn(leftToFree)}</span>}
+                    {leftToFree > 0 && !district.area && <span className="small" style={{ color: "var(--olive)", fontWeight: 700 }}>До бесплатной доставки {formatByn(leftToFree)}</span>}
                   </div>
                 )}
                 <label className="field">

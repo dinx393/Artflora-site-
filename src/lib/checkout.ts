@@ -237,7 +237,7 @@ export async function createOrder(raw: unknown): Promise<CreateOrderResult> {
         address: o.method === "DELIVERY" && !unknown ? fullAddress(o) : "",
         addressUnknown: unknown,
         shop: shopCode,
-        deliveryZone: totals.quote?.ok ? totals.quote.zone : null,
+        deliveryZone: totals.quote?.ok && !totals.quote.area ? totals.quote.zone : null,
         distanceKm: totals.quote?.ok ? totals.quote.km : null,
         deliveryDate: new Date(o.date + "T00:00:00Z"),
         deliverySlot: unknown ? "" : o.slot,

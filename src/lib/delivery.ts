@@ -5,7 +5,8 @@
 //  - зоны по расстоянию от магазина: 6 / 10 / 14 / 18 BYN;
 //  - за МКАД: последняя зона + 1 BYN за каждый км от МКАД;
 //  - бесплатно от суммы freeFromKop (внутри МКАД; за МКАД доплата за км остаётся);
-//  - самовывоз: скидка pickupDiscountPct на букеты.
+//  - самовывоз: скидка pickupDiscountPct на букеты;
+//  - свои участки (нарисованы в админке на карте) важнее кругов: там своя цена или «не возим».
 
 export type LatLng = { lat: number; lng: number };
 
@@ -17,7 +18,10 @@ export type Shop = {
   location: LatLng;
 };
 
-export type DeliveryZone = { maxKm: number; priceKop: number };
+export type DeliveryZone = { maxKm: number; priceKop: number; color?: string };
+
+// Участок, нарисованный владельцем на карте: например, «Смолевичи — 35 BYN» или «Радошковичи — не возим».
+export type DeliveryArea = { name: string; color: string; priceKop: number; noDelivery: boolean; points: LatLng[] };
 
 export type DeliveryConfig = {
   shops: Shop[];
@@ -28,7 +32,24 @@ export type DeliveryConfig = {
   freeFromKop: number;
   pickupDiscountPct: number;
   maxOutsideMkadKm: number; // дальше этого за МКАД не возим (владелец: до 30 км от Минска)
+  outsideColor?: string; // цвет «за МКАД» на карте в админке
+  areas?: DeliveryArea[]; // свои участки; если участки пересекаются, действует верхний в списке
 };
+
+// Точка внутри многоугольника (луч вправо, считаем пересечения). Для участков в пару десятков км плоской карты хватает.
+export function insidePolygon(p: LatLng, poly: LatLng[]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    if (a.lat > p.lat !== b.lat > p.lat && p.lng < ((b.lng - a.lng) * (p.lat - a.lat)) / (b.lat - a.lat) + a.lng) inside = !inside;
+  }
+  return inside;
+}
+
+export function areaAt(point: LatLng, cfg: Pick<DeliveryConfig, "areas">): DeliveryArea | null {
+  return cfg.areas?.find((a) => a.points.length >= 3 && insidePolygon(point, a.points)) ?? null;
+}
 
 export function distanceKm(a: LatLng, b: LatLng): number {
   const R = 6371;
@@ -54,17 +75,36 @@ export type DeliveryQuote =
       ok: true;
       shop: Shop;
       km: number; // до ближайшего магазина
-      zone: number; // 1..zones.length, за МКАД — последняя
+      zone: number; // 1..zones.length, за МКАД — последняя; 0 — свой участок
       outsideMkadKm: number; // 0 внутри МКАД
       baseKop: number; // цена без учёта бесплатной доставки
       priceKop: number; // к оплате
       free: boolean;
       leftToFreeKop: number; // сколько не хватает до бесплатной доставки
+      area?: { name: string; color: string }; // точка попала в свой участок
     }
-  | { ok: false; reason: "too-far"; km: number }; // km — сколько за МКАД
+  | { ok: false; reason: "too-far"; km: number; area?: { name: string; color: string } }; // km — сколько за МКАД
 
 export function quoteDelivery(point: LatLng, subtotalKop: number, cfg: DeliveryConfig): DeliveryQuote {
   const { shop, km } = nearestShop(point, cfg.shops);
+  const area = areaAt(point, cfg);
+  if (area) {
+    const tag = { name: area.name, color: area.color };
+    if (area.noDelivery) return { ok: false, reason: "too-far", km: 0, area: tag };
+    // Цена участка фиксированная; бесплатная доставка от суммы на участки не действует (они обычно за городом).
+    return {
+      ok: true,
+      shop,
+      km: Math.round(km * 10) / 10,
+      zone: 0,
+      outsideMkadKm: 0,
+      baseKop: area.priceKop,
+      priceKop: area.priceKop,
+      free: false,
+      leftToFreeKop: 0,
+      area: tag,
+    };
+  }
   const fromCenter = distanceKm(point, cfg.mkadCenter);
   const outsideMkadKm = Math.max(0, Math.ceil(fromCenter - cfg.mkadRadiusKm));
   if (outsideMkadKm > cfg.maxOutsideMkadKm) return { ok: false, reason: "too-far", km: outsideMkadKm };
