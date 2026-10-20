@@ -14,7 +14,14 @@ import {
 
 export const bouquetInclude = {
   collection: true,
-  sizes: { include: { items: { include: { flower: true }, orderBy: { id: "asc" } } } },
+  sizes: {
+    include: {
+      items: {
+        include: { flower: { include: { substitutes: { select: { name: true, inStock: true }, orderBy: { sortOrder: "asc" } } } } },
+        orderBy: { id: "asc" },
+      },
+    },
+  },
 } satisfies Prisma.BouquetInclude;
 
 export type BouquetRow = Prisma.BouquetGetPayload<{ include: typeof bouquetInclude }>;

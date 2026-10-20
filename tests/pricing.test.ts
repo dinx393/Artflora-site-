@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { availableSizes, bouquetVisibility, defaultSize, sizePriceKop, type PricedBouquet } from "@/lib/pricing";
+import { availableSizes, bouquetVisibility, compositionText, defaultSize, sizeAvailable, sizePriceKop, type PricedBouquet } from "@/lib/pricing";
 
 const rose = { id: 1, name: "Роза кустовая 60 см", priceKop: 1000, inStock: true };
 const eustoma = { id: 2, name: "Эустома", priceKop: 1300, inStock: true };
@@ -41,5 +41,24 @@ describe("цена букета", () => {
   });
   it("выключенный вручную букет скрыт", () => {
     expect(bouquetVisibility({ ...bag, enabled: false })).toEqual({ visible: false, reason: "disabled" });
+  });
+});
+
+describe("замены и дробное количество", () => {
+  const veronica = { id: 5, name: "Вероника", priceKop: 500, inStock: false, substitutes: [{ name: "Статица", inStock: true }] };
+  const lonely = { id: 6, name: "Пион", priceKop: 2000, inStock: false, substitutes: [{ name: "Ранункулюс", inStock: false }] };
+  it("нет цветка, но есть замена — размер остаётся, цена прежняя, в составе замена", () => {
+    const s = { code: "M" as const, note: "", packagingKop: 0, items: [{ qty: 3, flower: veronica }, { qty: 1, flower: rose }] };
+    expect(sizeAvailable(s)).toBe(true);
+    expect(sizePriceKop(s)).toBe(2500);
+    expect(compositionText(s.items)).toBe("Статица (вместо: вероника) × 3, Роза кустовая 60 см × 1");
+  });
+  it("замены тоже нет — размер скрыт", () => {
+    expect(sizeAvailable({ code: "M", note: "", packagingKop: 0, items: [{ qty: 1, flower: lonely }] })).toBe(false);
+  });
+  it("1,5 ветки эвкалипта: цена округляется до копейки", () => {
+    const euc = { ...eucalyptus, priceKop: 333 };
+    expect(sizePriceKop({ packagingKop: 0, items: [{ qty: 1.5, flower: euc }] })).toBe(500);
+    expect(compositionText([{ qty: 1.5, flower: euc }])).toBe("Эвкалипт × 1,5");
   });
 });

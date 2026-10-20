@@ -9,7 +9,7 @@ export default async function EditBouquet({ params }: { params: Promise<{ id: st
   if (!Number.isInteger(id)) notFound();
   const [b, flowers, collections, colors] = await Promise.all([
     db.bouquet.findUnique({ where: { id }, include: { sizes: { include: { items: { orderBy: { id: "asc" } } } } } }),
-    db.flower.findMany({ orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }] }),
+    db.flower.findMany({ orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }], include: { substitutes: { select: { id: true } } } }),
     db.collection.findMany({ orderBy: { name: "asc" } }),
     getSetting("colors"),
   ]);
@@ -39,7 +39,7 @@ export default async function EditBouquet({ params }: { params: Promise<{ id: st
           return { code, note: s?.note ?? "", packagingKop: s?.packagingKop ?? b.packagingKop, items: s?.items.map((i) => ({ flowerId: i.flowerId, qty: i.qty })) ?? [] };
         }),
       }}
-      flowers={flowers.map((f) => ({ id: f.id, name: f.name, kind: f.kind, unit: f.unit, priceKop: f.priceKop, inStock: f.inStock }))}
+      flowers={flowers.map((f) => ({ id: f.id, name: f.name, kind: f.kind, unit: f.unit, priceKop: f.priceKop, inStock: f.inStock, substitutes: f.substitutes.map((x) => x.id) }))}
       collections={collections.map((c) => ({ id: c.id, name: c.name }))}
       siblings={siblings}
       colors={colors}

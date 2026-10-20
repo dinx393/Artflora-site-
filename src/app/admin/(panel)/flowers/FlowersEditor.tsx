@@ -15,6 +15,7 @@ type Row = {
   priceText: string;
   prevPriceKop: number | null;
   inStock: boolean;
+  substitutes: number[]; // чем заменить, если цветка нет
 };
 type BouquetLite = {
   id: number;
@@ -23,7 +24,9 @@ type BouquetLite = {
   sizes: { code: SizeCode; packagingKop: number; items: { flowerId: number; qty: number }[] }[];
 };
 
-function toPriced(b: BouquetLite, flowers: Map<number, { name: string; priceKop: number; inStock: boolean }>): PricedBouquet {
+type FlowerInfo = { name: string; priceKop: number; inStock: boolean; substitutes: number[] };
+
+function toPriced(b: BouquetLite, flowers: Map<number, FlowerInfo>): PricedBouquet {
   return {
     enabled: b.enabled,
     sizes: b.sizes.map((s) => ({
@@ -31,8 +34,12 @@ function toPriced(b: BouquetLite, flowers: Map<number, { name: string; priceKop:
       packagingKop: s.packagingKop,
       note: "",
       items: s.items.map((i) => {
-        const f = flowers.get(i.flowerId) ?? { name: "?", priceKop: 0, inStock: false };
-        return { qty: i.qty, flower: { id: i.flowerId, ...f } };
+        const f = flowers.get(i.flowerId) ?? { name: "?", priceKop: 0, inStock: false, substitutes: [] };
+        const substitutes = f.substitutes.flatMap((id) => {
+          const x = flowers.get(id);
+          return x ? [{ name: x.name, inStock: x.inStock }] : [];
+        });
+        return { qty: i.qty, flower: { id: i.flowerId, name: f.name, priceKop: f.priceKop, inStock: f.inStock, substitutes } };
       }),
     })),
   };
@@ -44,7 +51,16 @@ function summary(b: PricedBouquet) {
   return { vis, price: s ? sizePriceKop(s) : null };
 }
 
-type FlowerData = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; prevPriceKop: number | null; inStock: boolean };
+type FlowerData = {
+  id: number;
+  name: string;
+  kind: "FLOWER" | "GREEN";
+  unit: "STEM" | "PIECE";
+  priceKop: number;
+  prevPriceKop: number | null;
+  inStock: boolean;
+  substitutes: number[];
+};
 
 const toRow = (f: FlowerData): Row => ({ ...f, key: String(f.id), priceText: kopToInput(f.priceKop) });
 
@@ -61,9 +77,13 @@ export function FlowersEditor({
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
 
-  const before = useMemo(() => new Map(initial.map((f) => [f.id, { name: f.name, priceKop: f.priceKop, inStock: f.inStock }])), [initial]);
+  const before = useMemo(
+    () => new Map(initial.map((f) => [f.id, { name: f.name, priceKop: f.priceKop, inStock: f.inStock, substitutes: f.substitutes }])),
+    [initial],
+  );
   const after = useMemo(
-    () => new Map(rows.filter((r) => r.id).map((r) => [r.id!, { name: r.name, priceKop: parseByn(r.priceText) ?? 0, inStock: r.inStock }])),
+    () =>
+      new Map(rows.filter((r) => r.id).map((r) => [r.id!, { name: r.name, priceKop: parseByn(r.priceText) ?? 0, inStock: r.inStock, substitutes: r.substitutes }])),
     [rows],
   );
   const usage = useMemo(() => {
@@ -99,7 +119,7 @@ export function FlowersEditor({
     }
     start(async () => {
       try {
-        const r = await saveFlowers(rows.map((x) => ({ id: x.id, name: x.name, kind: x.kind, unit: x.unit, priceKop: parseByn(x.priceText)!, inStock: x.inStock })));
+        const r = await saveFlowers(rows.map((x) => ({ id: x.id, name: x.name, kind: x.kind, unit: x.unit, priceKop: parseByn(x.priceText)!, inStock: x.inStock, substitutes: x.substitutes })));
         setMsg(r.ok ? { ok: true, text: "Сохранено, цены на сайте обновлены" } : { ok: false, text: r.error ?? "Ошибка" });
         if (r.ok && r.flowers) {
           // новые цветки получили номера в базе — без этого следующее сохранение создавало бы их второй раз
@@ -147,7 +167,7 @@ export function FlowersEditor({
         <button
           type="button"
           className="btn"
-          onClick={() => setRows((rs) => [...rs, { key: `new-${Date.now()}`, name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true }])}
+          onClick={() => setRows((rs) => [...rs, { key: `new-${Date.now()}`, name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, substitutes: [] }])}
         >
           + Добавить цветок
         </button>
@@ -210,6 +230,30 @@ export function FlowersEditor({
                       <select value={r.unit} onChange={(e) => patch(r.key, { unit: e.target.value as Row["unit"] })} style={{ border: 0, background: "none" }}>
                         <option value="STEM">за ветку</option>
                         <option value="PIECE">за штуку</option>
+                      </select>
+                    </div>
+                    <div className="subs small">
+                      <span className="muted">Замена:</span>
+                      {r.substitutes.map((id) => {
+                        const x = rows.find((y) => y.id === id);
+                        return x ? (
+                          <span key={id} className={`sub-chip ${x.inStock ? "" : "off"}`} title={x.inStock ? "" : "Этой замены сейчас тоже нет"}>
+                            {x.name}
+                            <button type="button" aria-label={`Убрать замену ${x.name}`} onClick={() => patch(r.key, { substitutes: r.substitutes.filter((s) => s !== id) })}>×</button>
+                          </span>
+                        ) : null;
+                      })}
+                      <select
+                        value=""
+                        aria-label={`Добавить замену для ${r.name}`}
+                        onChange={(e) => e.target.value && patch(r.key, { substitutes: [...r.substitutes, Number(e.target.value)] })}
+                      >
+                        <option value="">{r.substitutes.length ? "+ ещё" : "+ указать"}</option>
+                        {rows
+                          .filter((y) => y.id && y.key !== r.key && !r.substitutes.includes(y.id))
+                          .map((y) => (
+                            <option key={y.id} value={y.id}>{y.name}</option>
+                          ))}
                       </select>
                     </div>
                   </td>
@@ -284,7 +328,7 @@ export function FlowersEditor({
           {msg && <p className={msg.ok ? "pill ok" : "error"}>{msg.text}</p>}
           <button type="button" className="btn btn-lg" disabled={pending} onClick={save}>{pending ? "Сохраняем…" : "Сохранить и обновить сайт"}</button>
           <span className="small muted">
-            Цена букета = цветы по цене из этой таблицы × количество + упаковка. Если цветка нет в наличии, букет скрывается с сайта и вернётся сам, когда цветок появится.
+            Цена букета = цветы по цене из этой таблицы × количество + упаковка. Если цветка нет в наличии и нет замены в наличии, букет скрывается с сайта и вернётся сам, когда цветок появится. С заменой букет остаётся по прежней цене, а в составе пишем «статица (вместо: вероника)».
           </span>
         </div>
       </div>

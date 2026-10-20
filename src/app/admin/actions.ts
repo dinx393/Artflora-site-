@@ -51,9 +51,19 @@ const flowerRow = z.object({
   unit: z.enum(["STEM", "PIECE"]),
   priceKop: z.number().int().min(0).max(1_000_000),
   inStock: z.boolean(),
+  substitutes: z.array(z.number().int()).max(20).default([]), // id цветков-замен
 });
 
-export type SavedFlower = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; prevPriceKop: number | null; inStock: boolean };
+export type SavedFlower = {
+  id: number;
+  name: string;
+  kind: "FLOWER" | "GREEN";
+  unit: "STEM" | "PIECE";
+  priceKop: number;
+  prevPriceKop: number | null;
+  inStock: boolean;
+  substitutes: number[];
+};
 
 export async function saveFlowers(rows: z.input<typeof flowerRow>[]): Promise<{ ok: boolean; error?: string; flowers?: SavedFlower[] }> {
   await requireAdmin();
@@ -92,10 +102,21 @@ export async function saveFlowers(rows: z.input<typeof flowerRow>[]): Promise<{ 
                 priceKop: r.priceKop,
                 prevPriceKop: old.priceKop !== r.priceKop ? old.priceKop : old.prevPriceKop,
                 sortOrder: i,
+                substitutes: { set: r.substitutes.filter((id) => id !== old.id && existing.some((f) => f.id === id)).map((id) => ({ id })) },
               },
             });
           } else {
-            await tx.flower.create({ data: { name: r.name, kind: r.kind, unit: r.unit, priceKop: r.priceKop, inStock: r.inStock, sortOrder: i } });
+            await tx.flower.create({
+              data: {
+                name: r.name,
+                kind: r.kind,
+                unit: r.unit,
+                priceKop: r.priceKop,
+                inStock: r.inStock,
+                sortOrder: i,
+                substitutes: { connect: r.substitutes.filter((id) => existing.some((f) => f.id === id)).map((id) => ({ id })) },
+              },
+            });
           }
         }
       },
@@ -107,10 +128,19 @@ export async function saveFlowers(rows: z.input<typeof flowerRow>[]): Promise<{ 
     return { ok: false, error: "Не удалось сохранить, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз." };
   }
   refreshSite();
-  const flowers = await db.flower.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
+  const flowers = await db.flower.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }], include: { substitutes: { select: { id: true } } } });
   return {
     ok: true,
-    flowers: flowers.map((f) => ({ id: f.id, name: f.name, kind: f.kind, unit: f.unit, priceKop: f.priceKop, prevPriceKop: f.prevPriceKop, inStock: f.inStock })),
+    flowers: flowers.map((f) => ({
+      id: f.id,
+      name: f.name,
+      kind: f.kind,
+      unit: f.unit,
+      priceKop: f.priceKop,
+      prevPriceKop: f.prevPriceKop,
+      inStock: f.inStock,
+      substitutes: f.substitutes.map((x) => x.id),
+    })),
   };
 }
 
@@ -140,7 +170,7 @@ const sizeInput = z.object({
   code: z.enum(SIZE_ORDER),
   note: z.string().max(120),
   packagingKop: z.number().int().min(0).max(1_000_000),
-  items: z.array(z.object({ flowerId: z.number().int(), qty: z.number().int().min(1).max(500) })).max(40),
+  items: z.array(z.object({ flowerId: z.number().int(), qty: z.number().positive().max(500).transform((q) => Math.round(q * 100) / 100) })).max(40),
 });
 
 const bouquetInput = z.object({

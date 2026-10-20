@@ -2,13 +2,36 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { formatByn, kopToInput, parseByn } from "@/lib/money";
-import type { SizeCode } from "@/lib/pricing";
+import { qtyText, type SizeCode } from "@/lib/pricing";
 import { FORMATS, OCCASIONS, type ColorOption, type FormatCode } from "@/lib/occasions";
 import { cloneToFormat, deleteBouquet, saveBouquet, uploadPhoto, type BouquetInput } from "../../../actions";
 
-type Flower = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; inStock: boolean };
+type Flower = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; inStock: boolean; substitutes: number[] };
+
+// Количество можно дробно: «1,5». Пока набирают, держим текст; число отдаём, когда оно понятно.
+function QtyInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const [text, setText] = useState(qtyText(value));
+  useEffect(() => {
+    if (parseFloat(text.replace(",", ".")) !== value) setText(qtyText(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return (
+    <input
+      className="num"
+      style={{ width: 52, border: 0, textAlign: "center" }}
+      value={text}
+      inputMode="decimal"
+      onChange={(e) => {
+        setText(e.target.value);
+        const n = parseFloat(e.target.value.replace(",", "."));
+        if (n > 0) onChange(Math.round(n * 100) / 100);
+      }}
+      onBlur={() => setText(qtyText(value))}
+    />
+  );
+}
 
 type Initial = Omit<BouquetInput, "sizes" | "photoSize"> & {
   format: FormatCode;
@@ -42,15 +65,18 @@ export function BouquetEditor({
   const byId = useMemo(() => new Map(flowers.map((f) => [f.id, f])), [flowers]);
 
   const size = b.sizes.find((s) => s.code === sizeCode)!;
-  const flowersKop = (s: Initial["sizes"][number]) => s.items.reduce((sum, i) => sum + (byId.get(i.flowerId)?.priceKop ?? 0) * i.qty, 0);
+  const flowersKop = (s: Initial["sizes"][number]) => s.items.reduce((sum, i) => sum + Math.round((byId.get(i.flowerId)?.priceKop ?? 0) * i.qty), 0);
+  // чем заменим цветок, которого нет: первая замена в наличии
+  const replacement = (f: Flower | undefined) => (f && !f.inStock ? f.substitutes.map((id) => byId.get(id)).find((x) => x?.inStock) : undefined);
   const priceOf = (s: Initial["sizes"][number]) => (s.items.length ? flowersKop(s) + s.packagingKop : null);
-  const missing = (s: Initial["sizes"][number]) => s.items.filter((i) => !byId.get(i.flowerId)?.inStock).map((i) => byId.get(i.flowerId)?.name);
+  const missing = (s: Initial["sizes"][number]) =>
+    s.items.filter((i) => !byId.get(i.flowerId)?.inStock && !replacement(byId.get(i.flowerId))).map((i) => byId.get(i.flowerId)?.name);
 
   function patchSize(fn: (s: Initial["sizes"][number]) => Initial["sizes"][number]) {
     setB((x) => ({ ...x, sizes: x.sizes.map((s) => (s.code === sizeCode ? fn(s) : s)) }));
   }
   function setQty(flowerId: number, qty: number) {
-    patchSize((s) => ({ ...s, items: s.items.map((i) => (i.flowerId === flowerId ? { ...i, qty: Math.max(1, qty) } : i)) }));
+    patchSize((s) => ({ ...s, items: s.items.map((i) => (i.flowerId === flowerId ? { ...i, qty: Math.max(0.5, qty) } : i)) }));
   }
 
   async function onUpload(files: FileList | null) {
@@ -226,17 +252,20 @@ export function BouquetEditor({
                     <tr key={i.flowerId}>
                       <td>
                         <b>{f?.name ?? "?"}</b>
-                        <div className="small muted">{f?.kind === "GREEN" ? "Зелень" : "Цветы"}{f && !f.inStock ? " · нет в наличии" : ""}</div>
+                        <div className="small muted">
+                          {f?.kind === "GREEN" ? "Зелень" : "Цветы"}
+                          {f && !f.inStock ? (replacement(f) ? ` · нет, заменим на: ${replacement(f)!.name.toLowerCase()}` : " · нет в наличии") : ""}
+                        </div>
                       </td>
                       <td>
                         <div className="qty">
-                          <button type="button" onClick={() => setQty(i.flowerId, i.qty - 1)}>−</button>
-                          <input className="num" style={{ width: 52, border: 0, textAlign: "center" }} value={i.qty} inputMode="numeric" onChange={(e) => setQty(i.flowerId, parseInt(e.target.value || "1", 10) || 1)} />
+                          <button type="button" onClick={() => setQty(i.flowerId, i.qty > 1 ? i.qty - 1 : 0.5)}>−</button>
+                          <QtyInput value={i.qty} onChange={(n) => setQty(i.flowerId, n)} />
                           <button type="button" onClick={() => setQty(i.flowerId, i.qty + 1)}>+</button>
                         </div>
                       </td>
                       <td className="small muted">{f ? `${formatByn(f.priceKop)} / ${f.unit === "STEM" ? "ветка" : "шт"}` : ""}</td>
-                      <td style={{ fontWeight: 700 }}>{f ? formatByn(f.priceKop * i.qty) : ""}</td>
+                      <td style={{ fontWeight: 700 }}>{f ? formatByn(Math.round(f.priceKop * i.qty)) : ""}</td>
                       <td>
                         <button type="button" className="btn-ghost" aria-label="Убрать" onClick={() => patchSize((s) => ({ ...s, items: s.items.filter((x) => x.flowerId !== i.flowerId) }))}>×</button>
                       </td>
