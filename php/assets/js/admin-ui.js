@@ -165,7 +165,13 @@
   }
 
 
+  // Цена на сайте округляется вверх до 5 BYN — как Pricing::roundUpKop
+  function roundPriceKop(kop) {
+    return Math.ceil(kop / 500) * 500;
+  }
+
   window.AdminUI = {
+    roundPriceKop: roundPriceKop,
     esc: esc,
     formatByn: formatByn,
     parseByn: parseByn,

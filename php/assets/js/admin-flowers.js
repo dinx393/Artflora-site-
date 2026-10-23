@@ -39,7 +39,7 @@
       .sort(function (a, c) { return SIZE_ORDER.indexOf(a.code) - SIZE_ORDER.indexOf(c.code); });
   }
   function sizePriceKop(s) {
-    return s.items.reduce(function (sum, i) { return sum + Math.round(i.flower.priceKop * i.qty); }, 0) + s.packagingKop;
+    return U.roundPriceKop(s.items.reduce(function (sum, i) { return sum + Math.round(i.flower.priceKop * i.qty); }, 0) + s.packagingKop);
   }
   function visibility(b) {
     if (!b.enabled) return { visible: false, reason: "disabled" };

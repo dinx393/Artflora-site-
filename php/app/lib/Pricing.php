@@ -35,9 +35,23 @@ final class Pricing
         return null;
     }
 
-    public static function sizePriceKop(array $size): int
+    // Цена для покупателя — «красивая»: вверх до 5 или 0 BYN (177 → 180, 93 → 95, 120 → 120). Решение владельца 2026-10-23.
+    public const ROUND_KOP = 500;
+
+    public static function roundUpKop(int $kop): int
+    {
+        return (int) (ceil($kop / self::ROUND_KOP) * self::ROUND_KOP);
+    }
+
+    // Сумма по составу без округления — чтобы флорист в админке видел, откуда цена
+    public static function rawSizeKop(array $size): int
     {
         return self::flowersKop($size['items']) + (int) $size['packagingKop'];
+    }
+
+    public static function sizePriceKop(array $size): int
+    {
+        return self::roundUpKop(self::rawSizeKop($size));
     }
 
     public static function missingFlowers(array $size): array

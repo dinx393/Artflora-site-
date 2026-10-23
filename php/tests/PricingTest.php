@@ -9,7 +9,11 @@ $bag = ['enabled' => true, 'sizes' => [
     ['code' => 'L', 'note' => '', 'packagingKop' => 2500, 'items' => [['qty' => 7, 'flower' => $rose], ['qty' => 1, 'flower' => $peony]]],
 ]];
 
-test('Σ цветы × количество + упаковка (сумка «rose» из макета = 114 BYN)', fn () => eq(Pricing::sizePriceKop($bag['sizes'][0]), 11400));
+test('Σ цветы × количество + упаковка (сумка «rose» из макета = 114 BYN)', fn () => eq(Pricing::rawSizeKop($bag['sizes'][0]), 11400));
+test('на сайте цена вверх до 5 BYN: 114 → 115, 177 → 180, 93 → 95, 120 → 120', function () use ($bag) {
+    eq(Pricing::sizePriceKop($bag['sizes'][0]), 11500);
+    eq(array_map([Pricing::class, 'roundUpKop'], [17700, 9300, 12000, 12001, 19700, 0]), [18000, 9500, 12000, 12500, 20000, 0]);
+});
 test('у каждого размера своя упаковка', function () use ($rose, $bag) {
     eq(Pricing::sizePriceKop(['items' => [['qty' => 1, 'flower' => $rose]], 'packagingKop' => 500]), 1500);
     eq(Pricing::sizePriceKop($bag['sizes'][1]), 7 * 1000 + 2000 + 2500);

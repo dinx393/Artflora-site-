@@ -47,7 +47,7 @@
     return f.substitutes.map(function (id) { return byId[id]; }).filter(function (x) { return x && x.inStock; })[0];
   }
   function priceOf(s) {
-    return s.items.length ? flowersKop(s) + s.packagingKop : null;
+    return s.items.length ? U.roundPriceKop(flowersKop(s) + s.packagingKop) : null;
   }
   function missing(s) {
     return s.items
@@ -291,8 +291,9 @@
         else ui.render();
       }) + "></label>";
     h += '<div class="sum-row" style="border-top: 1px solid var(--line); padding-top: 10px; align-items: baseline"><b>Цена на сайте</b><span class="sum-total">' +
-      (s.items.length ? U.formatByn(sum + s.packagingKop) : "—") + "</span></div>";
-    h += '<span class="small muted">Цветы ' + U.formatByn(sum) + " + упаковка " + U.formatByn(s.packagingKop) + ". У каждого размера своя упаковка: переключите размер слева.</span></div>";
+      (s.items.length ? U.formatByn(U.roundPriceKop(sum + s.packagingKop)) : "—") + "</span></div>";
+    h += '<span class="small muted">Цветы ' + U.formatByn(sum) + " + упаковка " + U.formatByn(s.packagingKop) + " = " + U.formatByn(sum + s.packagingKop) +
+      ", на сайте округляем вверх до 5 BYN. У каждого размера своя упаковка: переключите размер слева.</span></div>";
 
     h += '<div class="card stack" style="gap: 10px"><span class="label">Коллекция</span><select class="input"' +
       on("change", function (e) { set({ collectionId: e.target.value ? Number(e.target.value) : null }); }) + '><option value="">Без коллекции</option>';
