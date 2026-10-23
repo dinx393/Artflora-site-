@@ -6,14 +6,16 @@ $msg = array_filter($contacts, fn ($c) => in_array($c['code'], ['viber', 'telegr
 $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_blank" rel="noopener"' : '';
 ?>
 <?php /* Вишнёвая полоска — над логотипом (решение владельца 2026-10-19) */ ?>
+<?php /* На телефоне справа в полоске — номер магазина, нажал и звонишь (вариант Б, решение владельца 2026-10-23) */ ?>
 <div class="ribbon">
   <div class="wrap">
-    <b>Сегодня доставим до 21:00</b>
-    <i aria-hidden="true">·</i>
+    <b class="desktop-only">Сегодня доставим до 21:00</b>
+    <span class="mobile-only ribbon-when"><b>Доставим сегодня</b><span class="ribbon-till"> до 21:00</span></span>
+    <i aria-hidden="true" class="desktop-only">·</i>
     <span class="desktop-only">Доставка от <?= e(Money::format(Delivery::minKop($delivery))) ?>, бесплатно от <?= e(Money::format($delivery['freeFromKop'])) ?></span>
     <i aria-hidden="true" class="desktop-only">·</i>
     <span class="desktop-only">Фото букета перед отправкой</span>
-    <span class="mobile-only">Фото до отправки</span>
+    <a href="tel:+<?= e(preg_replace('/\D/', '', $shop['phone'])) ?>" class="mobile-only ribbon-phone"><?= Icons::get('phone', 16) ?><?= e($shop['phone']) ?></a>
     <i aria-hidden="true" class="desktop-only">·</i>
     <span class="desktop-only">Самовывоз −<?= e($delivery['pickupDiscountPct']) ?>%</span>
   </div>

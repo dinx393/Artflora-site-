@@ -406,7 +406,12 @@ tr.dragging { opacity: .45; }
 @media (max-width: 860px) {
   :root { --gutter: 22px; }
   html { scroll-padding-top: 150px; }
-  .ribbon .wrap { flex-wrap: nowrap; overflow: hidden; gap: 6px; padding: 10px 12px; font-size: 13px; }
+  .ribbon .wrap { flex-wrap: nowrap; overflow: hidden; gap: 10px; padding: 0 12px 0 16px; min-height: 44px; justify-content: space-between; font-size: 13px; }
+  .ribbon-phone {
+    display: flex; align-items: center; gap: 6px; color: var(--white); font-size: 15px; font-weight: 800;
+    text-decoration: underline; text-decoration-color: var(--pink); text-underline-offset: 4px;
+  }
+  .ribbon-phone:hover { color: var(--pink); }
   .header-top { flex-wrap: wrap; gap: 14px; padding-top: 16px; padding-bottom: 16px; }
   .header-top .logo { flex: 1; text-align: center; font-size: 25px; font-weight: 500; }
   .header-top .search { order: 5; flex-basis: 100%; background: var(--blush); }
@@ -504,6 +509,8 @@ tr.dragging { opacity: .45; }
   .line .line-price { grid-column: 2; }
 }
 @media (min-width: 861px) { .mobile-only { display: none !important; } }
+/* Узкий телефон: в полоске остаются «Доставим сегодня» и номер */
+@media (max-width: 374px) { .ribbon-till { display: none; } }
 /* Узкие телефоны: в шапке у корзины только значок и число */
 @media (max-width: 860px) { .header-top .cart-word { display: none; } }
 
