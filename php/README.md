@@ -119,6 +119,18 @@ php tests/run.php                              # расчёты без базы,
 6. Почта: в `app/config.php` вписать `smtp_user` и `smtp_pass` (пароль приложения Gmail), затем админка → «Настройки» →
    адрес для писем → «Отправить пробное письмо».
 
+### Перенести букеты с версии на Node.js (localhost)
+
+На своём компьютере, в папке сайта (после `git pull && docker compose up -d --build`):
+```
+docker compose exec site node prisma/export-for-php.js
+docker compose cp site:/tmp/artflora-export.json artflora-export.json
+```
+Файл `artflora-export.json` (цветы, замены, коллекции, букеты с размерами, дополнения, настройки и фото) загрузить
+через «Менеджер файлов» в домашнюю папку, затем в Shell:
+`/opt/alt/php85/usr/bin/php ~/www/test.artflora.by/app/cli.php import ~/artflora-export.json`
+(если на сайте уже есть букеты — в конце `--replace`, они заменятся). Заказы и напоминания не переносятся.
+
 Без Shell: `sh dev/build-zip.sh` собирает архив для «Менеджера файлов» (без паролей и фото), `app/config.php`
 тогда создаётся из `app/config.sample.php` вручную.
 

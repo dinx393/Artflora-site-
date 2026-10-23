@@ -3,6 +3,9 @@
 //   php app/cli.php migrate      — применить новые таблицы базы
 //   php app/cli.php demo         — добавить цветы и букеты-примеры (только в пустую базу)
 //   php app/cli.php clean-demo   — убрать все букеты, заказы и напоминания (справочник цветов остаётся)
+//   php app/cli.php import ~/artflora-export.json [--replace]
+//                                — перенести каталог с сайта на Node.js (файл даёт prisma/export-for-php.js);
+//                                  --replace сначала убирает букеты, коллекции и цветы, которые уже есть на сайте
 require __DIR__ . '/bootstrap.php';
 if (PHP_SAPI !== 'cli') exit;
 
@@ -45,6 +48,59 @@ if ($cmd === 'migrate') {
     Db::exec('DELETE FROM bouquets');
     Db::exec('DELETE FROM collections');
     echo "Букеты, коллекции, заказы и напоминания удалены.\n";
+} elseif ($cmd === 'import') {
+    $file = $argv[2] ?? exit("Укажите файл: php app/cli.php import ~/artflora-export.json\n");
+    $data = is_file($file) ? json_decode(file_get_contents($file), true) : null;
+    if (!is_array($data) || ($data['version'] ?? 0) !== 1) exit("Файл $file не найден или это не выгрузка каталога.\n");
+    $has = Db::value('SELECT COUNT(*) FROM flowers') + Db::value('SELECT COUNT(*) FROM bouquets');
+    if ($has && !in_array('--replace', $argv, true)) {
+        exit("На сайте уже есть цветы или букеты. Чтобы заменить их выгрузкой, добавьте в конце команды --replace\n");
+    }
+    // Фото — в uploads/, имена те же, что на старом сайте
+    if (!is_dir(Uploads::dir())) mkdir(Uploads::dir(), 0755, true);
+    foreach ($data['photos'] ?? [] as $name => $b64) {
+        $bin = base64_decode($b64, true);
+        $ok = Uploads::safeName($name) && $bin !== false;
+        $ok = $ok && array_filter(array_keys(Uploads::TYPES), fn ($t) => Uploads::looksLikeImage($bin, $t));
+        if ($ok) file_put_contents(Uploads::dir() . '/' . $name, $bin);
+        else echo "Пропущено фото $name\n";
+    }
+    $b = fn ($v) => (int) (bool) $v;
+    Db::tx(function () use ($data, $b) {
+        // Номера (id) сохраняем, чтобы составы букетов и замены цветов указывали на те же цветы
+        Db::exec('DELETE FROM bouquets');
+        Db::exec('DELETE FROM collections');
+        Db::exec('DELETE FROM flowers');
+        foreach ($data['flowers'] as $f) {
+            Db::insert('flowers', ['id' => $f['id'], 'name' => $f['name'], 'kind' => $f['kind'], 'unit' => $f['unit'], 'priceKop' => $f['priceKop'],
+                'prevPriceKop' => $f['prevPriceKop'], 'inStock' => $b($f['inStock']), 'sortOrder' => $f['sortOrder']]);
+        }
+        foreach ($data['flowers'] as $f) {
+            foreach ($f['substitutes'] as $sub) Db::insert('flower_substitutes', ['flowerId' => $f['id'], 'substituteId' => $sub]);
+        }
+        foreach ($data['collections'] as $c) Db::insert('collections', ['id' => $c['id'], 'slug' => $c['slug'], 'name' => $c['name']]);
+        foreach ($data['bouquets'] as $x) {
+            Db::insert('bouquets', [
+                'id' => $x['id'], 'slug' => $x['slug'], 'name' => $x['name'], 'description' => $x['description'], 'format' => $x['format'],
+                'packagingKop' => $x['packagingKop'], 'enabled' => $b($x['enabled']), 'isHit' => $b($x['isHit']), 'isExclusive' => $b($x['isExclusive']),
+                'photoSize' => $x['photoSize'], 'colors' => Db::json($x['colors']), 'occasions' => Db::json($x['occasions']), 'photos' => Db::json($x['photos']),
+                'sortOrder' => $x['sortOrder'], 'collectionId' => $x['collectionId'],
+            ]);
+            foreach ($x['sizes'] as $s) {
+                $sid = Db::insert('bouquet_sizes', ['bouquetId' => $x['id'], 'code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop']]);
+                foreach ($s['items'] as $i) Db::insert('bouquet_items', ['sizeId' => $sid, 'flowerId' => $i['flowerId'], 'qty' => $i['qty']]);
+            }
+        }
+        foreach ($data['addons'] as $a) {
+            $row = ['name' => $a['name'], 'priceKop' => $a['priceKop'], 'included' => $b($a['included']), 'active' => $b($a['active']), 'sortOrder' => $a['sortOrder']];
+            $id = Db::value('SELECT id FROM addons WHERE code = ?', [$a['code']]);
+            $id ? Db::update('addons', (int) $id, $row) : Db::insert('addons', $row + ['code' => $a['code']]);
+        }
+        foreach ($data['settings'] as $key => $value) {
+            if (in_array($key, ['shop', 'delivery', 'districts', 'colors'], true) && is_array($value)) Settings::save($key, $value);
+        }
+    });
+    echo 'Перенесено: цветов ' . count($data['flowers']) . ', букетов ' . count($data['bouquets']) . ', фото ' . count($data['photos'] ?? []) . ", настройки.\n";
 } else {
-    echo "Команды: migrate, demo, clean-demo\n";
+    echo "Команды: migrate, demo, clean-demo, import\n";
 }

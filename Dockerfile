@@ -17,7 +17,8 @@ RUN npx prisma generate && npx next build \
  && npx esbuild scripts/migrate.ts --bundle --platform=node --format=cjs --external:pg-native --outfile=prisma/migrate.js \
  && npx esbuild prisma/seed.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:pg-native --outfile=prisma/seed.js \
  && npx esbuild prisma/demo-catalog.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:pg-native --outfile=prisma/demo-catalog.js \
- && npx esbuild prisma/clean-demo.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:pg-native --outfile=prisma/clean-demo.js
+ && npx esbuild prisma/clean-demo.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:pg-native --outfile=prisma/clean-demo.js \
+ && npx esbuild prisma/export-for-php.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:pg-native --outfile=prisma/export-for-php.js
 
 FROM node:22-alpine AS run
 WORKDIR /app
