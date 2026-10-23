@@ -48,15 +48,70 @@
     return on ? " " + name : "";
   }
 
-  function keyOf(el, root) {
-    if (el.getAttribute("data-k")) return "k:" + el.getAttribute("data-k");
-    var all = root.querySelectorAll("input, select, textarea, button");
-    return "i:" + Array.prototype.indexOf.call(all, el);
+  // Обновить страницу до нового HTML, не пересоздавая элементы: фокус, курсор, открытая палитра цвета
+  // и перетаскивание остаются как были. Поле, в котором сейчас печатают, не трогаем, если значение то же.
+  function syncAttrs(from, to) {
+    var i;
+    for (i = from.attributes.length - 1; i >= 0; i--) {
+      var n = from.attributes[i].name;
+      if (!to.hasAttribute(n)) from.removeAttribute(n);
+    }
+    for (i = 0; i < to.attributes.length; i++) {
+      var a = to.attributes[i];
+      if (from.getAttribute(a.name) !== a.value) from.setAttribute(a.name, a.value);
+    }
   }
 
-  function findKey(key, root) {
-    if (key.slice(0, 2) === "k:") return root.querySelector('[data-k="' + key.slice(2).replace(/"/g, '\\"') + '"]');
-    return root.querySelectorAll("input, select, textarea, button")[Number(key.slice(2))] || null;
+  function morphNode(from, to) {
+    if (from.nodeType !== to.nodeType || from.nodeName !== to.nodeName || (from.type || "") !== (to.type || "")) {
+      from.parentNode.replaceChild(to, from);
+      return;
+    }
+    if (from.nodeType !== 1) {
+      if (from.nodeValue !== to.nodeValue) from.nodeValue = to.nodeValue;
+      return;
+    }
+    syncAttrs(from, to);
+    var tag = from.nodeName;
+    var focused = from === document.activeElement;
+    if (tag === "INPUT") {
+      if (from.type === "checkbox" || from.type === "radio") from.checked = to.hasAttribute("checked");
+      else if (from.type !== "file") {
+        var v = to.getAttribute("value") || "";
+        if (from.value !== v) from.value = v;
+      }
+      return;
+    }
+    if (tag === "TEXTAREA") {
+      if (from.value !== to.textContent && !focused) from.value = to.textContent;
+      return;
+    }
+    morphChildren(from, to);
+    if (tag === "SELECT") {
+      var sel = to.querySelector("option[selected]");
+      from.value = sel ? sel.value : from.options.length ? from.options[0].value : "";
+    }
+  }
+
+  function morphChildren(from, to) {
+    var a = from.firstChild;
+    var b = to.firstChild;
+    while (b) {
+      var nextB = b.nextSibling;
+      if (!a) {
+        from.appendChild(b);
+      } else {
+        var nextA = a.nextSibling;
+        morphNode(a, b);
+        a = nextA;
+      }
+      b = nextB;
+    }
+    while (a) {
+      var next = a.nextSibling;
+      from.removeChild(a);
+      a = next;
+    }
   }
 
   function mount(root, view) {
@@ -66,33 +121,10 @@
       return " data-on-" + type + '="' + (handlers.length - 1) + '"';
     }
     function render() {
-      var a = document.activeElement;
-      var focus = null;
-      if (a && a !== root && root.contains(a)) {
-        focus = { key: keyOf(a, root) };
-        try {
-          focus.s = a.selectionStart;
-          focus.e = a.selectionEnd;
-        } catch (err) {}
-      }
-      var scrolls = Array.prototype.map.call(root.querySelectorAll("[data-keep-scroll]"), function (el) {
-        return [el.getAttribute("data-keep-scroll"), el.scrollTop];
-      });
       handlers = [];
-      root.innerHTML = view(on);
-      scrolls.forEach(function (s) {
-        var el = root.querySelector('[data-keep-scroll="' + s[0] + '"]');
-        if (el) el.scrollTop = s[1];
-      });
-      if (focus) {
-        var el = findKey(focus.key, root);
-        if (el) {
-          el.focus({ preventScroll: true });
-          try {
-            if (focus.s != null) el.setSelectionRange(focus.s, focus.e);
-          } catch (err) {}
-        }
-      }
+      var tpl = document.createElement("template");
+      tpl.innerHTML = view(on);
+      morphChildren(root, tpl.content);
     }
     // Один обработчик на весь блок: ищем ближайший элемент с data-on-<событие>, как всплытие в браузере.
     EVENTS.forEach(function (type) {
