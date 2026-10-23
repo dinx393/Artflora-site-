@@ -172,7 +172,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
         <select class="input" aria-label="Район доставки" data-district>
           <option value="">Выберите район</option>
           <?php foreach ($districts as $d): $free = $d['priceKop'] === 0 ?>
-            <option value="<?= e($d['name']) ?>" data-price="<?= e($free ? 'Доставка бесплатно' : 'Доставка ' . Money::format($d['priceKop'])) ?>" data-shop="<?= e($d['shopName']) ?>">
+            <option value="<?= e($d['name']) ?>" data-label="<?= e($free ? 'Доставка бесплатно' : 'Доставка ' . Money::format($d['priceKop'])) ?>" data-shop="<?= e($d['shopName']) ?>">
               <?= e($d['name']) ?> — <?= e($free ? 'бесплатно' : Money::format($d['priceKop'])) ?>
             </option>
           <?php endforeach ?>

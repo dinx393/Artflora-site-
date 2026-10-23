@@ -107,4 +107,34 @@ Http::get('/bouquet/{slug}', function (string $slug) {
     ]);
 });
 
-// Дальше будут: /single, /delivery, /remind (работа приостановлена по просьбе владельца 2026-10-23).
+Http::get('/single', fn () => View::page('shop/single', [
+    'title' => 'Цветы поштучно',
+    'flowers' => Db::all("SELECT id, name, unit, priceKop FROM flowers WHERE inStock = 1 ORDER BY kind = 'GREEN', sortOrder, name"),
+    'shop' => Settings::get('shop'),
+]));
+
+Http::get('/delivery', fn () => View::page('shop/delivery', [
+    'title' => 'Доставка и оплата',
+    'shop' => Settings::get('shop'),
+    'd' => Settings::get('delivery'),
+]));
+
+Http::get('/remind', fn () => View::page('shop/remind', [
+    'title' => 'Напомним о важных датах',
+    'ok' => isset($_GET['ok']),
+    'error' => Http::str('error', 10),
+]));
+
+Http::post('/remind', function () {
+    if (!RateLimit::allow('remind', RateLimit::clientIp())) Http::redirect('/remind?error=busy');
+    $name = Http::str('name', 1000);
+    $phone = preg_replace('/[^\d+]/', '', Http::str('phone', 1000));
+    $occasion = Http::str('occasion', 1000);
+    $date = Http::str('date', 20);
+    $d = DateTime::createFromFormat('!Y-m-d', $date);
+    $valid = $name !== '' && mb_strlen($name) <= 100 && preg_match('/^\+?\d{9,13}$/', $phone)
+        && $occasion !== '' && mb_strlen($occasion) <= 100 && $d && $d->format('Y-m-d') === $date;
+    if (!$valid) Http::redirect('/remind?error=1');
+    Db::insert('reminders', ['name' => $name, 'phone' => $phone, 'occasion' => $occasion, 'date' => $date]);
+    Http::redirect('/remind?ok=1');
+});
