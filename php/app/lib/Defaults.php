@@ -5,7 +5,7 @@ final class Defaults
     public const SHOP = [
         'phone' => '+375 29 683-28-32',
         'viber' => 'viber://chat?number=%2B375296832832',
-        'telegram' => 'https://t.me/',
+        'telegram' => 'https://t.me/artfloraminsk',
         'whatsapp' => '', // пусто — откроем WhatsApp по номеру телефона
         'instagram' => 'https://www.instagram.com/artflora.by/',
         'sellerDetails' => '[Наименование продавца], УНП [номер] · Юр. адрес: [адрес] · В Торговом реестре РБ с [дата], № [номер]',
