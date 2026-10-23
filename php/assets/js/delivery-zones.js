@@ -15,7 +15,7 @@
   function quoteColor(q, zones, outsideColor) {
     if (q.area) return q.area.color;
     if (!q.ok) return "#999999";
-    if (q.outsideMkadKm) return outsideColor || OUTSIDE_COLOR;
+    if (q.outside) return outsideColor || OUTSIDE_COLOR;
     return zoneColor(q.zone, (zones[q.zone - 1] || {}).color);
   }
   function insidePolygon(p, poly) {
@@ -49,10 +49,10 @@
     var last = cfg.zones.length - 1;
     var zi = cfg.zones.findIndex(function (z) { return km <= z.maxKm; });
     if (zi === -1 || outside > 0) zi = last;
-    var extra = outside * cfg.outsideMkadPerKmKop;
-    var base = cfg.zones[zi].priceKop + extra;
+    // За МКАД — одна цена, без бесплатной доставки (как Delivery::outsideQuote)
+    if (outside > 0) return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: outside, outside: true, priceKop: cfg.outsideMkadKop };
     var free = subtotalKop >= cfg.freeFromKop;
-    return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: outside, priceKop: free ? extra : base };
+    return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: 0, priceKop: free ? 0 : cfg.zones[zi].priceKop };
   }
 
   function rgba(hex, a) {
@@ -74,7 +74,7 @@
           var ll = map.unproject([coords.x * size.x + x + step / 2, coords.y * size.y + y + step / 2], coords.z);
           var q = quote({ lat: ll.lat, lng: ll.lng }, 0, cfg);
           if (!q.ok && !q.area) continue;
-          ctx.fillStyle = rgba(quoteColor(q, cfg.zones, cfg.outsideColor), q.ok && q.outsideMkadKm > 0 ? 0.28 : 0.38);
+          ctx.fillStyle = rgba(quoteColor(q, cfg.zones, cfg.outsideColor), q.ok && q.outside ? 0.28 : 0.38);
           ctx.fillRect(x, y, step, step);
         }
       }

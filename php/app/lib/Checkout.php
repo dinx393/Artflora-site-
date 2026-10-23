@@ -117,6 +117,7 @@ final class Checkout
                 return ['type' => 'point', 'lat' => round((float) $raw['lat'], 5), 'lng' => round((float) $raw['lng'], 5)];
             }
             if ($type === 'zone' && is_int($raw['zone'] ?? null) && $raw['zone'] >= 1 && $raw['zone'] <= 50) return ['type' => 'zone', 'zone' => $raw['zone']];
+            if ($type === 'outside') return ['type' => 'outside'];
             if ($type === 'area' && is_string($raw['name'] ?? null) && $raw['name'] !== '' && mb_strlen($raw['name']) <= 80) return ['type' => 'area', 'name' => $raw['name']];
             return null;
         }

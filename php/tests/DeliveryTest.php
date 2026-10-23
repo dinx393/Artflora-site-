@@ -22,16 +22,15 @@ test('центр — третья зона, 14 BYN (как в макете)', fu
     eq($q['priceKop'], 1400);
     eq($q['leftToFreeKop'], 7000);
 });
-test('за МКАД: 18 BYN + 1 BYN за км', function () use ($at, $cfg) {
+test('за МКАД — одна цена, без доплаты за км', function () use ($at, $cfg) {
     $q = Delivery::quote($at('Заславль'), 13000, $cfg);
-    ok($q['ok'] && $q['outsideMkadKm'] > 0);
-    eq($q['priceKop'], 1800 + $q['outsideMkadKm'] * 100);
+    ok($q['ok'] && $q['outside'] && $q['outsideMkadKm'] > 0);
+    eq($q['priceKop'], $cfg['outsideMkadKop']);
+    eq(Delivery::quote(['lat' => 53.6, 'lng' => 27.4], 13000, $cfg)['priceKop'], $cfg['outsideMkadKop'], 'дальше — та же цена');
+    eq(Delivery::quotePlace(['type' => 'outside'], 13000, $cfg)['priceKop'], $cfg['outsideMkadKop'], 'кнопка «За МКАД»');
 });
 test('бесплатно от 200 BYN внутри МКАД', fn () => eq(Delivery::quote($at('Центр'), 20000, $cfg)['priceKop'], 0));
-test('за МКАД при бесплатной доставке остаётся доплата за км', function () use ($at, $cfg) {
-    $q = Delivery::quote($at('Заславль'), 25000, $cfg);
-    eq($q['priceKop'], $q['outsideMkadKm'] * 100);
-});
+test('за МКАД бесплатной доставки нет', fn () => eq(Delivery::quote($at('Заславль'), 25000, $cfg)['priceKop'], $cfg['outsideMkadKop']));
 test('слишком далеко — отказ', fn () => eq(Delivery::quote(['lat' => 53.13, 'lng' => 26.01], 13000, $cfg)['ok'], false));
 test('самовывоз −10% на букеты', fn () => eq(Delivery::pickupDiscountKop(13000, $cfg), 1300));
 test('свой участок важнее кругов: своя цена или «не возим»', function () use ($at, $cfg) {

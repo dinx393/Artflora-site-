@@ -29,7 +29,7 @@ final class Defaults
         ],
         'mkadCenter' => ['lat' => 53.9006, 'lng' => 27.559],
         'mkadRadiusKm' => 11,
-        'outsideMkadPerKmKop' => 100,
+        'outsideMkadKop' => 2500, // за МКАД — одна цена (решение владельца 2026-10-23: без «+1 BYN за км»)
         'freeFromKop' => 20000,
         'pickupDiscountPct' => 10,
         'maxOutsideMkadKm' => 30, // дальше этого за МКАД не возим (владелец: до 30 км от Минска)

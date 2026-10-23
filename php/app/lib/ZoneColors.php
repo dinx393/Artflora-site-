@@ -27,7 +27,7 @@ final class ZoneColors
     {
         if (isset($q['area'])) return $q['area']['color'];
         if (!$q['ok']) return '#999999';
-        if (!empty($q['outsideMkadKm'])) return $outsideColor ?: self::OUTSIDE;
+        if (!empty($q['outside'])) return $outsideColor ?: self::OUTSIDE;
         return self::zone($q['zone'], $zones[$q['zone'] - 1]['color'] ?? null);
     }
 }

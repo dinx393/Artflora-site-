@@ -30,7 +30,7 @@
       var list = cfg.zones.map(function (z, i) {
         return { key: "zone:" + (i + 1), place: { type: "zone", zone: i + 1 }, color: Z.zoneColor(i + 1, z.color), title: i === last ? "Дальше, до МКАД" : "До " + z.maxKm + " км от магазина", price: byn(z.priceKop) };
       });
-      list.push({ key: "outside", place: null, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД, до " + cfg.maxOutsideMkadKm + " км", price: byn((cfg.zones[last] || {}).priceKop || 0) + " + " + byn(cfg.outsideMkadPerKmKop) + "/км" });
+      list.push({ key: "outside", place: { type: "outside" }, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД", price: byn(cfg.outsideMkadKop) });
       cfg.areas.forEach(function (a) {
         if (!a.noDelivery && a.points.length >= 3) list.push({ key: "area:" + a.name, place: { type: "area", name: a.name }, color: a.color, title: a.name, price: byn(a.priceKop) });
       });
@@ -40,7 +40,7 @@
     function keyOf(q) {
       if (!q.ok) return null;
       if (q.area) return "area:" + q.area.name;
-      if (q.outsideMkadKm) return "outside";
+      if (q.outside) return "outside";
       return "zone:" + q.zone;
     }
 
@@ -83,7 +83,7 @@
       }
       dropPin();
       pin = L.marker(latlng, { icon: L.divIcon({ className: "zmap-pin", iconSize: [22, 22], iconAnchor: [11, 11] }), interactive: false, zIndexOffset: 2000 }).addTo(map);
-      var where = q.area ? q.area.name : q.outsideMkadKm ? "за МКАД, " + q.outsideMkadKm + " км" : "по Минску";
+      var where = q.area ? q.area.name : q.outside ? "за МКАД" : "по Минску";
       L.popup({ closeButton: false, className: "zmap-popup", offset: [0, -8] }).setLatLng(latlng)
         .setContent('<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor)) + '"></span><b>Везём сюда · ' + esc(byn(q.priceKop)) + "</b><br>" + esc(where))
         .openOn(map);
@@ -97,12 +97,6 @@
         if (!b) return;
         var key = b.getAttribute("data-zmap-key");
         var p = places().filter(function (x) { return x.key === key; })[0];
-        // За МКАД цена зависит от расстояния — тут нужно место на карте
-        if (!p.place) {
-          say("За МКАД цена зависит от расстояния: нажмите на карте, куда везти.");
-          box.querySelector("[data-zmap-map]").scrollIntoView({ block: "center", behavior: "smooth" });
-          return;
-        }
         say("");
         dropPin();
         if (map) map.closePopup();
@@ -172,8 +166,8 @@
         var q = Z.quote({ lat: e.latlng.lat, lng: e.latlng.lng }, 0, cfg);
         var html = !q.ok ? "<b>Сюда не возим</b><br>Напишите нам, может быть, договоримся." :
           '<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor)) + '"></span><b>Возим сюда · ' + esc(byn(q.priceKop)) + "</b><br>" +
-          esc(q.area ? q.area.name : q.outsideMkadKm ? "за МКАД, " + q.outsideMkadKm + " км" : "по Минску") +
-          (!q.area && !q.outsideMkadKm ? "<br>Бесплатно при заказе от " + esc(byn(cfg.freeFromKop)) : "");
+          esc(q.area ? q.area.name : q.outside ? "за МКАД" : "по Минску") +
+          (!q.area && !q.outside ? "<br>Бесплатно при заказе от " + esc(byn(cfg.freeFromKop)) : "");
         L.popup({ closeButton: false, className: "zmap-popup" }).setLatLng(e.latlng).setContent(html).openOn(map);
       });
     }

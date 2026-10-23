@@ -4,12 +4,12 @@
 // Правила (из макетов):
 //  - везём из ближайшего магазина;
 //  - зоны по расстоянию от магазина: 6 / 10 / 14 / 18 BYN;
-//  - за МКАД: последняя зона + 1 BYN за каждый км от МКАД;
-//  - бесплатно от суммы freeFromKop (внутри МКАД; за МКАД доплата за км остаётся);
+//  - за МКАД: одна цена outsideMkadKop (решение владельца 2026-10-23, без доплаты за км), бесплатной доставки там нет;
+//  - бесплатно от суммы freeFromKop (внутри МКАД);
 //  - самовывоз: скидка pickupDiscountPct на букеты;
 //  - свои участки (нарисованы в админке на карте) важнее кругов: там своя цена или «не возим».
 //
-// Настройки — массив как Defaults::DELIVERY: shops, zones, mkadCenter, mkadRadiusKm, outsideMkadPerKmKop,
+// Настройки — массив как Defaults::DELIVERY: shops, zones, mkadCenter, mkadRadiusKm, outsideMkadKop,
 // freeFromKop, pickupDiscountPct, maxOutsideMkadKm, outsideColor?, areas?. Точка — ['lat' => .., 'lng' => ..].
 final class Delivery
 {
@@ -85,20 +85,30 @@ final class Delivery
         }
         if ($zoneIdx === -1 || $outside > 0) $zoneIdx = $last;
 
-        $zoneKop = (int) $cfg['zones'][$zoneIdx]['priceKop'];
-        $extraKop = $outside * (int) $cfg['outsideMkadPerKmKop'];
-        $baseKop = $zoneKop + $extraKop;
+        if ($outside > 0) return self::outsideQuote($shop, round($km, 1), $outside, $cfg);
+        $baseKop = (int) $cfg['zones'][$zoneIdx]['priceKop'];
         $free = $subtotalKop >= $cfg['freeFromKop'];
         return [
-            'ok' => true, 'shop' => $shop, 'km' => round($km, 1), 'zone' => $zoneIdx + 1, 'outsideMkadKm' => $outside,
-            'baseKop' => $baseKop, 'priceKop' => $free ? $extraKop : $baseKop, 'free' => $free,
+            'ok' => true, 'shop' => $shop, 'km' => round($km, 1), 'zone' => $zoneIdx + 1, 'outsideMkadKm' => 0,
+            'baseKop' => $baseKop, 'priceKop' => $free ? 0 : $baseKop, 'free' => $free,
             'leftToFreeKop' => max(0, $cfg['freeFromKop'] - $subtotalKop),
+        ];
+    }
+
+    // За МКАД — одна цена, без бесплатной доставки. outsideMkadKm — сколько км за МКАД (для флориста), на цену не влияет.
+    private static function outsideQuote(?array $shop, ?float $km, int $outsideKm, array $cfg): array
+    {
+        $kop = (int) $cfg['outsideMkadKop'];
+        return [
+            'ok' => true, 'shop' => $shop, 'km' => $km, 'zone' => count($cfg['zones']), 'outsideMkadKm' => $outsideKm, 'outside' => true,
+            'baseKop' => $kop, 'priceKop' => $kop, 'free' => false, 'leftToFreeKop' => 0,
         ];
     }
 
     // Цена по выбору покупателя в корзине (решение владельца 2026-10-23: без длинного списка районов).
     // place: ['type' => 'point', 'lat', 'lng'] — место, отмеченное на карте (считаем как обычно, по точке);
     //        ['type' => 'zone', 'zone' => N]  — кнопка цветной зоны: её цена, магазин выберет флорист;
+    //        ['type' => 'outside']             — кнопка «За МКАД»;
     //        ['type' => 'area', 'name']        — кнопка своего участка с карты.
     // Ответ как у quote(); у зоны и участка 'shop' => null и 'km' => null.
     public static function quotePlace(array $place, int $subtotalKop, array $cfg): array
@@ -116,6 +126,8 @@ final class Delivery
                     'ok' => true, 'shop' => null, 'km' => null, 'zone' => $place['zone'], 'outsideMkadKm' => 0,
                     'baseKop' => $base, 'priceKop' => $free ? 0 : $base, 'free' => $free, 'leftToFreeKop' => max(0, $cfg['freeFromKop'] - $subtotalKop),
                 ];
+            case 'outside':
+                return self::outsideQuote(null, null, 0, $cfg);
             case 'area':
                 foreach ($cfg['areas'] ?? [] as $a) {
                     if ($a['name'] !== $place['name'] || count($a['points']) < 3) continue;
@@ -144,9 +156,10 @@ final class Delivery
         if (!empty($place['district'])) return $place['district'];
         if ($place['type'] === 'zone') return 'Зона ' . $place['zone'] . ' (' . self::zoneTitle($place['zone'], $cfg) . ')';
         if ($place['type'] === 'area') return $place['name'];
+        if ($place['type'] === 'outside') return 'За МКАД';
         $at = sprintf('точка на карте %.5f, %.5f', $place['lat'], $place['lng']);
         if (isset($quote['area'])) return $quote['area']['name'] . ', ' . $at;
-        if (!empty($quote['outsideMkadKm'])) return "За МКАД {$quote['outsideMkadKm']} км, $at";
+        if (!empty($quote['outside'])) return "За МКАД ({$quote['outsideMkadKm']} км), $at";
         return 'Зона ' . ($quote['zone'] ?? '?') . ', ' . $at;
     }
 

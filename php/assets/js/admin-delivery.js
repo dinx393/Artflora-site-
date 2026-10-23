@@ -149,10 +149,10 @@
       changeCfg(withCfg({ zones: own.slice(0, last).concat([zone, own[last]]) }));
     }) + ">+ Добавить зону</button>";
     h += '<div class="zone-edit"><input type="color" class="color-pick sm" value="' + esc(cfg.outsideColor || OUTSIDE_COLOR) + '" aria-label="Цвет «за МКАД»"' +
-      on("input", function (e) { changeCfg(withCfg({ outsideColor: e.target.value })); }) + '><b>За МКАД</b><span class="small muted">+ за км</span>' +
-      '<span class="row" style="gap: 4px">' + money(on, "outside-km", cfg.outsideMkadPerKmKop, function (k) { changeCfg(withCfg({ outsideMkadPerKmKop: k })); }) + " BYN</span>" +
+      on("input", function (e) { changeCfg(withCfg({ outsideColor: e.target.value })); }) + '><b>За МКАД</b><span class="small muted">цена</span>' +
+      '<span class="row" style="gap: 4px">' + money(on, "outside-price", cfg.outsideMkadKop, function (k) { changeCfg(withCfg({ outsideMkadKop: k })); }) + " BYN</span>" +
       '<span class="row small" style="gap: 4px; grid-column: 3 / -1">не дальше ' + num(on, "max-outside", cfg.maxOutsideMkadKm, 1, 60, function (n) { changeCfg(withCfg({ maxOutsideMkadKm: n })); }) + " км</span></div>";
-    h += '<span class="small muted">За МКАД: цена зоны ' + cfg.zones.length + " (" + formatByn((cfg.zones[last] || {}).priceKop || 0) + ") + " + formatByn(cfg.outsideMkadPerKmKop) + " за каждый км от МКАД.</span>";
+    h += '<span class="small muted">За МКАД — одна цена, бесплатная доставка от суммы там не действует.</span>';
     h += '<div class="stack" style="gap: 8px; margin-top: 6px">';
     h += '<label class="sum-row" style="justify-content: flex-start; gap: 12px"><span>Бесплатно от, BYN</span>' + money(on, "free-from", cfg.freeFromKop, function (k) { changeCfg(withCfg({ freeFromKop: k })); }) + "</label>";
     h += '<label class="sum-row" style="justify-content: flex-start; gap: 12px"><span>Скидка за самовывоз, %</span>' + num(on, "pickup", cfg.pickupDiscountPct, 1, 70, function (n) { changeCfg(withCfg({ pickupDiscountPct: n })); }) + "</label>";
@@ -215,7 +215,7 @@
           changeDistricts(districts.map(function (y, j) { return j === i ? Object.assign({}, y, { name: v }) : y; }));
         }) + ">";
       h += '<span class="small" style="white-space: nowrap">';
-      if (q.ok) h += "<b>" + formatByn(q.priceKop) + '</b> <span class="muted">' + esc(q.area ? q.area.name : q.outsideMkadKm > 0 ? "за МКАД " + q.outsideMkadKm + " км" : "зона " + q.zone) + "</span>";
+      if (q.ok) h += "<b>" + formatByn(q.priceKop) + '</b> <span class="muted">' + esc(q.area ? q.area.name : q.outside ? "за МКАД " + q.outsideMkadKm + " км" : "зона " + q.zone) + "</span>";
       else h += '<span class="error" style="padding: 0">' + esc(q.area ? "не возим · " + q.area.name : "слишком далеко") + "</span>";
       h += "</span>";
       h += '<button type="button" class="btn-ghost" aria-label="Убрать район ' + esc(x.name) + '"' + on("click", function (e) {
@@ -250,7 +250,7 @@
     cfg.zones.forEach(function (z, i) {
       h += '<span><i class="zone-dot" style="background: ' + zoneColor(i + 1, z.color) + '"></i>' + (i === last ? "дальше, до МКАД" : "до " + z.maxKm + " км") + " · " + formatByn(z.priceKop) + "</span>";
     });
-    h += '<span><i class="zone-dot" style="background: ' + esc(cfg.outsideColor || OUTSIDE_COLOR) + '"></i>за МКАД · ' + formatByn((cfg.zones[last] || {}).priceKop || 0) + " + " + formatByn(cfg.outsideMkadPerKmKop) + "/км</span>";
+    h += '<span><i class="zone-dot" style="background: ' + esc(cfg.outsideColor || OUTSIDE_COLOR) + '"></i>за МКАД · ' + formatByn(cfg.outsideMkadKop) + "</span>";
     cfg.areas.forEach(function (a) {
       h += '<span><i class="zone-dot" style="background: ' + esc(a.color) + '"></i>' + esc(a.name) + " · " + (a.noDelivery ? "не возим" : formatByn(a.priceKop)) + "</span>";
     });

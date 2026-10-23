@@ -97,7 +97,7 @@
   // Как назвать выбор в блоке с ценой
   function placeTitle(q) {
     if (q.area) return q.area.name;
-    if (q.outsideMkadKm) return "За МКАД, " + q.outsideMkadKm + " км";
+    if (q.outside) return "За МКАД";
     var z = cfg.zones[q.zone - 1];
     if (!z) return "Доставка";
     return q.zone === cfg.zones.length ? "Минск, дальше от магазина (до МКАД)" : "Минск, до " + z.maxKm + " км от магазина";
@@ -264,7 +264,7 @@
       setText("[data-co-zone-shop]", d.shopName ? "из магазина " + d.shopName : "из ближайшего магазина");
       var left = Math.max(0, cfg.freeFromKop - t.priced.bouquetsKop);
       var free = $("[data-co-zone-free]");
-      free.hidden = !(left > 0 && !d.area && !d.outsideMkadKm);
+      free.hidden = !(left > 0 && !d.area && !d.outside);
       free.textContent = "До бесплатной доставки " + formatByn(left);
     }
     var places = root.querySelector("[data-zmap-places]");

@@ -38,7 +38,7 @@ $last = count($d['zones']) - 1;
       <?php endforeach ?>
       <div class="sum-row zone-row">
         <span>За МКАД</span>
-        <b>+<?= e(Money::format($d['outsideMkadPerKmKop'])) ?> за каждый км</b>
+        <b class="price" style="font-size: 22px"><?= ShopView::byn((int) $d['outsideMkadKop']) ?></b>
       </div>
       <?php foreach ($d['areas'] ?? [] as $a): if (!empty($a['noDelivery']) || count($a['points']) < 3) continue ?>
         <div class="sum-row zone-row">
