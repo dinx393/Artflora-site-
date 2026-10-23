@@ -93,11 +93,11 @@
         state.colors = state.colors.map(function (x, j) { return j === i ? Object.assign({}, x, p) : x; });
         ui.render();
       }
-      h += '<div class="row" style="gap: 8px; align-items: center">';
+      h += '<div class="row color-edit" style="gap: 8px; align-items: center">';
       h += /^#[0-9a-f]{6}$/i.test(c.swatch)
         ? '<input type="color" class="color-pick" value="' + esc(c.swatch) + '" aria-label="Оттенок: ' + esc(c.label) + '"' + on("change", function (e) { set({ swatch: e.target.value }); }) + ">"
         : '<i class="swatch" style="background: ' + esc(c.swatch) + '; width: 36px; height: 36px" title="Микс — разноцветный кружок"></i>';
-      h += '<input class="input" style="width: 220px" maxlength="30" data-k="color-' + esc(c.slug) + '" value="' + esc(c.label) + '"' + on("input", function (e) { set({ label: e.target.value }); }) + ">";
+      h += '<input class="input" style="width: 220px; min-width: 0" maxlength="30" data-k="color-' + esc(c.slug) + '" value="' + esc(c.label) + '"' + on("input", function (e) { set({ label: e.target.value }); }) + ">";
       h += '<button type="button" class="btn-ghost"' + U.attr("disabled", i === 0) + on("click", function () { state.colors = moveItem(state.colors, i, i - 1); ui.render(); }) + ' aria-label="Выше">▲</button>';
       h += '<button type="button" class="btn-ghost"' + U.attr("disabled", i === state.colors.length - 1) + on("click", function () { state.colors = moveItem(state.colors, i, i + 1); ui.render(); }) + ' aria-label="Ниже">▼</button>';
       h += '<button type="button" class="btn-ghost"' + on("click", function () { state.colors = state.colors.filter(function (_, j) { return j !== i; }); ui.render(); }) + ' aria-label="Убрать">×</button>';

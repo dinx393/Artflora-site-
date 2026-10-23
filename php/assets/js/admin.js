@@ -20,4 +20,22 @@
       return fetch(url, { method: "POST", body: fd }).then(function (r) { return r.json(); });
     },
   };
+
+  // На телефоне таблицы показываем карточками: у каждой ячейки подпись из шапки таблицы (data-label).
+  // Таблицы цветов, состава и допов рисует JS, поэтому подписываем заново после каждой перерисовки.
+  function labelTables() {
+    document.querySelectorAll(".admin-main table.table").forEach(function (t) {
+      var heads = Array.prototype.map.call(t.querySelectorAll("thead th"), function (th) { return th.textContent.trim(); });
+      t.querySelectorAll("tbody tr").forEach(function (tr) {
+        Array.prototype.forEach.call(tr.children, function (td, i) {
+          if (td.getAttribute("data-label") !== (heads[i] || "")) td.setAttribute("data-label", heads[i] || "");
+        });
+      });
+    });
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    labelTables();
+    var main = document.querySelector(".admin-main");
+    if (main && "MutationObserver" in window) new MutationObserver(labelTables).observe(main, { childList: true, subtree: true });
+  });
 })();
