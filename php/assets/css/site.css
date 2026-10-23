@@ -211,6 +211,12 @@ select.input {
 .hero h1 { max-width: 560px; font-size: 56px; line-height: 1.04; }
 .hero h1 .script { font-size: 1.3em; color: var(--pink); }
 .hero-text p { max-width: 400px; font-size: 17px; line-height: 1.55; color: var(--blush); }
+.hero-facts { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-width: 560px; }
+.hero-facts li { display: flex; flex-direction: column; gap: 4px; padding: 14px 14px 12px; border-radius: 18px; background: rgba(255, 255, 255, .08); }
+.hero-facts b { font-family: var(--serif); font-weight: 600; font-size: 26px; line-height: 1; color: var(--white); white-space: nowrap; }
+.hero-facts span { font-size: 13px; line-height: 1.3; color: var(--pink); }
+.hero-text .hero-delivery { display: flex; align-items: center; gap: 8px; margin: 0; max-width: none; font-size: 15px; color: var(--white); }
+.hero-delivery svg { color: var(--pink); flex: none; }
 .hero-actions { position: absolute; left: 44px; bottom: 44px; display: flex; flex-wrap: wrap; gap: 12px; }
 .hero-actions .btn { min-height: 52px; padding: 0 26px; }
 .hero-day {
@@ -431,6 +437,9 @@ tr.dragging { opacity: .45; }
   .hero-text .eyebrow { font-size: 12px; }
   .hero h1 { font-size: 36px; }
   .hero-text p { font-size: 15px; }
+  .hero-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-facts b { font-size: 22px; }
+  .hero-text .hero-delivery { font-size: 14px; }
   .hero-actions { flex-direction: column; }
   .hero-actions .btn { width: 100%; }
   .hero-day { height: auto; flex-direction: column; }

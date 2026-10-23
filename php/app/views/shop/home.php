@@ -9,6 +9,13 @@ $splitName = function (string $name): array {
     if (count($parts) < 2 || !preg_match('/^\p{L}+$/u', $parts[0])) return ['', $clean];
     return [$parts[0], implode(' ', array_slice($parts, 1))];
 };
+$shopNames = implode(', ', array_map(fn ($s) => $s['name'], $delivery['shops']));
+$heroFacts = [
+    ['Фото', 'букета перед доставкой'],
+    ['24 часа', 'гарантия свежести'],
+    ['Кризал', 'подкормка в подарок'],
+    ['−' . $delivery['pickupDiscountPct'] . '%', 'самовывоз: ' . $shopNames],
+];
 $cards = [
     ['shield', str_replace('Гарантия свежести', 'Гарантия', ShopView::GUARANTEE_TITLE), e(ShopView::GUARANTEE_TEXT), true],
     ['clock', 'В день заказа', e('Везём из ближайшего магазина, доставка от ' . Money::format(Delivery::minKop($delivery)) . '. Самовывоз −' . $delivery['pickupDiscountPct'] . '%.'), false],
@@ -23,7 +30,13 @@ $cards = [
       <div class="hero-text">
         <span class="eyebrow">Сеть салонов цветов: Уручье, Малиновка</span>
         <h1>Букетов много,<br> а запомнят <span class="script">ваш</span></h1>
-        <p>Радуем букетами уже 19 лет. Соберём, пришлём фото до отправки и привезём в день заказа.</p>
+        <?php /* Главное за 3 секунды: крупное слово + подпись (вариант Б, решение владельца 2026-10-23) */ ?>
+        <ul class="hero-facts">
+          <?php foreach ($heroFacts as [$big, $note]): ?>
+            <li><b><?= e($big) ?></b><span><?= e($note) ?></span></li>
+          <?php endforeach ?>
+        </ul>
+        <p class="hero-delivery"><?= Icons::get('truck') ?>Доставка по Минску и Минскому району</p>
       </div>
       <div class="hero-actions">
         <a href="/catalog" class="btn btn-pink">Выбрать букет</a>
