@@ -1,13 +1,20 @@
 // Карта зон доставки для покупателя: app/views/partials/zones-map.php. Расчёт — delivery-zones.js (как в админке).
-// Leaflet подгружаем при первом открытии карты, чтобы корзина открывалась быстро.
+// В корзине (pick-mode) карта и кнопки зон — это и есть выбор, куда везти: выбранное место уходит в корзину
+// событием «zmap:place» (detail = { type: "point", lat, lng } | { type: "zone", zone } | { type: "area", name }).
+// На странице «Доставка и оплата» карта только показывает зоны и цены.
+// Leaflet подгружаем при первом открытии карты, чтобы страница открывалась быстро.
 (function () {
   var Z = window.DeliveryZones;
   document.querySelectorAll("[data-zmap]").forEach(function (box) {
     var data = JSON.parse(box.querySelector("[data-zmap-config]").textContent);
     var cfg = data.delivery;
+    var pickMode = box.hasAttribute("data-zmap-pick-mode");
     var toggle = box.querySelector("[data-zmap-toggle]");
     var body = box.querySelector("[data-zmap-body]");
     var started = false;
+    var map = null;
+    var pin = null;
+    var selected = null; // ключ выбранной кнопки: "zone:1", "outside", "area:Имя"
 
     function esc(s) {
       return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
@@ -16,63 +23,96 @@
       var k = Math.round(kop) % 100;
       return String(Math.floor(Math.round(kop) / 100)) + (k ? "," + (k < 10 ? "0" : "") + k : "") + " BYN";
     }
-    // Список районов в корзине: выбрать район = поменять значение и сообщить корзине
-    function districtSelect() {
-      return document.querySelector("[data-co-district]");
+
+    // Зоны с подписями и ценами: и для кнопок, и для подписей под картой
+    function places() {
+      var last = cfg.zones.length - 1;
+      var list = cfg.zones.map(function (z, i) {
+        return { key: "zone:" + (i + 1), place: { type: "zone", zone: i + 1 }, color: Z.zoneColor(i + 1, z.color), title: i === last ? "Дальше, до МКАД" : "До " + z.maxKm + " км от магазина", price: byn(z.priceKop) };
+      });
+      list.push({ key: "outside", place: null, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД, до " + cfg.maxOutsideMkadKm + " км", price: byn((cfg.zones[last] || {}).priceKop || 0) + " + " + byn(cfg.outsideMkadPerKmKop) + "/км" });
+      cfg.areas.forEach(function (a) {
+        if (!a.noDelivery && a.points.length >= 3) list.push({ key: "area:" + a.name, place: { type: "area", name: a.name }, color: a.color, title: a.name, price: byn(a.priceKop) });
+      });
+      return list;
     }
-    function choose(name) {
-      var sel = districtSelect();
-      if (!sel) return;
-      sel.value = name;
-      sel.dispatchEvent(new Event("change"));
+    // Какая кнопка соответствует точке на карте
+    function keyOf(q) {
+      if (!q.ok) return null;
+      if (q.area) return "area:" + q.area.name;
+      if (q.outsideMkadKm) return "outside";
+      return "zone:" + q.zone;
     }
 
     function legend() {
-      var last = cfg.zones.length - 1;
-      var h = "";
-      var chip = function (color, text, price) {
-        return '<span class="zmap-chip"><i style="background: ' + esc(color) + '"></i>' + esc(text) + " · <b>" + esc(price) + "</b></span>";
-      };
-      cfg.zones.forEach(function (z, i) {
-        h += chip(Z.zoneColor(i + 1, z.color), i === last ? "дальше, до МКАД" : "до " + z.maxKm + " км от магазина", byn(z.priceKop));
-      });
-      h += chip(cfg.outsideColor || Z.OUTSIDE_COLOR, "за МКАД", byn((cfg.zones[last] || {}).priceKop || 0) + " + " + byn(cfg.outsideMkadPerKmKop) + "/км");
-      cfg.areas.forEach(function (a) {
-        if (!a.noDelivery) h += chip(a.color, a.name, byn(a.priceKop));
-      });
-      box.querySelector("[data-zmap-legend]").innerHTML = h;
+      box.querySelector("[data-zmap-legend]").innerHTML = places().map(function (p) {
+        return '<span class="zmap-chip"><i style="background: ' + esc(p.color) + '"></i>' + esc(p.title) + " · <b>" + esc(p.price) + "</b></span>";
+      }).join("");
     }
 
-    // Что показать по нажатию на карту
-    function popupHtml(point) {
+    // ---- Выбор в корзине ----
+    var tip = box.querySelector("[data-zmap-tip]");
+    function say(text) {
+      if (!tip) return;
+      tip.hidden = !text;
+      tip.textContent = text || "";
+    }
+    function renderPlaces() {
+      var wrap = box.querySelector("[data-zmap-places]");
+      wrap.innerHTML = places().map(function (p) {
+        return '<button type="button" class="zmap-place' + (selected === p.key ? " on" : "") + '" data-zmap-key="' + esc(p.key) + '" aria-pressed="' + (selected === p.key) + '">' +
+          '<i style="background: ' + esc(p.color) + '"></i><span>' + esc(p.title) + "</span><b>" + esc(p.price) + "</b></button>";
+      }).join("");
+    }
+    function choose(place, key) {
+      selected = key;
+      renderPlaces();
+      document.dispatchEvent(new CustomEvent("zmap:place", { detail: place }));
+    }
+    function dropPin() {
+      if (pin) pin.remove();
+      pin = null;
+    }
+    function pickPoint(latlng) {
+      var point = { lat: Math.round(latlng.lat * 100000) / 100000, lng: Math.round(latlng.lng * 100000) / 100000 };
       var q = Z.quote(point, 0, cfg);
-      if (!q.ok) return "<b>Сюда не возим</b><br>Напишите нам, может быть, договоримся.";
-      var color = Z.quoteColor(q, cfg.zones, cfg.outsideColor);
-      var where = q.area ? q.area.name : q.outsideMkadKm ? "за МКАД, " + q.outsideMkadKm + " км" : "по Минску";
-      var h = '<span class="zmap-dot" style="background: ' + esc(color) + '"></span><b>Возим сюда · ' + esc(byn(q.priceKop)) + "</b><br>" + esc(where);
-      if (!q.area && !q.outsideMkadKm) h += "<br>Бесплатно при заказе от " + esc(byn(cfg.freeFromKop));
-      // Подсказываем, что выбрать в списке: свой участок или ближайший район с той же ценой
-      if (districtSelect()) {
-        var pick = null;
-        if (q.area) pick = data.districts.filter(function (d) { return d.isArea && d.name === q.area.name; })[0] || null;
-        if (!pick) {
-          var best = Infinity;
-          data.districts.forEach(function (d) {
-            if (d.isArea) return;
-            var dq = Z.quote(d, 0, cfg);
-            if (!dq.ok || dq.priceKop !== q.priceKop) return;
-            var km = Z.distanceKm(point, d);
-            if (km < best) { best = km; pick = d; }
-          });
-        }
-        if (pick) h += '<br><button type="button" class="zmap-pick" data-zmap-pick="' + esc(pick.name) + '">Выбрать «' + esc(pick.name) + "»</button>";
+      var L = window.L;
+      if (!q.ok) {
+        L.popup({ closeButton: false, className: "zmap-popup" }).setLatLng(latlng).setContent("<b>Сюда не возим</b><br>Напишите нам, может быть, договоримся.").openOn(map);
+        return;
       }
-      return h;
+      dropPin();
+      pin = L.marker(latlng, { icon: L.divIcon({ className: "zmap-pin", iconSize: [22, 22], iconAnchor: [11, 11] }), interactive: false, zIndexOffset: 2000 }).addTo(map);
+      var where = q.area ? q.area.name : q.outsideMkadKm ? "за МКАД, " + q.outsideMkadKm + " км" : "по Минску";
+      L.popup({ closeButton: false, className: "zmap-popup", offset: [0, -8] }).setLatLng(latlng)
+        .setContent('<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor)) + '"></span><b>Везём сюда · ' + esc(byn(q.priceKop)) + "</b><br>" + esc(where))
+        .openOn(map);
+      say("");
+      choose({ type: "point", lat: point.lat, lng: point.lng }, keyOf(q));
+    }
+    if (pickMode) {
+      renderPlaces();
+      box.querySelector("[data-zmap-places]").addEventListener("click", function (e) {
+        var b = e.target.closest("[data-zmap-key]");
+        if (!b) return;
+        var key = b.getAttribute("data-zmap-key");
+        var p = places().filter(function (x) { return x.key === key; })[0];
+        // За МКАД цена зависит от расстояния — тут нужно место на карте
+        if (!p.place) {
+          say("За МКАД цена зависит от расстояния: нажмите на карте, куда везти.");
+          box.querySelector("[data-zmap-map]").scrollIntoView({ block: "center", behavior: "smooth" });
+          return;
+        }
+        say("");
+        dropPin();
+        if (map) map.closePopup();
+        choose(p.place, key);
+      });
     }
 
     function start() {
       started = true;
-      legend();
+      if (!pickMode) legend();
       var css = document.createElement("link");
       css.rel = "stylesheet";
       css.href = data.leaflet.css;
@@ -86,7 +126,7 @@
     function draw() {
       var L = window.L;
       var el = box.querySelector("[data-zmap-map]");
-      var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 });
+      map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 });
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 18,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -115,39 +155,41 @@
           interactive: false, zIndexOffset: 1000,
         }).addTo(map);
       });
-      if (districtSelect()) {
-        data.districts.forEach(function (d) {
-          if (d.isArea) return;
-          var q = Z.quote(d, 0, cfg);
-          var mk = L.marker([d.lat, d.lng], {
-            icon: L.divIcon({ className: "map-district", html: '<i style="background:' + Z.quoteColor(q, cfg.zones, cfg.outsideColor) + '"></i><span>' + esc(d.name) + "</span>", iconSize: [14, 14], iconAnchor: [7, 7] }),
-            title: d.name,
-          }).addTo(map);
-          mk.on("click", function () { choose(d.name); map.closePopup(); });
-        });
-      }
-      // Подписи районов — только вблизи, иначе они налезают друг на друга
+      // Названия районов — только чтобы легче найти себя; нажатие проходит сквозь них на карту
+      data.districts.forEach(function (d) {
+        if (d.isArea) return;
+        L.marker([d.lat, d.lng], {
+          icon: L.divIcon({ className: "map-district zmap-name", html: "<span>" + esc(d.name) + "</span>", iconSize: [0, 0] }),
+          interactive: false,
+        }).addTo(map);
+      });
       function labels() { el.classList.toggle("zmap-far", map.getZoom() < 11); }
       map.on("zoomend", labels);
       labels();
 
       map.on("click", function (e) {
-        L.popup({ closeButton: false, className: "zmap-popup" }).setLatLng(e.latlng).setContent(popupHtml({ lat: e.latlng.lat, lng: e.latlng.lng })).openOn(map);
-      });
-      el.addEventListener("click", function (e) {
-        var b = e.target.closest("[data-zmap-pick]");
-        if (!b) return;
-        choose(b.getAttribute("data-zmap-pick"));
-        map.closePopup();
+        if (pickMode) return pickPoint(e.latlng);
+        var q = Z.quote({ lat: e.latlng.lat, lng: e.latlng.lng }, 0, cfg);
+        var html = !q.ok ? "<b>Сюда не возим</b><br>Напишите нам, может быть, договоримся." :
+          '<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor)) + '"></span><b>Возим сюда · ' + esc(byn(q.priceKop)) + "</b><br>" +
+          esc(q.area ? q.area.name : q.outsideMkadKm ? "за МКАД, " + q.outsideMkadKm + " км" : "по Минску") +
+          (!q.area && !q.outsideMkadKm ? "<br>Бесплатно при заказе от " + esc(byn(cfg.freeFromKop)) : "");
+        L.popup({ closeButton: false, className: "zmap-popup" }).setLatLng(e.latlng).setContent(html).openOn(map);
       });
     }
 
-    toggle.addEventListener("click", function () {
-      var open = body.hidden;
-      body.hidden = !open;
-      toggle.setAttribute("aria-expanded", String(open));
-      if (open && !started) start();
-    });
+    if (toggle) {
+      toggle.addEventListener("click", function () {
+        var open = body.hidden;
+        body.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        if (open && !started) start();
+      });
+    }
+    // Карта может быть скрыта (самовывоз, другой шаг на телефоне): Leaflet надо пересчитать размер, когда её покажут
     if (!body.hidden) start();
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function () { if (map) map.invalidateSize(); }).observe(box);
+    }
   });
 })();

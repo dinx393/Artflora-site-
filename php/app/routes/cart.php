@@ -31,16 +31,18 @@ function cart_api_body(): mixed
 }
 
 // Корзина по актуальным ценам: браузер присылает только id и размеры.
-// Район (точку) тоже берём из нашего списка по названию, а не координаты из браузера.
+// Куда везти — место на карте или кнопка зоны (Checkout::parsePlace); цену считаем здесь.
 Http::post('/api/cart', function () {
     $raw = cart_api_body();
     $cart = Checkout::parseCart($raw['cart'] ?? null);
     $method = $raw['method'] ?? 'DELIVERY';
-    $district = $raw['district'] ?? '';
-    if ($cart === null || !in_array($method, ['DELIVERY', 'PICKUP'], true) || !is_string($district)) Http::json(['error' => 'bad-request'], 400);
-    $point = $method === 'DELIVERY' && $district !== '' ? Checkout::districtPoint($district) : null;
-    $t = Checkout::totals($cart, $method, $point);
-    unset($t['quote']['shop']); // браузеру координаты магазина не нужны
+    if ($cart === null || !in_array($method, ['DELIVERY', 'PICKUP'], true)) Http::json(['error' => 'bad-request'], 400);
+    $place = $method === 'DELIVERY' ? Checkout::parsePlace($raw['place'] ?? null, $raw['district'] ?? '') : null;
+    $t = Checkout::totals($cart, $method, $place);
+    if ($t['quote']) {
+        $t['quote']['shopName'] = $t['quote']['shop']['name'] ?? null;
+        unset($t['quote']['shop']); // браузеру координаты магазина не нужны
+    }
     Http::json($t);
 });
 

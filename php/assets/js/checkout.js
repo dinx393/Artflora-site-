@@ -58,7 +58,7 @@
     step: 1,
     method: "DELIVERY",
     unknown: false,
-    district: "",
+    place: null, // куда везти: выбирают на карте или кнопкой зоны (delivery-map.js)
     shop: cfg.shops[0] ? cfg.shops[0].code : "",
     dayMode: "today",
     otherDate: addDays(today, 2),
@@ -89,8 +89,18 @@
   inputs.date.max = addDays(today, 90);
   inputs.date.value = st.otherDate;
 
-  function district() {
-    return cfg.districts.find(function (d) { return d.name === st.district; }) || null;
+  // Выбранное место, если сервер подтвердил, что туда возим
+  function placeQuote() {
+    var q = st.totals && st.totals.quote;
+    return st.place && q && q.ok ? q : null;
+  }
+  // Как назвать выбор в блоке с ценой
+  function placeTitle(q) {
+    if (q.area) return q.area.name;
+    if (q.outsideMkadKm) return "За МКАД, " + q.outsideMkadKm + " км";
+    var z = cfg.zones[q.zone - 1];
+    if (!z) return "Доставка";
+    return q.zone === cfg.zones.length ? "Минск, дальше от магазина (до МКАД)" : "Минск, до " + z.maxKm + " км от магазина";
   }
   function date() {
     return st.dayMode === "today" ? today : st.dayMode === "tomorrow" ? addDays(today, 1) : st.otherDate;
@@ -112,7 +122,7 @@
     fetch("/api/cart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cart: cart, method: st.method, district: st.method === "DELIVERY" && !unknown ? st.district : "" }),
+      body: JSON.stringify({ cart: cart, method: st.method, place: st.method === "DELIVERY" && !unknown ? st.place : null }),
       signal: ctrl.signal,
     })
       .then(function (r) { return r.json(); })
@@ -216,7 +226,7 @@
     var t = st.totals;
     var lines = t ? t.priced.lines : [];
     var unknown = st.method === "DELIVERY" && st.unknown;
-    var d = district();
+    var d = placeQuote();
     var slots = availableSlots(date(), cfg.leadHours);
     var todaySlots = availableSlots(today, cfg.leadHours);
     // Если на сегодня интервалов не осталось, сразу предлагаем завтра
@@ -249,15 +259,16 @@
     zone.hidden = !d;
     var deliveryKop = t ? t.deliveryKop : 0;
     if (d) {
-      setText("[data-co-zone-name]", d.name);
-      setHtml("[data-co-zone-price]", t && t.deliveryKop === 0 ? "Бесплатно" : byn(t ? t.deliveryKop : d.priceKop));
-      setText("[data-co-zone-shop]", d.shopName);
-      var left = Math.max(0, cfg.freeFromKop - (t ? t.priced.bouquetsKop : 0));
+      setText("[data-co-zone-name]", placeTitle(d));
+      setHtml("[data-co-zone-price]", t.deliveryKop === 0 ? "Бесплатно" : byn(t.deliveryKop));
+      setText("[data-co-zone-shop]", d.shopName ? "из магазина " + d.shopName : "из ближайшего магазина");
+      var left = Math.max(0, cfg.freeFromKop - t.priced.bouquetsKop);
       var free = $("[data-co-zone-free]");
-      free.hidden = !(left > 0 && !d.area);
+      free.hidden = !(left > 0 && !d.area && !d.outsideMkadKm);
       free.textContent = "До бесплатной доставки " + formatByn(left);
     }
-    $("[data-co-district]").setAttribute("aria-invalid", String(!!(st.error && st.error.field === "address" && !d)));
+    var places = root.querySelector("[data-zmap-places]");
+    if (places) places.classList.toggle("invalid", !!(st.error && st.error.field === "address" && !d));
     inputs.address.setAttribute("aria-invalid", String(!!(st.error && st.error.field === "address" && d)));
 
     // Когда
@@ -294,8 +305,8 @@
     setText("[data-co-discount]", formatByn(-(t ? t.discountKop : 0)));
     setText("[data-co-m-discount]", formatByn(-(t ? t.discountKop : 0)));
     setText("[data-co-m-goods]", formatByn(goods));
-    setText("[data-co-delivery]", unknown ? "доплата после уточнения" : d ? (deliveryKop ? formatByn(deliveryKop) : "бесплатно") : "по району");
-    setHtml("[data-co-m-delivery]", unknown ? "после уточнения" : d ? (deliveryKop ? esc(formatByn(deliveryKop)) : '<span class="gift">бесплатно</span>') : "по району");
+    setText("[data-co-delivery]", unknown ? "доплата после уточнения" : d ? (deliveryKop ? formatByn(deliveryKop) : "бесплатно") : "выберите, куда");
+    setHtml("[data-co-m-delivery]", unknown ? "после уточнения" : d ? (deliveryKop ? esc(formatByn(deliveryKop)) : '<span class="gift">бесплатно</span>') : "выберите, куда");
     setHtml("[data-co-total]", byn(t ? t.totalKop : 0));
 
     // Можно ли дальше / оформить
@@ -315,7 +326,7 @@
     var hint = $("[data-co-hint]");
     hint.hidden = canSubmit;
     hint.textContent =
-      (!unknown && (!deliveryReady || (st.method === "DELIVERY" && address.length <= 3)) ? (d ? "Укажите адрес доставки. " : "Выберите район доставки. ") : "") +
+      (!unknown && (!deliveryReady || (st.method === "DELIVERY" && address.length <= 3)) ? (d ? "Укажите адрес доставки. " : "Выберите на карте или кнопкой, куда везти. ") : "") +
       (!unknown && !st.slot ? "Выберите время. " : "") +
       (!recipientOk ? "Укажите телефон получателя. " : "") +
       (!inputs.customerName.value.trim() ? "Укажите имя и телефон." : "");
@@ -346,7 +357,7 @@
         entrance: inputs.entrance.value,
         floor: inputs.floor.value,
         addressUnknown: unknown,
-        district: st.method === "DELIVERY" && !unknown ? st.district : "",
+        place: st.method === "DELIVERY" && !unknown ? st.place : null,
         shop: st.method === "PICKUP" ? st.shop : "",
         date: date(),
         slot: st.slot,
@@ -387,7 +398,12 @@
     b.addEventListener("click", function () { st.method = b.getAttribute("data-co-method"); refresh(); render(); });
   });
   $("[data-co-unknown]").addEventListener("change", function (e) { st.unknown = e.target.checked; refresh(); render(); });
-  $("[data-co-district]").addEventListener("change", function (e) { st.district = e.target.value; refresh(); render(); });
+  document.addEventListener("zmap:place", function (e) {
+    st.place = e.detail;
+    if (st.error && st.error.field === "address") st.error = null;
+    refresh();
+    render();
+  });
   $$("[data-co-shop]").forEach(function (b) {
     b.addEventListener("click", function () { st.shop = b.getAttribute("data-co-shop"); render(); });
   });

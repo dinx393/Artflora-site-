@@ -11,7 +11,7 @@ $payments = [
 $byn = fn (int $kop) => e(preg_replace('/ BYN$/', '', Money::format($kop))) . '<small class="cur">BYN</small>';
 $config = [
     'shops' => $shops, 'pickupPct' => $pickupPct, 'freeFromKop' => $freeFromKop, 'districts' => $districts, 'leadHours' => $leadHours,
-    'today' => Slots::minskNow()['date'], 'slots' => Slots::ALL,
+    'today' => Slots::minskNow()['date'], 'slots' => Slots::ALL, 'zones' => $delivery['zones'],
 ];
 ?>
 <script type="application/json" id="checkout-config"><?= json_encode($config, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
@@ -78,31 +78,21 @@ $config = [
         </div>
 
         <div class="stack" style="gap: 18px" data-co-show="address">
-          <label class="field">
-            <span>Район</span>
-            <select class="input" data-co-district>
-              <option value="">Выберите район</option>
-              <?php $groups = ['' => array_filter($districts, fn ($d) => empty($d['isArea'])), 'area' => array_filter($districts, fn ($d) => !empty($d['isArea']))] ?>
-              <?php foreach ($groups as $g => $list): if (!$list) continue ?>
-                <?php if ($groups['area']): ?><optgroup label="<?= $g === 'area' ? 'Зоны на карте (за городом и др.)' : 'Районы' ?>"><?php endif ?>
-                <?php foreach ($list as $d): ?>
-                  <option value="<?= e($d['name']) ?>"><?= e($d['name']) ?> — <?= e(Money::format($d['priceKop'])) ?></option>
-                <?php endforeach ?>
-                <?php if ($groups['area']): ?></optgroup><?php endif ?>
-              <?php endforeach ?>
-            </select>
+          <?php /* Куда везти: цветная кнопка зоны или место на карте (решение владельца 2026-10-23 — без длинного списка районов) */ ?>
+          <div class="stack" style="gap: 10px">
+            <div class="label">Куда везём?</div>
             <span class="small muted">
-              Минск и до <?= e($maxOutsideKm) ?> км за МКАД. Не знаете, ваш ли район? Посмотрите на карте ниже: цвет — это цена.
-              Нет вашего района? Отметьте «Не знаю адрес» выше или напишите нам.
+              Найдите своё место на карте и нажмите на него, или нажмите кнопку зоны нужного цвета.
+              Минск и до <?= e($maxOutsideKm) ?> км за МКАД. Не нашли? Отметьте «Не знаю адрес» выше или напишите нам.
             </span>
-          </label>
-          <?= View::render('partials/zones-map', ['delivery' => $delivery, 'districts' => $districts, 'open' => false]) ?>
+            <?= View::render('partials/zones-map', ['delivery' => $delivery, 'districts' => $districts, 'open' => true, 'pick' => true]) ?>
+          </div>
           <div class="zone" data-co-zone hidden>
             <div class="row between">
               <b data-co-zone-name></b>
               <span class="price" style="font-size: 24px" data-co-zone-price></span>
             </div>
-            <span class="small muted">Привезём из магазина <span data-co-zone-shop></span>, <?= e(Text::fromHours($leadHours)) ?></span>
+            <span class="small muted">Привезём <span data-co-zone-shop>из ближайшего магазина</span>, <?= e(Text::fromHours($leadHours)) ?></span>
             <span class="small" style="color: var(--olive); font-weight: 700" data-co-zone-free hidden></span>
           </div>
           <label class="field">
@@ -158,7 +148,7 @@ $config = [
         <div class="mobile-only zone stack" style="gap: 8px">
           <div class="sum-row"><span>Букеты</span><span data-co-m-goods>0 BYN</span></div>
           <div class="sum-row" data-co-show="pickup" hidden><span>Скидка за самовывоз</span><span data-co-m-discount></span></div>
-          <div class="sum-row" data-co-show="delivery"><span>Доставка</span><span data-co-m-delivery>по району</span></div>
+          <div class="sum-row" data-co-show="delivery"><span>Доставка</span><span data-co-m-delivery>выберите, куда</span></div>
           <div class="sum-row" style="align-items: baseline">
             <b>Итого</b>
             <span class="price" style="font-size: 24px" data-co-total><?= $byn(0) ?></span>
@@ -214,7 +204,7 @@ $config = [
       <div class="sum-row" data-co-addons-row hidden><span>Дополнения</span><span data-co-addons></span></div>
       <div class="sum-row"><span>Открытка и подкормка</span><span class="gift">в подарок</span></div>
       <div class="sum-row" data-co-show="pickup" hidden><span>Скидка за самовывоз</span><span data-co-discount></span></div>
-      <div class="sum-row" data-co-show="delivery"><span>Доставка</span><span data-co-delivery>по району</span></div>
+      <div class="sum-row" data-co-show="delivery"><span>Доставка</span><span data-co-delivery>выберите, куда</span></div>
       <div class="sum-row" style="align-items: baseline; border-top: 1px solid var(--line); padding-top: 12px">
         <b>Итого</b>
         <span class="sum-total" data-co-total><?= $byn(0) ?></span>

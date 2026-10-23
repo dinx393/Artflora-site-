@@ -55,3 +55,13 @@ test('текст уведомления', function () {
     contains($t, 'Когда: 2026-10-24, 14–16');
     contains($t, '/admin/orders/7');
 });
+test('куда везти из браузера: только понятные значения', function () {
+    eq(Checkout::parsePlace(['type' => 'point', 'lat' => 54.2060001, 'lng' => 27.853]), ['type' => 'point', 'lat' => 54.206, 'lng' => 27.853]);
+    eq(Checkout::parsePlace(['type' => 'point', 'lat' => '54.2', 'lng' => 27.8]), null, 'строка вместо числа');
+    eq(Checkout::parsePlace(['type' => 'point', 'lat' => 10, 'lng' => 27.8]), null, 'не Беларусь');
+    eq(Checkout::parsePlace(['type' => 'zone', 'zone' => 2]), ['type' => 'zone', 'zone' => 2]);
+    eq(Checkout::parsePlace(['type' => 'zone', 'zone' => '2']), null);
+    eq(Checkout::parsePlace(['type' => 'area', 'name' => 'Удалённая доставка']), ['type' => 'area', 'name' => 'Удалённая доставка']);
+    eq(Checkout::parsePlace(['type' => 'other']), null);
+    eq(Checkout::parsePlace(null, ''), null);
+});

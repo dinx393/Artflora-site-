@@ -86,8 +86,9 @@ final class Checkout
         ];
     }
 
-    // Итог корзины: ['priced', 'quote' (null при самовывозе или без района), 'discountKop', 'deliveryKop', 'totalKop']
-    public static function totals(array $cart, string $method, ?array $point): array
+    // Итог корзины: ['priced', 'quote' (null при самовывозе или без выбора места), 'discountKop', 'deliveryKop', 'totalKop']
+    // $place — см. Delivery::quotePlace (Checkout::parsePlace)
+    public static function totals(array $cart, string $method, ?array $place): array
     {
         $cfg = Settings::get('delivery');
         $priced = self::priceCart($cart);
@@ -97,11 +98,30 @@ final class Checkout
         $deliveryKop = 0;
         if ($method === 'PICKUP') {
             $discountKop = Delivery::pickupDiscountKop($priced['bouquetsKop'], $cfg);
-        } elseif ($point) {
-            $quote = Delivery::quote($point, $priced['bouquetsKop'], $cfg);
+        } elseif ($place) {
+            $quote = Delivery::quotePlace($place, $priced['bouquetsKop'], $cfg);
             if ($quote['ok']) $deliveryKop = $quote['priceKop'];
         }
         return ['priced' => $priced, 'quote' => $quote, 'discountKop' => $discountKop, 'deliveryKop' => $deliveryKop, 'totalKop' => $goods - $discountKop + $deliveryKop];
+    }
+
+    // Куда везти — из браузера: место на карте, кнопка зоны или участка. Старые страницы присылают
+    // район по названию — его тоже понимаем. Цену всё равно считает сервер. Не понятно — null.
+    public static function parsePlace(mixed $raw, mixed $district = ''): ?array
+    {
+        if (is_array($raw)) {
+            $type = $raw['type'] ?? null;
+            $num = fn ($v) => is_int($v) || is_float($v);
+            if ($type === 'point' && $num($raw['lat'] ?? null) && $num($raw['lng'] ?? null)
+                && $raw['lat'] > 50 && $raw['lat'] < 57 && $raw['lng'] > 22 && $raw['lng'] < 33) {
+                return ['type' => 'point', 'lat' => round((float) $raw['lat'], 5), 'lng' => round((float) $raw['lng'], 5)];
+            }
+            if ($type === 'zone' && is_int($raw['zone'] ?? null) && $raw['zone'] >= 1 && $raw['zone'] <= 50) return ['type' => 'zone', 'zone' => $raw['zone']];
+            if ($type === 'area' && is_string($raw['name'] ?? null) && $raw['name'] !== '' && mb_strlen($raw['name']) <= 80) return ['type' => 'area', 'name' => $raw['name']];
+            return null;
+        }
+        if (is_string($district) && $district !== '' && ($p = self::districtPoint($district))) return ['type' => 'point', 'district' => $district] + $p;
+        return null;
     }
 
     // Точка района из списка в настройках или своего участка с карты; нет такого — null.
@@ -180,16 +200,17 @@ final class Checkout
             return ['ok' => false, 'error' => $unknown ? 'На этот день уже не успеваем, выберите другой' : 'Это время уже недоступно, выберите другое', 'field' => 'slot'];
         }
 
-        // Доставку считаем по району из нашего списка (решение владельца 2026-10-19: без проверки адреса по карте).
-        // Точку из браузера не берём. Район и адрес вместе видны в заказе: при подтверждении их сверяют,
-        // а оплату покупатель вносит только после подтверждения.
-        $point = null;
+        // Доставку считаем по месту, которое покупатель выбрал на карте или кнопкой зоны (решение владельца 2026-10-23).
+        // Выбор и адрес вместе видны в заказе: при подтверждении их сверяют, а оплату покупатель вносит
+        // только после подтверждения.
+        $place = null;
         if ($o['method'] === 'DELIVERY' && !$unknown) {
-            $point = self::districtPoint($o['district']);
-            if (!$point) return ['ok' => false, 'error' => 'Выберите район доставки', 'field' => 'address'];
+            $place = self::parsePlace($raw['place'] ?? null, $o['district']);
+            if (!$place) return ['ok' => false, 'error' => 'Выберите на карте, куда везти', 'field' => 'address'];
         }
 
-        $t = self::totals($o['cart'], $o['method'], $point);
+        $t = self::totals($o['cart'], $o['method'], $place);
+        if ($place && ($t['quote']['ok'] ?? false)) $o['district'] = Delivery::placeLabel($place, $t['quote'], $cfg);
         if ($t['priced']['removed']) {
             return ['ok' => false, 'error' => 'Часть букетов закончилась, корзина обновлена. Проверьте заказ ещё раз', 'removed' => $t['priced']['removed']];
         }
@@ -202,7 +223,8 @@ final class Checkout
             $shopCode = $cfg['shops'][0]['code'];
             foreach ($cfg['shops'] as $s) if ($s['code'] === $o['shop']) $shopCode = $s['code'];
         } else {
-            $shopCode = ($t['quote']['ok'] ?? false) ? $t['quote']['shop']['code'] : $cfg['shops'][0]['code'];
+            // Кнопка зоны — без точки: магазин по умолчанию первый, флорист поменяет при подтверждении
+            $shopCode = !empty($t['quote']['shop']) ? $t['quote']['shop']['code'] : $cfg['shops'][0]['code'];
         }
         $q = $t['quote'];
 

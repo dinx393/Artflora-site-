@@ -96,6 +96,60 @@ final class Delivery
         ];
     }
 
+    // Цена по выбору покупателя в корзине (решение владельца 2026-10-23: без длинного списка районов).
+    // place: ['type' => 'point', 'lat', 'lng'] — место, отмеченное на карте (считаем как обычно, по точке);
+    //        ['type' => 'zone', 'zone' => N]  — кнопка цветной зоны: её цена, магазин выберет флорист;
+    //        ['type' => 'area', 'name']        — кнопка своего участка с карты.
+    // Ответ как у quote(); у зоны и участка 'shop' => null и 'km' => null.
+    public static function quotePlace(array $place, int $subtotalKop, array $cfg): array
+    {
+        $far = ['ok' => false, 'reason' => 'too-far', 'km' => 0];
+        switch ($place['type']) {
+            case 'point':
+                return self::quote($place, $subtotalKop, $cfg);
+            case 'zone':
+                $z = $cfg['zones'][$place['zone'] - 1] ?? null;
+                if (!$z) return $far;
+                $base = (int) $z['priceKop'];
+                $free = $subtotalKop >= $cfg['freeFromKop'];
+                return [
+                    'ok' => true, 'shop' => null, 'km' => null, 'zone' => $place['zone'], 'outsideMkadKm' => 0,
+                    'baseKop' => $base, 'priceKop' => $free ? 0 : $base, 'free' => $free, 'leftToFreeKop' => max(0, $cfg['freeFromKop'] - $subtotalKop),
+                ];
+            case 'area':
+                foreach ($cfg['areas'] ?? [] as $a) {
+                    if ($a['name'] !== $place['name'] || count($a['points']) < 3) continue;
+                    $tag = ['name' => $a['name'], 'color' => $a['color']];
+                    if (!empty($a['noDelivery'])) return $far + ['area' => $tag];
+                    return [
+                        'ok' => true, 'shop' => null, 'km' => null, 'zone' => 0, 'outsideMkadKm' => 0,
+                        'baseKop' => (int) $a['priceKop'], 'priceKop' => (int) $a['priceKop'], 'free' => false, 'leftToFreeKop' => 0, 'area' => $tag,
+                    ];
+                }
+                return $far;
+        }
+        return $far;
+    }
+
+    // Подпись зоны для покупателя: «до 3 км от магазина», последняя — «дальше, до МКАД»
+    public static function zoneTitle(int $zone, array $cfg): string
+    {
+        $last = count($cfg['zones']);
+        return $zone === $last ? 'дальше, до МКАД' : 'до ' . $cfg['zones'][$zone - 1]['maxKm'] . ' км от магазина';
+    }
+
+    // Как выбор покупателя видят флорист и курьер в адресе заказа
+    public static function placeLabel(array $place, array $quote, array $cfg): string
+    {
+        if (!empty($place['district'])) return $place['district'];
+        if ($place['type'] === 'zone') return 'Зона ' . $place['zone'] . ' (' . self::zoneTitle($place['zone'], $cfg) . ')';
+        if ($place['type'] === 'area') return $place['name'];
+        $at = sprintf('точка на карте %.5f, %.5f', $place['lat'], $place['lng']);
+        if (isset($quote['area'])) return $quote['area']['name'] . ', ' . $at;
+        if (!empty($quote['outsideMkadKm'])) return "За МКАД {$quote['outsideMkadKm']} км, $at";
+        return 'Зона ' . ($quote['zone'] ?? '?') . ', ' . $at;
+    }
+
     public static function pickupDiscountKop(int $bouquetsKop, array $cfg): int
     {
         return (int) round($bouquetsKop * $cfg['pickupDiscountPct'] / 100);

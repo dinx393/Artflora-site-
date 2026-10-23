@@ -84,3 +84,18 @@ test('свой участок — пунктом в списке «куда ве
         ['lat' => 54.1, 'lng' => 27.4], ['lat' => 54.3, 'lng' => 27.4], ['lat' => 54.3, 'lng' => 27.5], ['lat' => 54.0, 'lng' => 27.5]]]];
     eq(Delivery::areaAt(Delivery::areaPlaces($cfg)[0], $cfg)['name'], 'Подкова');
 });
+test('выбор в корзине: кнопка зоны, участок, точка на карте', function () use ($cfg) {
+    $cfg['areas'] = [['name' => 'Удалённая доставка', 'color' => '#f2b705', 'priceKop' => 6000, 'noDelivery' => false,
+        'points' => [['lat' => 54.33, 'lng' => 27.70], ['lat' => 54.33, 'lng' => 28.10], ['lat' => 54.12, 'lng' => 28.15], ['lat' => 54.05, 'lng' => 27.95], ['lat' => 54.10, 'lng' => 27.70]]]];
+    $z2 = Delivery::quotePlace(['type' => 'zone', 'zone' => 2], 13000, $cfg);
+    eq([$z2['ok'], $z2['priceKop'], $z2['shop']], [true, 1000, null]);
+    eq(Delivery::quotePlace(['type' => 'zone', 'zone' => 2], 20000, $cfg)['priceKop'], 0, 'бесплатно от 200 BYN');
+    eq(Delivery::quotePlace(['type' => 'zone', 'zone' => 9], 0, $cfg)['ok'], false);
+    eq(Delivery::quotePlace(['type' => 'area', 'name' => 'Удалённая доставка'], 30000, $cfg)['priceKop'], 6000);
+    eq(Delivery::quotePlace(['type' => 'area', 'name' => 'Нет такого'], 0, $cfg)['ok'], false);
+    $logoisk = ['type' => 'point', 'lat' => 54.206, 'lng' => 27.853];
+    $q = Delivery::quotePlace($logoisk, 0, $cfg);
+    eq([$q['priceKop'], $q['area']['name']], [6000, 'Удалённая доставка']);
+    eq(Delivery::placeLabel($logoisk, $q, $cfg), 'Удалённая доставка, точка на карте 54.20600, 27.85300');
+    eq(Delivery::placeLabel(['type' => 'zone', 'zone' => 1], $z2, $cfg), 'Зона 1 (до 3 км от магазина)');
+});
