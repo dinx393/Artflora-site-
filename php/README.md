@@ -103,7 +103,23 @@ php tests/run.php                              # расчёты без базы,
 Образы Docker Hub иногда ограничивают скачивание: тогда `docker pull mirror.gcr.io/library/php:8.1-apache`
 и `docker tag mirror.gcr.io/library/php:8.1-apache php:8.1-apache` (так же для `mysql:8.0`).
 
-## Установка на хостинг
+## Установка на хостинг (hoster.by, ISPmanager)
 
-Будет описана, когда все три части готовы (база в панели ISPmanager, файлы в /www/test.artflora.by,
-app/config.php, cron для повторной отправки уведомлений: раз в 5 минут `php /путь/к/сайту/app/cron.php`).
+1. Панель → «Базы данных» → «Создать базу данных»: тип MySQL, имя, пользователь и пароль (запишите).
+2. Панель → «Сайты» → test.artflora.by: версия PHP 8.1 или новее.
+3. Панель → «Shell-клиент», одна команда (она же потом обновляет сайт):
+   ```
+   curl -fsSL https://raw.githubusercontent.com/dinx393/Artflora-site-/refs/heads/claude/project-thread-b45kuf/php/dev/install.php -o ~/install.php && php ~/install.php test.artflora.by
+   ```
+   Установщик (`dev/install.php`) скачивает код, кладёт его в `~/www/test.artflora.by`, старые файлы из этой папки
+   переносит в `~/backup-…`, при первом запуске спрашивает базу и пароль админки и пишет `app/config.php`.
+   При обновлении `app/config.php` и фото в `uploads/` не трогает.
+4. Панель → «SSL-сертификаты» → «Выпустить Let's Encrypt» для test.artflora.by.
+5. Панель → «Планировщик CRON», раз в 5 минут: `php ~/www/test.artflora.by/app/cron.php` (точную строку печатает установщик).
+6. Почта: в `app/config.php` вписать `smtp_user` и `smtp_pass` (пароль приложения Gmail), затем админка → «Настройки» →
+   адрес для писем → «Отправить пробное письмо».
+
+Без Shell: `sh dev/build-zip.sh` собирает архив для «Менеджера файлов» (без паролей и фото), `app/config.php`
+тогда создаётся из `app/config.sample.php` вручную.
+
+Если сайт пишет «Сайт настраивается», ниже указано, что поправить в `app/config.php`. Ошибки пишутся в `app/storage/errors.log`.

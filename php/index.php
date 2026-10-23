@@ -25,7 +25,17 @@ $problems = Config::problems(Config::all());
 if ($problems) {
     http_response_code(503);
     app_log('Сайт не запущен, исправьте app/config.php: ' . implode('; ', $problems));
-    echo '<h1>Сайт настраивается</h1>' . ($debug ? '<pre>' . e(implode("\n", $problems)) . '</pre>' : '');
+    // Паролей в списке нет, только что поправить: так проще настроить сайт на хостинге
+    echo '<h1>Сайт настраивается</h1><p>Что поправить в app/config.php:</p><pre>' . e(implode("\n", $problems)) . '</pre>';
+    exit;
+}
+
+try {
+    Db::pdo();
+} catch (PDOException $e) {
+    http_response_code(503);
+    app_log('Нет связи с базой: ' . $e->getMessage());
+    echo '<h1>Сайт настраивается</h1><p>Нет связи с базой данных: проверьте db_host, db_name, db_user и db_pass в app/config.php.</p>';
     exit;
 }
 
