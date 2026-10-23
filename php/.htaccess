@@ -1,0 +1,24 @@
+# Все адреса, кроме настоящих файлов (картинки, стили), обрабатывает index.php
+Options -Indexes
+DirectoryIndex index.php
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Служебные папки и файлы не отдаём никогда
+  RewriteRule ^(app|tests|dev)(/|$) - [F,L]
+  RewriteRule (^|/)\.(git|env) - [F,L]
+  RewriteRule \.(md|sql|sh|yml|lock|log)$ - [F,L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType text/css "access plus 30 days"
+  ExpiresByType application/javascript "access plus 30 days"
+</IfModule>

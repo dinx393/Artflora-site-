@@ -1,0 +1,5 @@
+app/config.php
+app/storage/
+uploads/*
+!uploads/.gitkeep
+!uploads/.htaccess

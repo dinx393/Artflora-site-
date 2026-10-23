@@ -1,0 +1,37 @@
+<?php
+// Настройки сайта, которые меняются в админке: shop (контакты, реквизиты), delivery (зоны, магазины, участки),
+// districts (районы), colors (цвета букетов). Не сохранено — берём значения по умолчанию.
+final class Settings
+{
+    private static array $cache = [];
+
+    public static function defaults(string $key): array
+    {
+        return match ($key) {
+            'shop' => Defaults::SHOP,
+            'delivery' => Defaults::DELIVERY,
+            'districts' => Defaults::DISTRICTS,
+            'colors' => Occasions::COLORS,
+            default => throw new InvalidArgumentException("Нет настройки $key"),
+        };
+    }
+
+    public static function get(string $key): array
+    {
+        if (!array_key_exists($key, self::$cache)) {
+            $def = self::defaults($key);
+            $raw = Db::value('SELECT value FROM settings WHERE `key` = ?', [$key]);
+            $val = $raw === null ? null : json_decode($raw, true);
+            // Списки (районы, цвета) храним целиком, объекты дополняем новыми полями по умолчанию
+            self::$cache[$key] = !is_array($val) ? $def : (array_is_list($def) ? $val : array_merge($def, $val));
+        }
+        return self::$cache[$key];
+    }
+
+    public static function save(string $key, array $value): void
+    {
+        self::defaults($key); // неизвестный ключ — ошибка
+        Db::exec('INSERT INTO settings (`key`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)', [$key, Db::json($value)]);
+        self::$cache[$key] = $value;
+    }
+}

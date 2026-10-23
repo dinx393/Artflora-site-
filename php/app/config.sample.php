@@ -1,0 +1,29 @@
+<?php
+// Настройки сайта. Скопируйте этот файл в app/config.php и впишите свои значения.
+// app/config.php в GitHub не попадает: в нём пароли.
+// Базу (имя, пользователь, пароль) создаёте в панели хостинга → «Базы данных» → «Создать базу данных».
+return [
+    'db_host' => 'localhost',
+    'db_name' => '',
+    'db_user' => '',
+    'db_pass' => '',
+
+    // Адрес сайта: для ссылок в письмах. На хостинге — https://test.artflora.by, потом https://artflora.by
+    'site_url' => 'https://test.artflora.by',
+
+    // Пароль входа в админку (/admin): от 12 символов
+    'admin_password' => '',
+    // Любая длинная случайная строка от 32 символов: ей подписывается вход в админку
+    'session_secret' => '',
+
+    // Письма о заказах (Gmail: smtp.gmail.com, 465, ящик и «пароль приложения»)
+    'smtp_host' => '',
+    'smtp_port' => 465,
+    'smtp_user' => '',
+    'smtp_pass' => '',
+    'smtp_from' => '',
+
+    // Уведомления в Telegram (необязательно)
+    'telegram_bot_token' => '',
+    'telegram_chat_id' => '',
+];

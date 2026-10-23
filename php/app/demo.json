@@ -1,0 +1,290 @@
+{
+ "flowers": [
+  {
+   "name": "Роза кустовая 60 см",
+   "kind": "FLOWER",
+   "unit": "STEM",
+   "price": 10
+  },
+  {
+   "name": "Роза Кения 40 см",
+   "kind": "FLOWER",
+   "unit": "PIECE",
+   "price": 6.5
+  },
+  {
+   "name": "Эустома",
+   "kind": "FLOWER",
+   "unit": "STEM",
+   "price": 13
+  },
+  {
+   "name": "Гортензия",
+   "kind": "FLOWER",
+   "unit": "PIECE",
+   "price": 32
+  },
+  {
+   "name": "Альстромерия",
+   "kind": "FLOWER",
+   "unit": "STEM",
+   "price": 7.5
+  },
+  {
+   "name": "Хризантема кустовая",
+   "kind": "FLOWER",
+   "unit": "STEM",
+   "price": 9
+  },
+  {
+   "name": "Пион",
+   "kind": "FLOWER",
+   "unit": "PIECE",
+   "price": 20,
+   "inStock": false
+  },
+  {
+   "name": "Эвкалипт",
+   "kind": "GREEN",
+   "unit": "STEM",
+   "price": 5
+  },
+  {
+   "name": "Гипсофила",
+   "kind": "GREEN",
+   "unit": "STEM",
+   "price": 7
+  }
+ ],
+ "bouquets": [
+  {
+   "slug": "sumka-rose",
+   "colors": [
+    "pink"
+   ],
+   "name": "Сумка с цветами «rose»",
+   "format": "BAG",
+   "packaging": 15,
+   "photo": "/demo/rose-bag.jpg",
+   "occasions": [
+    "mom",
+    "love",
+    "nothing"
+   ],
+   "description": "Кустовая роза, эустома, сезонная зелень, крафтовая сумка с водой внутри: букет не нужно сразу ставить в вазу.",
+   "composition": [
+    [
+     "Роза кустовая 60 см",
+     5
+    ],
+    [
+     "Эустома",
+     3
+    ],
+    [
+     "Эвкалипт",
+     2
+    ]
+   ],
+   "isHit": true,
+   "collection": "rose"
+  },
+  {
+   "slug": "buket-rose",
+   "colors": [
+    "pink"
+   ],
+   "name": "Букет «rose»",
+   "format": "BOUQUET",
+   "packaging": 8,
+   "photo": "/demo/rose-bag.jpg",
+   "occasions": [
+    "mom",
+    "love",
+    "nothing"
+   ],
+   "description": "Тот же состав, что в сумке «rose», в классической упаковке.",
+   "composition": [
+    [
+     "Роза кустовая 60 см",
+     5
+    ],
+    [
+     "Эустома",
+     3
+    ],
+    [
+     "Эвкалипт",
+     2
+    ]
+   ],
+   "collection": "rose"
+  },
+  {
+   "slug": "osenniy-vayb",
+   "colors": [
+    "yellow",
+    "mix"
+   ],
+   "isExclusive": true,
+   "name": "Осенний вайб",
+   "format": "BOUQUET",
+   "packaging": 8,
+   "photo": "/demo/autumn.jpg",
+   "occasions": [
+    "birthday",
+    "colleague",
+    "nothing"
+   ],
+   "description": "Тёплый осенний букет с кустовой хризантемой и гортензией.",
+   "composition": [
+    [
+     "Хризантема кустовая",
+     5
+    ],
+    [
+     "Гортензия",
+     1
+    ],
+    [
+     "Эвкалипт",
+     3
+    ]
+   ],
+   "isHit": true
+  },
+  {
+   "slug": "25-keniyskih-roz",
+   "colors": [
+    "red"
+   ],
+   "name": "25 кенийских роз",
+   "format": "BOUQUET",
+   "packaging": 10,
+   "photo": "/demo/kenya-roses.jpg",
+   "occasions": [
+    "love",
+    "birthday",
+    "mom"
+   ],
+   "description": "Классика: 25 кенийских роз в лаконичной упаковке.",
+   "composition": [
+    [
+     "Роза Кения 40 см",
+     25
+    ]
+   ],
+   "isHit": true
+  },
+  {
+   "slug": "sumochka-eustoma-alstromeriya",
+   "colors": [
+    "pink",
+    "white"
+   ],
+   "isExclusive": true,
+   "name": "Сумочка с эустомой и альстромерией",
+   "format": "BAG",
+   "packaging": 15,
+   "photo": "/demo/eustoma-bag.jpg",
+   "occasions": [
+    "mom",
+    "colleague",
+    "nothing"
+   ],
+   "description": "Нежная сумочка с эустомой и альстромерией, вода внутри.",
+   "composition": [
+    [
+     "Эустома",
+     5
+    ],
+    [
+     "Альстромерия",
+     3
+    ]
+   ]
+  },
+  {
+   "slug": "alstromeriya-11",
+   "colors": [
+    "pink",
+    "mix"
+   ],
+   "name": "Альстромерия 11 веток",
+   "format": "BOUQUET",
+   "packaging": 8,
+   "photo": "/demo/alstroemeria.jpg",
+   "occasions": [
+    "colleague",
+    "nothing"
+   ],
+   "description": "Яркий и стойкий букет из 11 веток альстромерии.",
+   "composition": [
+    [
+     "Альстромерия",
+     11
+    ]
+   ],
+   "enabled": false
+  },
+  {
+   "slug": "ekzoticheskiy-akcent",
+   "colors": [
+    "burgundy",
+    "mix"
+   ],
+   "isExclusive": true,
+   "name": "Экзотический акцент",
+   "format": "BASKET",
+   "packaging": 30,
+   "photo": "/demo/exotic.jpg",
+   "occasions": [
+    "exotic",
+    "birthday",
+    "love"
+   ],
+   "description": "Композиция в корзине с гортензией, эустомой и гипсофилой.",
+   "composition": [
+    [
+     "Гортензия",
+     2
+    ],
+    [
+     "Эустома",
+     2
+    ],
+    [
+     "Гипсофила",
+     2
+    ]
+   ],
+   "isHit": true
+  },
+  {
+   "slug": "solnechnyy-luchik",
+   "colors": [
+    "yellow"
+   ],
+   "name": "Солнечный лучик",
+   "format": "BOUQUET",
+   "packaging": 8,
+   "photo": "/demo/sunny.jpg",
+   "occasions": [
+    "birthday",
+    "mom"
+   ],
+   "description": "Пионы и облако гипсофилы.",
+   "composition": [
+    [
+     "Пион",
+     7
+    ],
+    [
+     "Гипсофила",
+     2
+    ]
+   ],
+   "isHit": true
+  }
+ ]
+}

@@ -1,0 +1,40 @@
+# PHP-версия сайта на своём компьютере: cd php/dev && docker compose up -d --build
+# Сайт: http://localhost:8080, админка: http://localhost:8080/admin (пароль artflora)
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: artflora
+      MYSQL_USER: artflora
+      MYSQL_PASSWORD: artflora
+      MYSQL_ROOT_PASSWORD: artflora-root
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-partflora-root"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PHP_SITE_PORT:-8080}:80"
+    environment:
+      ARTFLORA_DB_HOST: db
+      ARTFLORA_DB_NAME: artflora
+      ARTFLORA_DB_USER: artflora
+      ARTFLORA_DB_PASS: artflora
+      ARTFLORA_SITE_URL: http://localhost:${PHP_SITE_PORT:-8080}
+      ARTFLORA_ADMIN_PASSWORD: artflora
+      ARTFLORA_SESSION_SECRET: local-only-secret-change-me-on-server
+    volumes:
+      - ..:/var/www/html
+
+volumes:
+  db:
