@@ -1,13 +1,13 @@
 #!/bin/bash
 # Первая настройка нового сервера (Ubuntu 22.04/24.04) под сайт Артфлора.
 # Запуск на сервере от root одной строкой:
-#   curl -fsSL https://raw.githubusercontent.com/dinx393/artflora-site-/refs/heads/claude/project-thread-b45kuf/deploy/setup-server.sh | bash -s -- new.artflora.by
+#   curl -fsSL https://raw.githubusercontent.com/dinx393/Artflora-site-/refs/heads/claude/project-thread-b45kuf/deploy/setup-server.sh | bash -s -- new.artflora.by
 # Можно запускать повторно: уже сделанное пропускается, файл .env с паролями не перезаписывается.
 set -euo pipefail
 
 DOMAIN="${1:-artflora.by}"
 DIR=/opt/artflora
-REPO=https://github.com/dinx393/artflora-site-.git
+REPO=https://github.com/dinx393/Artflora-site-.git
 
 say() { printf '\n\033[1;35m== %s\033[0m\n' "$*"; }
 

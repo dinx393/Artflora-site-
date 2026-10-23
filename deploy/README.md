@@ -37,7 +37,7 @@
 Вставить:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dinx393/artflora-site-/refs/heads/claude/project-thread-b45kuf/deploy/setup-server.sh | bash -s -- new.artflora.by
+curl -fsSL https://raw.githubusercontent.com/dinx393/Artflora-site-/refs/heads/claude/project-thread-b45kuf/deploy/setup-server.sh | bash -s -- new.artflora.by
 ```
 
 Через 5–10 минут команда напишет «Готово» и **пароль админки**. Запишите его.
