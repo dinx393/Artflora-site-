@@ -20,8 +20,8 @@ final class Occasions
     ];
 
     public const PRICE_RANGES = [
-        ['slug' => 'to80', 'label' => 'До 80 BYN', 'min' => 0, 'max' => 8000],
-        ['slug' => '80-150', 'label' => '80–150 BYN', 'min' => 8000, 'max' => 15000],
+        ['slug' => 'to100', 'label' => 'До 100 BYN', 'min' => 0, 'max' => 10000],
+        ['slug' => '100-150', 'label' => '100–150 BYN', 'min' => 10000, 'max' => 15000],
         ['slug' => 'from150', 'label' => 'От 150 BYN', 'min' => 15000, 'max' => PHP_INT_MAX],
     ];
 

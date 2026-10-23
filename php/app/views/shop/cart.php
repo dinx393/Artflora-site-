@@ -24,7 +24,7 @@ $config = [
       <a href="/catalog?occasion=mom" class="chip">Маме</a>
       <a href="/catalog?occasion=love" class="chip">Любимой</a>
       <a href="/catalog?q=розы" class="chip">Розы</a>
-      <a href="/catalog?price=to80" class="chip">До 80 BYN</a>
+      <a href="/catalog?price=to100" class="chip">До 100 BYN</a>
     </div>
     <a href="/catalog" class="btn btn-lg">Перейти в каталог</a>
     <a href="/#hits">Хиты этой недели →</a>
