@@ -95,7 +95,7 @@ if (!is_file($config)) {
     $dbName = ask('Имя базы данных');
     $dbUser = ask('Пользователь базы', $dbName);
     $dbPass = ask('Пароль пользователя базы');
-    $dbHost = ask('Сервер базы', 'localhost');
+    $dbHost = ask('Сервер базы (просто нажмите Enter)', 'localhost');
     try {
         new PDO("mysql:host=$dbHost;dbname=$dbName;charset=utf8mb4", $dbUser, $dbPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     } catch (PDOException $e) {
