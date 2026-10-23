@@ -45,7 +45,7 @@ $cards = [
       </div>
       <div class="hero-actions">
         <a href="/catalog" class="btn btn-pink">Выбрать букет</a>
-        <a href="<?= e($shop['viber']) ?>" class="btn btn-on-cherry">Написать в Viber</a>
+        <a href="<?= e($shop['telegram']) ?>" class="btn btn-on-cherry" target="_blank" rel="noopener">Написать в Telegram</a>
       </div>
     </div>
     <?php if ($ofDay): ?>

@@ -11,5 +11,5 @@
       </div>
     <?php endforeach ?>
   </div>
-  <a href="<?= e($shop['viber']) ?>" class="btn btn-lg" style="align-self: flex-start">Собрать букет с флористом в Viber</a>
+  <a href="<?= e($shop['telegram']) ?>" class="btn btn-lg" style="align-self: flex-start" target="_blank" rel="noopener">Собрать букет с флористом в Telegram</a>
 </div>

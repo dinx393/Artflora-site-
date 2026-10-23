@@ -61,7 +61,7 @@ $last = count($d['zones']) - 1;
     <p>Картой по ссылке, через ЕРИП или ссылкой в Viber. Платите после того, как мы подтвердим заказ и согласуем с вами фото букета.</p>
     <div class="row">
       <a href="/catalog" class="btn btn-lg">Выбрать букет</a>
-      <a href="<?= e($shop['viber']) ?>" class="btn btn-lg btn-outline">Спросить в Viber</a>
+      <a href="<?= e($shop['telegram']) ?>" class="btn btn-lg btn-outline" target="_blank" rel="noopener">Спросить в Telegram</a>
     </div>
   </div>
 </div>

@@ -161,7 +161,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
         <span style="color: var(--olive); margin-top: 1px"><?= Icons::get('leaf') ?></span>
         <span><?= e(ShopView::SUBSTITUTION_NOTE) ?></span>
       </div>
-      <a href="<?= e($shop['viber']) ?>" style="align-self: flex-start; font-weight: 700; font-size: 15px">Есть вопрос? Напишите флористу в Viber →</a>
+      <a href="<?= e($shop['telegram']) ?>" style="align-self: flex-start; font-weight: 700; font-size: 15px" target="_blank" rel="noopener">Есть вопрос? Напишите флористу в Telegram →</a>
 
       <?php /* «Куда доставить?»: цена доставки по району */ ?>
       <div class="card stack" data-delivery-estimate>

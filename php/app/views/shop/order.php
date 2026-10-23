@@ -36,7 +36,7 @@ $o = $order;
       </li>
     </ol>
     <div class="row">
-      <a href="<?= e($shop['viber']) ?>" class="btn btn-lg">Открыть чат в Viber</a>
+      <a href="<?= e($shop['telegram']) ?>" class="btn btn-lg" target="_blank" rel="noopener">Открыть чат в Telegram</a>
       <a href="/" class="btn btn-lg btn-outline">На главную</a>
     </div>
   </div>

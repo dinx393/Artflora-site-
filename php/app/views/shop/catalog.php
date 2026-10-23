@@ -140,7 +140,7 @@ $f = fn (array $patch) => e($href($sp, $patch));
       </details>
       <div class="help">
         <b>Нужна подсказка?</b>
-        <span class="small muted">Флорист поможет выбрать в Viber.</span>
+        <span class="small muted">Флорист поможет выбрать в Telegram.</span>
         <a href="<?= e($shop['viber']) ?>" class="small" style="font-weight: 700">Написать флористу →</a>
       </div>
       <button type="button" class="btn btn-lg filters-done mobile-only" data-filters-done>Показать <?= count($list) ?> <?= ShopView::bouquets(count($list)) ?></button>
@@ -175,7 +175,7 @@ $f = fn (array $patch) => e($href($sp, $patch));
         <h2 class="h2">По запросу «<?= e($val('q')) ?>» ничего нет</h2>
         <p class="muted">Проверьте написание или посмотрите похожее. Флорист соберёт букет и на заказ.</p>
         <div class="row" style="justify-content: center">
-          <a href="<?= e($shop['viber']) ?>" class="btn">Написать флористу в Viber</a>
+          <a href="<?= e($shop['telegram']) ?>" class="btn" target="_blank" rel="noopener">Написать флористу в Telegram</a>
           <a href="/catalog">Смотреть весь каталог →</a>
         </div>
       </div>
