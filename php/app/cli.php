@@ -116,7 +116,14 @@ if ($cmd === 'migrate') {
     $to = $ask('Куда присылать письма о заказах', ($shop['orderEmail'] ?? '') ?: $user);
     $domain = substr(strrchr($user, '@'), 1);
     // Сервер почты: у Gmail известен, у почты на хостинге пробуем обычные имена
-    $hosts = $domain === 'gmail.com' ? ['smtp.gmail.com'] : array_unique(array_filter(["mail.$domain", "smtp.$domain", gethostname() ?: '', 'mail.hoster.by', 'smtp.hoster.by']));
+    // (сначала почтовые серверы домена из DNS, MX: у artflora.by это mailbe03.hoster.by)
+    $mx = [];
+    if ($domain !== 'gmail.com' && function_exists('dns_get_record')) {
+        $rec = @dns_get_record($domain, DNS_MX) ?: [];
+        usort($rec, fn ($a, $b) => $a['pri'] <=> $b['pri']);
+        $mx = array_column($rec, 'target');
+    }
+    $hosts = $domain === 'gmail.com' ? ['smtp.gmail.com'] : array_unique(array_filter([...$mx, "mail.$domain", "smtp.$domain", 'mailbe03.hoster.by', gethostname() ?: '', 'mail.hoster.by', 'smtp.hoster.by']));
     $found = null;
     foreach ($hosts as $host) {
         foreach ([465, 587] as $port) {
