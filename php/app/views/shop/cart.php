@@ -95,7 +95,7 @@ $config = [
               <b data-co-zone-name></b>
               <span class="price" style="font-size: 24px" data-co-zone-price></span>
             </div>
-            <span class="small muted">Привезём из магазина <span data-co-zone-shop></span>, от <?= e($leadHours) ?> часов</span>
+            <span class="small muted">Привезём из магазина <span data-co-zone-shop></span>, <?= e(Text::fromHours($leadHours)) ?></span>
             <span class="small" style="color: var(--olive); font-weight: 700" data-co-zone-free hidden></span>
           </div>
           <label class="field">
@@ -139,7 +139,7 @@ $config = [
             <input type="date" class="input" style="width: auto" data-co-date hidden>
           </div>
           <p class="small muted" data-co-show="unknown" hidden>Точное время согласуем с получателем.</p>
-          <div class="row" style="gap: 8px" data-co-show="slots">
+          <div class="slots" data-co-show="slots">
             <?php foreach (Slots::ALL as $s): ?>
               <button type="button" class="chip" data-co-slot="<?= e($s) ?>"><?= e($s) ?></button>
             <?php endforeach ?>

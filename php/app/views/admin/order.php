@@ -38,7 +38,7 @@ $created = date('d.m.Y, H:i:s', strtotime($o['createdAt']));
                 <span>Время</span>
                 <select class="input" name="slot">
                   <option value="">не знаем</option>
-                  <?php foreach (Slots::ALL as $s): ?><option value="<?= e($s) ?>" <?= $o['deliverySlot'] === $s ? 'selected' : '' ?>><?= e($s) ?></option><?php endforeach ?>
+                  <?php foreach (array_unique([...Slots::ALL, ...($o['deliverySlot'] ? [$o['deliverySlot']] : [])]) as $s): ?><option value="<?= e($s) ?>" <?= $o['deliverySlot'] === $s ? 'selected' : '' ?>><?= e($s) ?></option><?php endforeach ?>
                 </select>
               </label>
               <label class="field" style="flex: 1 1 120px">

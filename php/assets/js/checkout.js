@@ -47,7 +47,10 @@
     if (date < m.date) return [];
     if (date > m.date) return cfg.slots.slice();
     var ready = m.hour + m.minute / 60 + lead;
-    return cfg.slots.filter(function (s) { return parseInt(s, 10) >= ready; });
+    return cfg.slots.filter(function (s) {
+      var hm = s.split("–")[0].split(":"); // «9:30–10:30» → 9.5
+      return parseInt(hm[0], 10) + (parseInt(hm[1] || "0", 10) / 60) >= ready;
+    });
   }
 
   var today = minskNow().date;
@@ -266,6 +269,7 @@
       var s = b.getAttribute("data-co-slot");
       b.classList.toggle("on", s === st.slot);
       b.disabled = slots.indexOf(s) === -1;
+      b.hidden = b.disabled; // прошедшие интервалы не показываем, их теперь много
     });
     var slotErr = $("[data-co-slot-error]");
     slotErr.hidden = !(st.error && st.error.field === "slot");

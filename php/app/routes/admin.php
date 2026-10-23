@@ -488,7 +488,7 @@ Http::get('/admin/orders', function () {
     } else {
         [$where, $params] = ['status = ?', [$status]];
     }
-    $orders = Db::all("SELECT * FROM orders WHERE $where ORDER BY deliveryDate, deliverySlot LIMIT 200", $params);
+    $orders = Db::all("SELECT * FROM orders WHERE $where ORDER BY deliveryDate, LPAD(deliverySlot, 11, '0') LIMIT 200", $params);
     $ids = array_column($orders, 'id');
     $items = $ids ? Db::all('SELECT * FROM order_items WHERE orderId ' . Db::in($ids) . ' ORDER BY id', $ids) : [];
     foreach ($orders as &$o) $o['items'] = array_values(array_filter($items, fn ($i) => $i['orderId'] === $o['id']));
@@ -536,7 +536,7 @@ Http::post('/admin/orders/address', function () {
     $slot = (string) ($_POST['slot'] ?? '');
     $delivery = trim((string) ($_POST['delivery'] ?? ''));
     $o = Db::one('SELECT * FROM orders WHERE id = ?', [$id]);
-    if ($o && $o['addressUnknown'] && mb_strlen($address) <= 300 && mb_strlen($slot) <= 10 && preg_match('/^\d{1,4}([.,]\d{1,2})?$/', $delivery)) {
+    if ($o && $o['addressUnknown'] && mb_strlen($address) <= 300 && mb_strlen($slot) <= 20 && preg_match('/^\d{1,4}([.,]\d{1,2})?$/', $delivery)) {
         $deliveryKop = (int) round((float) str_replace(',', '.', $delivery) * 100);
         Db::update('orders', $id, [
             'address' => $address, 'deliverySlot' => $slot, 'deliveryKop' => $deliveryKop,

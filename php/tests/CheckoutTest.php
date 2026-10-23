@@ -2,7 +2,7 @@
 group('оформление заказа');
 $order = [
     'cart' => ['lines' => [['bouquetId' => 1, 'size' => 'M', 'qty' => 1]], 'addons' => [], 'cardText' => ''],
-    'method' => 'DELIVERY', 'address' => 'пр. Независимости, 180', 'district' => ' Уручье ', 'date' => '2026-10-24', 'slot' => '14–16',
+    'method' => 'DELIVERY', 'address' => 'пр. Независимости, 180', 'district' => ' Уручье ', 'date' => '2026-10-24', 'slot' => '14:00–15:00',
     'customerName' => ' Анна ', 'customerPhone' => '+375 (29) 111-22-33', 'payment' => 'ERIP',
 ];
 test('корзина: только id, размер и количество; цены из браузера отбрасываются', function () {

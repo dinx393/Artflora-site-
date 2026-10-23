@@ -92,3 +92,4 @@ test('файл делится на запросы, комментарии убр
     eq(count($parts), 13);
     ok(!str_contains(implode("\n", $parts), '-- '), 'остались комментарии');
 });
+test('срок «от N часов»', fn () => eq([Text::fromHours(1), Text::fromHours(1.5), Text::fromHours(2), Text::fromHours(11), Text::fromHours(21)], ['от 1 часа', 'от 1,5 часа', 'от 2 часов', 'от 11 часов', 'от 21 часа']));

@@ -12,6 +12,14 @@ final class Text
         return $raw;
     }
 
+    // Срок после «от»: «от 1 часа», «от 1,5 часа», «от 2 часов», «от 21 часа»
+    public static function fromHours(int|float $h): string
+    {
+        $n = str_replace('.', ',', (string) round($h, 1));
+        $one = fmod($h, 1) != 0 || ((int) $h % 10 === 1 && (int) $h % 100 !== 11);
+        return "от $n " . ($one ? 'часа' : 'часов');
+    }
+
     // «Уручье: ул. Немига, 5, кв. 12, подъезд 2, этаж 4» — так адрес видит флорист и курьер.
     // Район впереди: цену доставки считали по нему, при подтверждении заказа его сверяют с адресом.
     public static function fullAddress(array $o): string

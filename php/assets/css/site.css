@@ -89,6 +89,9 @@ main > .section:last-child { padding-bottom: 0; }
 }
 .chip.on { background: var(--cherry); color: var(--white); border-color: var(--cherry); }
 .chip-sm { min-height: 40px; padding: 0 14px; }
+/* Время доставки: интервалов много (каждые полчаса), ставим ровной сеткой */
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+.slots .chip { padding: 0 6px; justify-content: center; }
 .chips-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
 .tag { font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 999px; background: var(--blush); text-decoration: none; display: inline-flex; align-items: center; }
 .swatch { display: inline-block; width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(126,31,60,.18); font-style: normal; }

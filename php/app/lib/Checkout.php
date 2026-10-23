@@ -128,7 +128,7 @@ final class Checkout
         if (!in_array($method, ['DELIVERY', 'PICKUP'], true)) return $bad('Выберите доставку или самовывоз', 'method');
 
         $fields = ['address' => 300, 'district' => 40, 'apartment' => 20, 'entrance' => 20, 'floor' => 20, 'shop' => 40,
-            'slot' => 10, 'customerName' => 100, 'recipientName' => 100, 'recipientPhone' => 30, 'comment' => 1000, 'date' => 10, 'customerPhone' => 40];
+            'slot' => 20, 'customerName' => 100, 'recipientName' => 100, 'recipientPhone' => 30, 'comment' => 1000, 'date' => 10, 'customerPhone' => 40];
         // Имена, район и части адреса — без пробелов по краям (как .trim() в схеме)
         $trimmed = ['district', 'apartment', 'entrance', 'floor', 'customerName', 'recipientName'];
         $o = ['cart' => $cart, 'method' => $method];

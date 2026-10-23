@@ -178,7 +178,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
           <?php endforeach ?>
         </select>
         <div class="small muted" data-delivery-shop hidden></div>
-        <div class="small muted">Возим по Минску и до <?= e($delivery['maxOutsideMkadKm']) ?> км за МКАД. Бесплатно от <?= e(Money::format($delivery['freeFromKop'])) ?>. Привезём от <?= e($shop['leadHours']) ?> часов.</div>
+        <div class="small muted">Возим по Минску и до <?= e($delivery['maxOutsideMkadKm']) ?> км за МКАД. Бесплатно от <?= e(Money::format($delivery['freeFromKop'])) ?>. Привезём <?= e(Text::fromHours($shop['leadHours'])) ?>.</div>
       </div>
 
       <div class="acc">
