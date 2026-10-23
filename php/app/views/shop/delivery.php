@@ -40,6 +40,12 @@ $last = count($d['zones']) - 1;
         <span>За МКАД</span>
         <b>+<?= e(Money::format($d['outsideMkadPerKmKop'])) ?> за каждый км</b>
       </div>
+      <?php foreach ($d['areas'] ?? [] as $a): if (!empty($a['noDelivery']) || count($a['points']) < 3) continue ?>
+        <div class="sum-row zone-row">
+          <span><i class="zone-dot" style="background: <?= e($a['color']) ?>; margin-right: 8px; vertical-align: -2px"></i><?= e($a['name']) ?> (зона на карте ниже)</span>
+          <b class="price" style="font-size: 22px"><?= ShopView::byn((int) $a['priceKop']) ?></b>
+        </div>
+      <?php endforeach ?>
       <div class="sum-row zone-row">
         <span>Как далеко возим</span>
         <b>до <?= e($d['maxOutsideMkadKm']) ?> км за МКАД</b>
@@ -47,6 +53,8 @@ $last = count($d['zones']) - 1;
     </div>
     <p class="small muted">Выберите район в корзине, и цена появится сразу. Нет вашего района в списке? Напишите нам, договоримся.</p>
   </div>
+
+  <?= View::render('partials/zones-map', ['delivery' => $d, 'districts' => [], 'open' => true]) ?>
 
   <div class="stack" style="gap: 14px">
     <h2 style="font-size: 30px">Оплата</h2>

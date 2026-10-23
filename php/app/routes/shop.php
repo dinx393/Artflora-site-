@@ -117,6 +117,7 @@ Http::get('/delivery', fn () => View::page('shop/delivery', [
     'title' => 'Доставка и оплата',
     'shop' => Settings::get('shop'),
     'd' => Settings::get('delivery'),
+    'scripts' => ShopView::zonesMapScripts(),
 ]));
 
 Http::get('/remind', fn () => View::page('shop/remind', [

@@ -2,7 +2,7 @@
 // Корзина и оформление (повторяет src/components/Checkout.tsx). Разметка здесь, оживляет её assets/js/checkout.js:
 // строки корзины и суммы приходят с сервера (/api/cart), заказ уходит на /api/orders.
 // На телефоне два шага: «Корзина и доставка» → «Получатель и оплата» (нижняя панель «Далее»).
-// Переменные: $shops, $pickupPct, $freeFromKop, $maxOutsideKm, $districts, $leadHours
+// Переменные: $shops, $pickupPct, $freeFromKop, $maxOutsideKm, $districts, $leadHours, $delivery
 $payments = [
     ['code' => 'CARD', 'title' => 'Картой', 'note' => 'Пришлём ссылку на оплату после подтверждения заказа'],
     ['code' => 'ERIP', 'title' => 'ЕРИП', 'note' => 'Пришлём код для оплаты после подтверждения заказа'],
@@ -82,14 +82,21 @@ $config = [
             <span>Район</span>
             <select class="input" data-co-district>
               <option value="">Выберите район</option>
-              <?php foreach ($districts as $d): ?>
-                <option value="<?= e($d['name']) ?>"><?= e($d['name']) ?> — <?= e(Money::format($d['priceKop'])) ?></option>
+              <?php $groups = ['' => array_filter($districts, fn ($d) => empty($d['isArea'])), 'area' => array_filter($districts, fn ($d) => !empty($d['isArea']))] ?>
+              <?php foreach ($groups as $g => $list): if (!$list) continue ?>
+                <?php if ($groups['area']): ?><optgroup label="<?= $g === 'area' ? 'Зоны на карте (за городом и др.)' : 'Районы' ?>"><?php endif ?>
+                <?php foreach ($list as $d): ?>
+                  <option value="<?= e($d['name']) ?>"><?= e($d['name']) ?> — <?= e(Money::format($d['priceKop'])) ?></option>
+                <?php endforeach ?>
+                <?php if ($groups['area']): ?></optgroup><?php endif ?>
               <?php endforeach ?>
             </select>
             <span class="small muted">
-              Минск и до <?= e($maxOutsideKm) ?> км за МКАД. Нет вашего района? Отметьте «Не знаю адрес» выше или напишите нам.
+              Минск и до <?= e($maxOutsideKm) ?> км за МКАД. Не знаете, ваш ли район? Посмотрите на карте ниже: цвет — это цена.
+              Нет вашего района? Отметьте «Не знаю адрес» выше или напишите нам.
             </span>
           </label>
+          <?= View::render('partials/zones-map', ['delivery' => $delivery, 'districts' => $districts, 'open' => false]) ?>
           <div class="zone" data-co-zone hidden>
             <div class="row between">
               <b data-co-zone-name></b>

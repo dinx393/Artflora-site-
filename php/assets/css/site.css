@@ -591,6 +591,32 @@ tr.dragging { opacity: .45; }
 .map-district.on i { width: 20px; height: 20px; flex-basis: 20px; margin: -3px; box-shadow: 0 0 0 2px var(--cherry); }
 .map-district.on span { font-size: 13px; color: var(--cherry); }
 .map-district.far span { color: #888; }
+
+/* Карта зон доставки для покупателя (корзина, «Доставка и оплата») */
+.zmap { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--white); }
+.zmap-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 0 18px;
+  border: 0; background: var(--blush); color: var(--cherry); font: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
+}
+.zmap-chev { display: flex; transition: transform .2s; }
+.zmap-toggle[aria-expanded="true"] .zmap-chev { transform: rotate(180deg); }
+.zmap-map { height: 420px; background: var(--line-soft); }
+.zmap-foot { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; }
+.zmap-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.zmap-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: var(--blush); font-size: 13px; }
+.zmap-chip i, .zmap-dot { display: inline-block; width: 10px; height: 10px; flex: none; border-radius: 50%; }
+.zmap-dot { margin-right: 6px; }
+.zmap-chip b { font-weight: 700; }
+.zmap-far .map-district span { display: none; }
+.zmap .map-district { cursor: pointer; }
+.zmap-popup .leaflet-popup-content-wrapper { border-radius: 16px; }
+.zmap-popup .leaflet-popup-content { margin: 12px 14px; font: 13px/1.4 var(--sans); color: var(--cherry); }
+.zmap-popup .leaflet-popup-content b { font-size: 15px; }
+.zmap-pick {
+  margin-top: 8px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--cherry); color: var(--white);
+  font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+@media (max-width: 860px) { .zmap-map { height: 320px; } }
 .map-shop { display: flex !important; align-items: center; gap: 6px; width: auto !important; white-space: nowrap; }
 .map-shop span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--cherry); color: #fff; font-size: 20px; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); }
 .map-shop b { font: 700 12px/1 var(--sans); color: var(--cherry); text-shadow: 0 0 3px #fff, 0 0 3px #fff; }

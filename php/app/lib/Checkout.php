@@ -104,10 +104,11 @@ final class Checkout
         return ['priced' => $priced, 'quote' => $quote, 'discountKop' => $discountKop, 'deliveryKop' => $deliveryKop, 'totalKop' => $goods - $discountKop + $deliveryKop];
     }
 
-    // Точка района из списка в настройках; нет такого района — null.
+    // Точка района из списка в настройках или своего участка с карты; нет такого — null.
     public static function districtPoint(string $name): ?array
     {
-        foreach (Settings::get('districts') as $d) {
+        $districts = Settings::get('districts');
+        foreach ([...$districts, ...Delivery::areaPlaces(Settings::get('delivery'), $districts)] as $d) {
             if ($d['name'] === $name) return ['lat' => (float) $d['lat'], 'lng' => (float) $d['lng']];
         }
         return null;

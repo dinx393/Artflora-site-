@@ -554,7 +554,7 @@ Http::get('/admin/delivery', function () {
         'title' => 'Доставка',
         'editor' => ['delivery' => Settings::get('delivery'), 'districts' => Settings::get('districts')],
         'head' => '<link rel="stylesheet" href="' . View::asset('vendor/leaflet/leaflet.css') . '">',
-        'scripts' => '<script src="' . View::asset('vendor/leaflet/leaflet.js') . '"></script>' . admin_scripts('admin-delivery.js'),
+        'scripts' => '<script src="' . View::asset('vendor/leaflet/leaflet.js') . '"></script>' . admin_scripts('delivery-zones.js', 'admin-delivery.js'),
     ]);
 });
 

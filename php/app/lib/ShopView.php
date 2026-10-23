@@ -35,4 +35,10 @@ final class ShopView
         $rows = Db::all('SELECT id, code, name, priceKop, included FROM addons WHERE active = 1' . ($withCard ? '' : " AND code <> 'card'") . ' ORDER BY sortOrder, id');
         return array_map(fn ($a) => ['id' => (int) $a['id'], 'code' => $a['code'], 'name' => $a['name'], 'priceKop' => (int) $a['priceKop'], 'included' => (bool) $a['included']], $rows);
     }
+
+    // Карта зон доставки (partials/zones-map.php): расчёт зон и сама карта
+    public static function zonesMapScripts(): string
+    {
+        return '<script src="' . View::asset('js/delivery-zones.js') . '"></script><script src="' . View::asset('js/delivery-map.js') . '"></script>';
+    }
 }

@@ -107,8 +107,40 @@ final class Delivery
         return min(array_map(fn ($z) => (int) $z['priceKop'], $cfg['zones']));
     }
 
+    // Свои участки как пункты списка «куда везти» (решение владельца 2026-10-23: например, жёлтая «Удалённая доставка»
+    // с Логойском — в списке районов его нет, а выбрать надо). Точка — любая внутри участка, по ней считается цена.
+    // Участки «не возим» и участки, у которых имя совпало с районом, пропускаем.
+    public static function areaPlaces(array $cfg, array $districts = []): array
+    {
+        $taken = array_map(fn ($d) => $d['name'], $districts);
+        $out = [];
+        foreach ($cfg['areas'] ?? [] as $a) {
+            if (!empty($a['noDelivery']) || count($a['points']) < 3 || in_array($a['name'], $taken, true)) continue;
+            $p = self::pointInArea($a, $cfg);
+            if ($p) $out[] = ['name' => $a['name'], 'lat' => $p['lat'], 'lng' => $p['lng']];
+        }
+        return $out;
+    }
+
+    // Точка внутри участка, где действует именно его цена: центр, иначе середины от первой вершины к остальным
+    private static function pointInArea(array $area, array $cfg): ?array
+    {
+        $pts = $area['points'];
+        $n = count($pts);
+        $cands = [['lat' => array_sum(array_column($pts, 'lat')) / $n, 'lng' => array_sum(array_column($pts, 'lng')) / $n]];
+        for ($i = 2; $i < $n; $i++) {
+            $cands[] = ['lat' => ($pts[0]['lat'] + $pts[$i - 1]['lat'] + $pts[$i]['lat']) / 3, 'lng' => ($pts[0]['lng'] + $pts[$i - 1]['lng'] + $pts[$i]['lng']) / 3];
+        }
+        foreach ($cands as $p) {
+            $hit = self::areaAt($p, $cfg);
+            if ($hit && $hit['name'] === $area['name']) return ['lat' => round($p['lat'], 5), 'lng' => round($p['lng'], 5)];
+        }
+        return null;
+    }
+
     // Район доставки с ценой для списка в корзине и на странице букета:
-    // ['name','lat','lng','zone','priceKop','shopName','area'?]. Районы дальше разрешённого не показываем.
+    // ['name','lat','lng','zone','priceKop','shopName','area'?, 'isArea'?]. Районы дальше разрешённого не показываем.
+    // После районов (по алфавиту) идут свои участки с карты, с пометкой isArea.
     // В корзине цена — обычная (subtotalKop = 0), бесплатную доставку от суммы корзина покажет сама.
     public static function districtOptions(array $list, array $cfg, int $subtotalKop = 0): array
     {
@@ -122,6 +154,10 @@ final class Delivery
         }
         $coll = class_exists('Collator') ? new Collator('ru_RU') : null;
         usort($out, fn ($a, $b) => $coll ? $coll->compare($a['name'], $b['name']) : strcmp(self::sortKey($a['name']), self::sortKey($b['name'])));
+        foreach (self::areaPlaces($cfg, $list) as $p) {
+            $q = self::quote($p, $subtotalKop, $cfg);
+            if ($q['ok']) $out[] = ['name' => $p['name'], 'lat' => $p['lat'], 'lng' => $p['lng'], 'zone' => 0, 'priceKop' => $q['priceKop'], 'shopName' => $q['shop']['name'], 'area' => $p['name'], 'isArea' => true];
+        }
         return $out;
     }
 

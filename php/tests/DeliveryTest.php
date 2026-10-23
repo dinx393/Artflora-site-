@@ -63,3 +63,24 @@ test('у каждого района своя цена, по алфавиту', 
     eq($names[0], 'Боровляны');
 });
 test('слишком далёкие районы не показываем', fn () => eq(Delivery::districtOptions([['name' => 'Борисов', 'lat' => 54.2279, 'lng' => 28.505]], $cfg), []));
+test('свой участок — пунктом в списке «куда везти» (Логойск)', function () use ($cfg) {
+    $far = ['lat' => 54.206, 'lng' => 27.853]; // Логойск
+    $cfg['areas'] = [
+        ['name' => 'Удалённая доставка', 'color' => '#f2b705', 'priceKop' => 3500, 'noDelivery' => false,
+            'points' => [['lat' => 54.33, 'lng' => 27.70], ['lat' => 54.33, 'lng' => 28.10], ['lat' => 54.12, 'lng' => 28.15], ['lat' => 54.05, 'lng' => 27.95], ['lat' => 54.10, 'lng' => 27.70]]],
+        ['name' => 'Не возим', 'color' => '#999999', 'priceKop' => 0, 'noDelivery' => true,
+            'points' => [['lat' => 53.6, 'lng' => 27.0], ['lat' => 53.6, 'lng' => 27.1], ['lat' => 53.7, 'lng' => 27.1]]],
+    ];
+    eq(Delivery::quote($far, 0, $cfg)['priceKop'], 3500);
+    $places = Delivery::areaPlaces($cfg);
+    eq(array_column($places, 'name'), ['Удалённая доставка']);
+    eq(Delivery::areaAt($places[0], $cfg)['name'], 'Удалённая доставка');
+    $opts = Delivery::districtOptions([['name' => 'Центр', 'lat' => 53.9006, 'lng' => 27.559]], $cfg);
+    eq(array_column($opts, 'name'), ['Центр', 'Удалённая доставка']);
+    eq([$opts[1]['priceKop'], $opts[1]['isArea'] ?? false], [3500, true]);
+    // вогнутый участок («подкова»): центр снаружи, точку всё равно находим внутри
+    $cfg['areas'] = [['name' => 'Подкова', 'color' => '#f00', 'priceKop' => 2000, 'noDelivery' => false, 'points' => [
+        ['lat' => 54.0, 'lng' => 27.0], ['lat' => 54.3, 'lng' => 27.0], ['lat' => 54.3, 'lng' => 27.1], ['lat' => 54.1, 'lng' => 27.1],
+        ['lat' => 54.1, 'lng' => 27.4], ['lat' => 54.3, 'lng' => 27.4], ['lat' => 54.3, 'lng' => 27.5], ['lat' => 54.0, 'lng' => 27.5]]]];
+    eq(Delivery::areaAt(Delivery::areaPlaces($cfg)[0], $cfg)['name'], 'Подкова');
+});

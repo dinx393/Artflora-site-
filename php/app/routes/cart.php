@@ -14,7 +14,8 @@ Http::get('/cart', function () {
         'maxOutsideKm' => $delivery['maxOutsideMkadKm'],
         'districts' => Delivery::districtOptions(Settings::get('districts'), $delivery),
         'leadHours' => $shop['leadHours'],
-        'scripts' => '<script src="' . View::asset('js/checkout.js') . '"></script>',
+        'delivery' => $delivery,
+        'scripts' => '<script src="' . View::asset('js/checkout.js') . '"></script>' . ShopView::zonesMapScripts(),
     ]);
 });
 
