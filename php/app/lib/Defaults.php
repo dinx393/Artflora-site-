@@ -18,8 +18,8 @@ final class Defaults
     // Координаты приблизительные, их можно уточнить в настройках.
     public const DELIVERY = [
         'shops' => [
-            ['code' => 'uruchye', 'name' => 'Уручье', 'address' => 'пр. Независимости, 168/1', 'hours' => '8:00–21:00', 'mapUrl' => 'https://yandex.by/maps/-/CXVazMOZ', 'location' => ['lat' => 53.9452, 'lng' => 27.6882]],
-            ['code' => 'malinovka', 'name' => 'Малиновка', 'address' => 'ул. Яна Чечота, 7', 'hours' => '8:00–21:00', 'mapUrl' => 'https://yandex.by/maps/-/CXVazBM0', 'location' => ['lat' => 53.851, 'lng' => 27.476]],
+            ['code' => 'uruchye', 'name' => 'Уручье', 'address' => 'пр. Независимости, 168/1', 'hours' => '8:00–21:00', 'mapUrl' => 'https://yandex.by/maps/-/CXVazBM0', 'location' => ['lat' => 53.9452, 'lng' => 27.6882]],
+            ['code' => 'malinovka', 'name' => 'Малиновка', 'address' => 'ул. Яна Чечота, 7', 'hours' => '8:00–21:00', 'mapUrl' => 'https://yandex.by/maps/-/CXVazMOZ', 'location' => ['lat' => 53.851, 'lng' => 27.476]],
         ],
         'zones' => [
             ['maxKm' => 3, 'priceKop' => 600],

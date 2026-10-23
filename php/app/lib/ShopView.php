@@ -40,7 +40,9 @@ final class ShopView
     // Ссылка на магазин в Яндекс Картах: своя из админки, иначе из Defaults (для старых настроек), иначе поиск по адресу
     public static function mapUrl(array $s): string
     {
-        if (!empty($s['mapUrl'])) return $s['mapUrl'];
+        // 2026-10-23 ссылки филиалов сначала были перепутаны и могли сохраниться в админке — такие не берём
+        $mixed = ['uruchye' => 'https://yandex.by/maps/-/CXVazMOZ', 'malinovka' => 'https://yandex.by/maps/-/CXVazBM0'];
+        if (!empty($s['mapUrl']) && $s['mapUrl'] !== ($mixed[$s['code'] ?? ''] ?? null)) return $s['mapUrl'];
         foreach (Defaults::DELIVERY['shops'] as $d) if ($d['code'] === ($s['code'] ?? '') && $d['address'] === $s['address']) return $d['mapUrl'];
         return 'https://yandex.by/maps/?text=' . rawurlencode('Минск, ' . $s['address']);
     }
