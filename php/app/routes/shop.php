@@ -1,6 +1,6 @@
 <?php
 // Витрина: главная, каталог, страница букета, поштучно, доставка и оплата, напоминания.
-// Повторяет src/app/(shop)/page.tsx, catalog, bouquet/[slug], single, delivery, remind.
+// Повторяет src/app/(shop)/page.tsx, catalog, bouquet/[slug], single, delivery.
 
 Http::get('/', function () {
     $all = Catalog::visible();
@@ -119,23 +119,3 @@ Http::get('/delivery', fn () => View::page('shop/delivery', [
     'd' => Settings::get('delivery'),
     'scripts' => ShopView::zonesMapScripts(),
 ]));
-
-Http::get('/remind', fn () => View::page('shop/remind', [
-    'title' => 'Напомним о важных датах',
-    'ok' => isset($_GET['ok']),
-    'error' => Http::str('error', 10),
-]));
-
-Http::post('/remind', function () {
-    if (!RateLimit::allow('remind', RateLimit::clientIp())) Http::redirect('/remind?error=busy');
-    $name = Http::str('name', 1000);
-    $phone = preg_replace('/[^\d+]/', '', Http::str('phone', 1000));
-    $occasion = Http::str('occasion', 1000);
-    $date = Http::str('date', 20);
-    $d = DateTime::createFromFormat('!Y-m-d', $date);
-    $valid = $name !== '' && mb_strlen($name) <= 100 && preg_match('/^\+?\d{9,13}$/', $phone)
-        && $occasion !== '' && mb_strlen($occasion) <= 100 && $d && $d->format('Y-m-d') === $date;
-    if (!$valid) Http::redirect('/remind?error=1');
-    Db::insert('reminders', ['name' => $name, 'phone' => $phone, 'occasion' => $occasion, 'date' => $date]);
-    Http::redirect('/remind?ok=1');
-});

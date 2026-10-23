@@ -66,11 +66,4 @@ $o = $order;
       <b>Итого</b><span class="sum-total"><?= $byn($o['totalKop']) ?></span>
     </div>
   </div>
-  <div class="panel row between" style="flex: 1 1 100%; gap: 16px">
-    <div class="stack" style="gap: 6px; flex: 1 1 360px">
-      <div style="font-family: var(--serif); font-size: 28px; font-weight: 600">Напомнить в следующий раз?</div>
-      <div class="muted">Сохраните повод и дату, например день рождения мамы. За 5 дней пришлём подборку в Viber и скидку 5%.</div>
-    </div>
-    <a href="/remind" class="btn btn-lg">Сохранить дату</a>
-  </div>
 </div>

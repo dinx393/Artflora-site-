@@ -125,16 +125,6 @@ $cards = [
   </div>
 </section>
 
-<section class="section">
-  <div class="panel row between" style="gap: 20px">
-    <div class="stack" style="gap: 8px; flex: 1 1 360px">
-      <h2 style="font-size: 32px">Напомним о важных датах</h2>
-      <p class="muted">Оставьте дату, и за 5 дней пришлём в Viber подборку букетов и скидку 5%.</p>
-    </div>
-    <a href="/remind" class="btn btn-lg">Добавить дату</a>
-  </div>
-</section>
-
 <?php if ($exclusive): ?>
   <section class="section">
     <div class="stack sec-title" style="gap: 10px">

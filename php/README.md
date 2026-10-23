@@ -83,7 +83,7 @@ Http::get('/bouquet/{slug}', function (string $slug) {
 
 | Часть | Свои файлы | Повторяет из Node.js |
 |---|---|---|
-| **1. Витрина** | `routes/shop.php`, `views/shop/*` (кроме корзины), `assets/js/shop.js` | `src/app/(shop)/page.tsx`, `catalog`, `bouquet/[slug]`, `single`, `delivery`, `remind`; компоненты ProductCard, BuyBox, Gallery, CatalogFilters, ScrollRow, DeliveryEstimate, Guarantee |
+| **1. Витрина** | `routes/shop.php`, `views/shop/*` (кроме корзины), `assets/js/shop.js` | `src/app/(shop)/page.tsx`, `catalog`, `bouquet/[slug]`, `single`, `delivery`; компоненты ProductCard, BuyBox, Gallery, CatalogFilters, ScrollRow, DeliveryEstimate, Guarantee |
 | **2. Корзина и заказ** | `routes/cart.php`, `views/shop/cart*.php`, `views/shop/order*.php`, `assets/js/checkout.js`, `lib/Checkout.php`, `lib/Notify.php`, `lib/Smtp.php`, `app/cron.php` | `src/components/Checkout.tsx`, `src/lib/checkout.ts`, `notify.ts`, `src/app/api/*`, `(shop)/cart`, `(shop)/order/[number]` |
 | **3. Админка** | `routes/admin.php`, `views/admin/*`, `assets/js/admin-*.js` | `src/app/admin/**` (букеты, цветы, коллекции, заказы, доставка с картой Leaflet, настройки) |
 

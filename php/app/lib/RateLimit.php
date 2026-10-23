@@ -7,7 +7,6 @@ final class RateLimit
     public const RULES = [
         'login' => ['perIp' => 5, 'total' => 30, 'windowMs' => 15 * 60_000],
         'order' => ['perIp' => 10, 'total' => 200, 'windowMs' => 60 * 60_000],
-        'remind' => ['perIp' => 5, 'total' => 100, 'windowMs' => 60 * 60_000],
     ];
 
     // true — можно, false — слишком часто. $now — миллисекунды (для тестов).
