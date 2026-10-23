@@ -206,7 +206,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
     );
     return admin_page('bouquet', [
         'title' => $b['name'],
-        'data' => [
+        'editor' => [
             'initial' => $initial, 'flowers' => $flowers, 'collections' => $collections, 'siblings' => $siblings,
             'colors' => Settings::get('colors'), 'occasions' => Occasions::LIST, 'formats' => Occasions::FORMATS,
         ],
@@ -352,7 +352,7 @@ Http::get('/admin/flowers', function () {
     ], Db::all('SELECT id, name, enabled FROM bouquets ORDER BY id'));
     return admin_page('flowers', [
         'title' => 'Цветы',
-        'data' => ['initial' => admin_flowers(), 'bouquets' => $bouquets],
+        'editor' => ['initial' => admin_flowers(), 'bouquets' => $bouquets],
         'scripts' => admin_scripts('admin-flowers.js'),
     ]);
 });
@@ -552,7 +552,7 @@ Http::get('/admin/delivery', function () {
     Auth::requireAdmin();
     return admin_page('delivery', [
         'title' => 'Доставка',
-        'data' => ['delivery' => Settings::get('delivery'), 'districts' => Settings::get('districts')],
+        'editor' => ['delivery' => Settings::get('delivery'), 'districts' => Settings::get('districts')],
         'head' => '<link rel="stylesheet" href="' . View::asset('vendor/leaflet/leaflet.css') . '">',
         'scripts' => '<script src="' . View::asset('vendor/leaflet/leaflet.js') . '"></script>' . admin_scripts('admin-delivery.js'),
     ]);
@@ -660,7 +660,7 @@ Http::get('/admin/settings', function () {
     Auth::requireAdmin();
     return admin_page('settings', [
         'title' => 'Настройки',
-        'data' => [
+        'editor' => [
             'shop' => Settings::get('shop'),
             'colors' => Settings::get('colors'),
             'addons' => admin_addons(),
