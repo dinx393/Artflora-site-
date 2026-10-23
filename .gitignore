@@ -9,3 +9,4 @@ uploads/*
 prisma/migrate.js
 prisma/seed.js
 prisma/demo-catalog.js
+/backups/

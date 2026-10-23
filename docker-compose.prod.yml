@@ -1,0 +1,57 @@
+# Дополнение для сервера (artflora.by). Включается строкой в .env:
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml
+# после этого обычные команды `docker compose up -d --build` и т.д. работают с ним сами.
+# Что меняется по сравнению с компьютером:
+#  - сайт не открыт наружу напрямую, снаружи только Caddy на 80/443 с https;
+#  - каждый день в 03:00 делается резервная копия базы и фото в папку backups.
+services:
+  site:
+    ports: !reset []
+    environment:
+      TZ: Europe/Minsk
+    logging: &logs
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  db:
+    environment:
+      TZ: Europe/Minsk
+    logging: *logs
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on: [site]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?В .env нужна строка DOMAIN=artflora.by}
+      ACME_EMAIL: ${ACME_EMAIL:-minskartflora@gmail.com}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging: *logs
+
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["sh", "/backup.sh"]
+    environment:
+      TZ: Europe/Minsk
+      PGPASSWORD: ${DB_PASSWORD:-artflora}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./deploy/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+      - uploads:/uploads
+    logging: *logs
+
+volumes:
+  caddy_data:
+  caddy_config:
