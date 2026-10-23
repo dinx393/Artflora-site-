@@ -15,7 +15,7 @@ $last = count($d['zones']) - 1;
     </div>
     <div class="info-card">
       <h3>Самовывоз −<?= e($d['pickupDiscountPct']) ?>%</h3>
-      <p><?= e(implode('. ', array_map(fn ($s) => "{$s['name']}, {$s['address']}, {$s['hours']}", $d['shops']))) ?>.</p>
+      <p><?= implode('. ', array_map(fn ($s) => e($s['name']) . ', ' . ShopView::mapLink($s, $s['address'], 'map-link') . ', ' . e($s['hours']), $d['shops'])) ?>.</p>
     </div>
     <div class="info-card info-accent">
       <h3><?= e(ShopView::GUARANTEE_TITLE) ?></h3>

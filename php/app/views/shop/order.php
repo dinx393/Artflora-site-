@@ -31,7 +31,7 @@ $o = $order;
           <div class="muted">И привезёт букет по адресу</div>
         <?php else: ?>
           <b>Заберите букет в магазине</b>
-          <div class="muted"><?= e($pickupShop ? "{$pickupShop['name']}, {$pickupShop['address']}" : $o['shop']) ?></div>
+          <div class="muted"><?= $pickupShop ? e($pickupShop['name']) . ', ' . ShopView::mapLink($pickupShop, $pickupShop['address'], 'map-link') : e($o['shop']) ?></div>
         <?php endif ?>
       </li>
     </ol>

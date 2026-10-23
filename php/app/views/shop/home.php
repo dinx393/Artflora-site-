@@ -11,7 +11,7 @@ $splitName = function (string $name): array {
 };
 $shopNames = implode(', ', array_map(fn ($s) => $s['name'], $delivery['shops']));
 // «Независимости 168/1 · Яна Чечота 7» — адреса магазинов без «пр.»/«ул.» и запятых
-$pickupAddresses = array_map(fn ($s) => preg_replace(['/^(пр|ул)\.\s*/u', '/,\s*/u'], ['', ' '], $s['address']), $delivery['shops']);
+$pickupAddresses = array_map(fn ($s) => ShopView::mapLink($s, preg_replace(['/^(пр|ул)\.\s*/u', '/,\s*/u'], ['', ' '], $s['address']), 'nowrap map-link'), $delivery['shops']);
 $heroFacts = [
     ['Фото', 'букета перед доставкой'],
     ['24 часа', 'гарантия свежести'],
@@ -40,7 +40,7 @@ $cards = [
         </ul>
         <div class="hero-ways">
           <p class="hero-delivery"><?= Icons::get('truck') ?>Доставка по Минску и Минскому району</p>
-          <p class="hero-delivery"><?= Icons::get('pin') ?><span>Самовывоз: <?= implode(' · ', array_map(fn ($a) => '<span class="nowrap">' . e($a) . '</span>', $pickupAddresses)) ?></span></p>
+          <p class="hero-delivery"><?= Icons::get('pin') ?><span>Самовывоз: <?= implode(' · ', $pickupAddresses) ?></span></p>
         </div>
       </div>
       <div class="hero-actions">

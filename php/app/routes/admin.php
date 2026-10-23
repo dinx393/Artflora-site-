@@ -585,7 +585,9 @@ Http::post('/admin/delivery/save', function () {
         $loc = admin_latlng($s['location'] ?? null);
         if (!is_string($s['code'] ?? null) || !preg_match('/^[a-z0-9-]+$/', $s['code']) || !is_string($s['name'] ?? null) || $s['name'] === ''
             || mb_strlen($s['name']) > 60 || admin_str($s['address'] ?? null, 200) === null || admin_str($s['hours'] ?? null, 60) === null || !$loc) $bad('магазины');
-        $shops[] = ['code' => $s['code'], 'name' => $s['name'], 'address' => $s['address'], 'hours' => $s['hours'], 'location' => $loc];
+        $mapUrl = trim((string) ($s['mapUrl'] ?? ''));
+        if ($mapUrl !== '' && (mb_strlen($mapUrl) > 300 || !preg_match('~^https://~', $mapUrl))) admin_fail('Ссылка на карту должна начинаться с https://');
+        $shops[] = ['code' => $s['code'], 'name' => $s['name'], 'address' => $s['address'], 'hours' => $s['hours'], 'mapUrl' => $mapUrl, 'location' => $loc];
     }
 
     $zones = [];

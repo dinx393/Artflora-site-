@@ -236,6 +236,7 @@
         '<input class="input" aria-label="Название" data-k="shop-name-' + i + '" value="' + esc(s.name) + '"' + on("input", function (e) { set({ name: e.target.value }); }) + ">" +
         '<input class="input" aria-label="Адрес" data-k="shop-address-' + i + '" value="' + esc(s.address) + '"' + on("input", function (e) { set({ address: e.target.value }); }) + ">" +
         '<input class="input" aria-label="Часы работы" data-k="shop-hours-' + i + '" value="' + esc(s.hours) + '"' + on("input", function (e) { set({ hours: e.target.value }); }) + ">" +
+        '<input class="input" aria-label="Ссылка на Яндекс Карты" placeholder="Ссылка на Яндекс Карты" data-k="shop-map-' + i + '" value="' + esc(s.mapUrl || "") + '"' + on("input", function (e) { set({ mapUrl: e.target.value }); }) + ">" +
         "</div>";
     });
     h += "</div>";

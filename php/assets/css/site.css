@@ -217,6 +217,9 @@ select.input {
 .hero-facts span { font-size: 13px; line-height: 1.3; color: var(--pink); }
 .hero-text .hero-delivery { display: flex; align-items: center; gap: 8px; margin: 0; max-width: none; font-size: 15px; color: var(--white); }
 .hero-delivery svg { color: var(--pink); flex: none; }
+/* адреса магазинов — ссылки на Яндекс Карты */
+a.map-link { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .hero-ways { display: flex; flex-direction: column; gap: 6px; }
 .nowrap { white-space: nowrap; }
 .hero-actions { position: absolute; left: 44px; bottom: 44px; display: flex; flex-wrap: wrap; gap: 12px; }
@@ -587,6 +590,7 @@ tr.dragging { opacity: .45; }
 .district-row .input { padding: 7px 10px; font-size: 14px; }
 .district-row.on { background: var(--blush); }
 .shop-edit { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; }
+.shop-edit [data-k^="shop-map-"] { grid-column: 1 / -1; }
 .shop-edit .input { padding: 8px 10px; font-size: 14px; }
 .map-district { display: flex !important; align-items: center; gap: 4px; width: auto !important; white-space: nowrap; }
 .map-district i { width: 14px; height: 14px; flex: 0 0 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }

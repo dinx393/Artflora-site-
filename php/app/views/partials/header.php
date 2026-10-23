@@ -102,7 +102,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
     <div class="stack small" style="gap: 12px">
       <?php foreach ($delivery['shops'] as $s): ?>
         <div class="stack" style="gap: 2px">
-          <b><?= e($s['name']) ?> · <?= e($s['address']) ?></b>
+          <b><?= e($s['name']) ?> · <?= ShopView::mapLink($s, $s['address'], 'map-link') ?></b>
           <span class="muted">Ежедневно <?= e($s['hours']) ?></span>
         </div>
       <?php endforeach ?>

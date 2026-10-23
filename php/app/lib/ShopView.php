@@ -37,6 +37,20 @@ final class ShopView
     }
 
     // Карта зон доставки (partials/zones-map.php): расчёт зон и сама карта
+    // Ссылка на магазин в Яндекс Картах: своя из админки, иначе из Defaults (для старых настроек), иначе поиск по адресу
+    public static function mapUrl(array $s): string
+    {
+        if (!empty($s['mapUrl'])) return $s['mapUrl'];
+        foreach (Defaults::DELIVERY['shops'] as $d) if ($d['code'] === ($s['code'] ?? '') && $d['address'] === $s['address']) return $d['mapUrl'];
+        return 'https://yandex.by/maps/?text=' . rawurlencode('Минск, ' . $s['address']);
+    }
+
+    // Адрес магазина ссылкой на карту (открывается в новой вкладке)
+    public static function mapLink(array $s, string $text, string $class = ''): string
+    {
+        return '<a href="' . e(self::mapUrl($s)) . '" target="_blank" rel="noreferrer"' . ($class ? ' class="' . e($class) . '"' : '') . '>' . e($text) . '</a>';
+    }
+
     public static function zonesMapScripts(): string
     {
         return '<script src="' . View::asset('js/delivery-zones.js') . '"></script><script src="' . View::asset('js/delivery-map.js') . '"></script>';

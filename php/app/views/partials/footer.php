@@ -12,7 +12,7 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
       <div class="stack" style="gap: 6px">
         <?php foreach ($delivery['shops'] as $i => $s): ?>
           <div class="stack" style="gap: 4px; margin-top: <?= $i ? 10 : 0 ?>px">
-            <b><?= e(mb_strtoupper(mb_substr($s['address'], 0, 1)) . mb_substr($s['address'], 1)) ?></b>
+            <b><?= ShopView::mapLink($s, mb_strtoupper(mb_substr($s['address'], 0, 1)) . mb_substr($s['address'], 1), 'map-link') ?></b>
             <span class="soft"><?= e($s['name']) ?> · ежедневно <?= e($s['hours']) ?></span>
           </div>
         <?php endforeach ?>
