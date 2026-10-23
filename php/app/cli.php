@@ -3,6 +3,8 @@
 //   php app/cli.php migrate      — применить новые таблицы базы
 //   php app/cli.php demo         — добавить цветы и букеты-примеры (только в пустую базу)
 //   php app/cli.php clean-demo   — убрать все букеты, заказы и напоминания (справочник цветов остаётся)
+//   php app/cli.php mail         — подключить почту для писем о заказах: спросит ящик и пароль, сам найдёт сервер,
+//                                  отправит пробное письмо и запишет настройки в app/config.php
 //   php app/cli.php import ~/artflora-export.json [--replace]
 //                                — перенести каталог с сайта на Node.js (файл даёт prisma/export-for-php.js);
 //                                  --replace сначала убирает букеты, коллекции и цветы, которые уже есть на сайте
@@ -101,6 +103,44 @@ if ($cmd === 'migrate') {
         }
     });
     echo 'Перенесено: цветов ' . count($data['flowers']) . ', букетов ' . count($data['bouquets']) . ', фото ' . count($data['photos'] ?? []) . ", настройки.\n";
+} elseif ($cmd === 'mail') {
+    $ask = function (string $q, string $default = ''): string {
+        echo $q . ($default !== '' ? " [$default]" : '') . ': ';
+        $a = trim((string) fgets(STDIN));
+        return $a === '' ? $default : $a;
+    };
+    $user = $ask('Почтовый ящик, с которого сайт отправляет письма', 'zakaz@artflora.by');
+    if (!filter_var($user, FILTER_VALIDATE_EMAIL)) exit("Это не адрес почты.\n");
+    $pass = $ask(str_ends_with($user, '@gmail.com') ? 'Пароль приложения Gmail (16 букв)' : 'Пароль от этого ящика');
+    $shop = Settings::get('shop');
+    $to = $ask('Куда присылать письма о заказах', ($shop['orderEmail'] ?? '') ?: $user);
+    $domain = substr(strrchr($user, '@'), 1);
+    // Сервер почты: у Gmail известен, у почты на хостинге пробуем обычные имена
+    $hosts = $domain === 'gmail.com' ? ['smtp.gmail.com'] : array_unique(array_filter(["mail.$domain", "smtp.$domain", gethostname() ?: '', 'mail.hoster.by', 'smtp.hoster.by']));
+    $found = null;
+    foreach ($hosts as $host) {
+        foreach ([465, 587] as $port) {
+            echo "Пробую {$host}:{$port}… ";
+            try {
+                (new Smtp($host, $port, $user, $pass, 15))->send($user, 'Артфлора — заказы', array_map('trim', explode(',', $to)), 'Пробное письмо с сайта Артфлоры', '',
+                    'Это пробное письмо. Раз оно дошло, письма о новых заказах будут приходить сюда же.');
+                echo "получилось\n";
+                $found = [$host, $port];
+                break 2;
+            } catch (Throwable $e) {
+                echo mb_substr($e->getMessage(), 0, 150) . "\n";
+                if (preg_match('/^AUTH/', $e->getMessage())) break 2; // сервер нашёлся, но не принял пароль — дальше пробовать нет смысла
+            }
+        }
+    }
+    if (!$found) exit("\nПисьмо не ушло. Если выше написано AUTH — неверный ящик или пароль" . ($domain === 'gmail.com' ? ' (нужен пароль приложения, не обычный)' : '') . ". Запустите команду ещё раз.\n");
+    $file = APP_DIR . '/config.php';
+    $cfg = is_file($file) ? require $file : [];
+    $cfg = array_merge($cfg, ['smtp_host' => $found[0], 'smtp_port' => $found[1], 'smtp_user' => $user, 'smtp_pass' => $pass, 'smtp_from' => $user]);
+    file_put_contents($file, "<?php\n// Настройки сайта. В GitHub не попадает. Почта: smtp_user — ящик, smtp_pass — пароль (php app/cli.php mail).\nreturn " . var_export($cfg, true) . ";\n");
+    chmod($file, 0600);
+    Settings::save('shop', array_merge($shop, ['orderEmail' => $to]));
+    echo "\nГотово: пробное письмо отправлено на $to. Проверьте почту (и папку «Спам»). Письма о заказах будут приходить туда же.\n";
 } else {
-    echo "Команды: migrate, demo, clean-demo, import\n";
+    echo "Команды: migrate, demo, clean-demo, import, mail\n";
 }
