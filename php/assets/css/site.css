@@ -217,6 +217,8 @@ select.input {
 .hero-facts span { font-size: 13px; line-height: 1.3; color: var(--pink); }
 .hero-text .hero-delivery { display: flex; align-items: center; gap: 8px; margin: 0; max-width: none; font-size: 15px; color: var(--white); }
 .hero-delivery svg { color: var(--pink); flex: none; }
+.hero-ways { display: flex; flex-direction: column; gap: 6px; }
+.nowrap { white-space: nowrap; }
 .hero-actions { position: absolute; left: 44px; bottom: 44px; display: flex; flex-wrap: wrap; gap: 12px; }
 .hero-actions .btn { min-height: 52px; padding: 0 26px; }
 .hero-day {
@@ -457,10 +459,11 @@ tr.dragging { opacity: .45; }
   .occasion span { width: 64px; height: 64px; }
   .occasion svg { width: 30px; height: 30px; }
   .chips-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
-  .chips-row::-webkit-scrollbar { display: none; }
+  .chips-row::-webkit-scrollbar, .occasions::-webkit-scrollbar { display: none; }
+  .scroll-row.has-more:has(> .occasions)::after { right: calc(-1 * var(--gutter)); }
   /* Подсказка, что ряд листается: затухание справа и тонкий ползунок снизу */
   .scroll-row { position: relative; min-width: 0; }
-  .scroll-row.has-more::after { content: ""; position: absolute; top: 0; right: 0; width: 48px; height: 44px; pointer-events: none; background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--white)); }
+  .scroll-row.has-more::after { content: ""; position: absolute; top: 0; right: 0; width: 48px; bottom: 13px; pointer-events: none; background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--white)); }
   .scroll-track { position: relative; height: 3px; margin: 10px auto 0; width: 72px; border-radius: 2px; background: var(--line); }
   .scroll-track i { position: absolute; top: 0; height: 100%; border-radius: 2px; background: var(--cherry); }
   .h1 { line-height: 1.05; }
@@ -616,7 +619,24 @@ tr.dragging { opacity: .45; }
   margin-top: 8px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--cherry); color: var(--white);
   font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
 }
+/* Корзина: крупные кнопки зон — по цвету покупатель выбирает, куда везти */
+.zmap-places { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.zmap-place {
+  display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; min-height: 56px; padding: 8px 14px;
+  border: 1.5px solid var(--line); border-radius: 18px; background: var(--white); color: var(--cherry);
+  font: inherit; font-size: 15px; text-align: left; cursor: pointer;
+}
+.zmap-place i { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+.zmap-place span { font-weight: 600; line-height: 1.25; }
+.zmap-place b { font-family: var(--serif); font-size: 18px; font-weight: 600; white-space: nowrap; }
+.zmap-place:hover { border-color: var(--pink); }
+.zmap-place.on { border-color: var(--cherry); background: var(--blush); box-shadow: 0 0 0 1px var(--cherry); }
+.zmap-places.invalid .zmap-place { border-color: var(--danger); }
+.zmap-pick-mode .zmap-map { cursor: crosshair; }
+.zmap-pin { width: 22px !important; height: 22px !important; border-radius: 50%; background: var(--cherry); border: 4px solid #fff; box-shadow: 0 0 0 2px var(--cherry), 0 2px 8px rgba(0, 0, 0, .3); box-sizing: border-box; }
+.zmap-name span { font: 600 11px/1.2 var(--sans); color: #3a2a30; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; white-space: nowrap; transform: translate(-50%, -50%); display: inline-block; }
 @media (max-width: 860px) { .zmap-map { height: 320px; } }
+@media (max-width: 560px) { .zmap-places { grid-template-columns: 1fr; } }
 .map-shop { display: flex !important; align-items: center; gap: 6px; width: auto !important; white-space: nowrap; }
 .map-shop span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--cherry); color: #fff; font-size: 20px; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); }
 .map-shop b { font: 700 12px/1 var(--sans); color: var(--cherry); text-shadow: 0 0 3px #fff, 0 0 3px #fff; }

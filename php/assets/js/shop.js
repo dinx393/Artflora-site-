@@ -132,10 +132,11 @@
     show(); // браузер мог запомнить выбор после «Назад»
   }
 
-  // Ряд разделов над каталогом: на телефоне ползунок снизу и затухание у края, пока есть что листать
+  // Ряды, которые листаются вбок (разделы над каталогом, поводы на главной):
+  // на телефоне ползунок снизу и затухание у края, пока есть что листать
   function scrollRows() {
     document.querySelectorAll("[data-scroll-row]").forEach(function (wrap) {
-      var row = wrap.querySelector(".chips-row");
+      var row = wrap.querySelector("[data-scroll-items]") || wrap.querySelector(".chips-row");
       var track = wrap.querySelector(".scroll-track");
       var thumb = track.querySelector("i");
       function update() {

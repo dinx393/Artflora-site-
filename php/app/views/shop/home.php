@@ -10,6 +10,8 @@ $splitName = function (string $name): array {
     return [$parts[0], implode(' ', array_slice($parts, 1))];
 };
 $shopNames = implode(', ', array_map(fn ($s) => $s['name'], $delivery['shops']));
+// «Независимости 168/1 · Яна Чечота 7» — адреса магазинов без «пр.»/«ул.» и запятых
+$pickupAddresses = array_map(fn ($s) => preg_replace(['/^(пр|ул)\.\s*/u', '/,\s*/u'], ['', ' '], $s['address']), $delivery['shops']);
 $heroFacts = [
     ['Фото', 'букета перед доставкой'],
     ['24 часа', 'гарантия свежести'],
@@ -28,7 +30,7 @@ $cards = [
     <div class="hero-main">
       <svg class="hero-shape" viewBox="0 0 706 588" preserveAspectRatio="none" aria-hidden="true"><path d="<?= $heroNotch ?>" /></svg>
       <div class="hero-text">
-        <span class="eyebrow">Сеть салонов цветов: Уручье, Малиновка</span>
+        <span class="eyebrow desktop-only">Сеть салонов цветов: Уручье, Малиновка</span>
         <h1>Букетов много,<br> а запомнят <span class="script">ваш</span></h1>
         <?php /* Главное за 3 секунды: крупное слово + подпись (вариант Б, решение владельца 2026-10-23) */ ?>
         <ul class="hero-facts">
@@ -36,7 +38,10 @@ $cards = [
             <li><b><?= e($big) ?></b><span><?= e($note) ?></span></li>
           <?php endforeach ?>
         </ul>
-        <p class="hero-delivery"><?= Icons::get('truck') ?>Доставка по Минску и Минскому району</p>
+        <div class="hero-ways">
+          <p class="hero-delivery"><?= Icons::get('truck') ?>Доставка по Минску и Минскому району</p>
+          <p class="hero-delivery"><?= Icons::get('pin') ?><span>Самовывоз: <?= implode(' · ', array_map(fn ($a) => '<span class="nowrap">' . e($a) . '</span>', $pickupAddresses)) ?></span></p>
+        </div>
       </div>
       <div class="hero-actions">
         <a href="/catalog" class="btn btn-pink">Выбрать букет</a>
@@ -65,10 +70,14 @@ $cards = [
 
 <section class="section" id="occasions">
   <h2 class="h2 sec-title">Кому сегодня <span class="script">дарим?</span></h2>
-  <div class="occasions">
-    <?php foreach (Occasions::LIST as $o): if ($o['slug'] === 'exotic') continue ?>
-      <a href="/catalog?occasion=<?= e($o['slug']) ?>" class="occasion"><span><?= Icons::occasion($o['slug']) ?></span><?= e($o['label']) ?></a>
-    <?php endforeach ?>
+  <?php /* На телефоне ряд листается вбок, под ним ползунок (shop.js) */ ?>
+  <div class="scroll-row" data-scroll-row>
+    <div class="occasions" data-scroll-items>
+      <?php foreach (Occasions::LIST as $o): if ($o['slug'] === 'exotic') continue ?>
+        <a href="/catalog?occasion=<?= e($o['slug']) ?>" class="occasion"><span><?= Icons::occasion($o['slug']) ?></span><?= e($o['label']) ?></a>
+      <?php endforeach ?>
+    </div>
+    <div class="scroll-track" aria-hidden="true" hidden><i></i></div>
   </div>
 </section>
 
