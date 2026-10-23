@@ -88,8 +88,8 @@ Http::get('/bouquet/{slug}', function (string $slug) {
 | **3. Админка** | `routes/admin.php`, `views/admin/*`, `assets/js/admin-*.js` | `src/app/admin/**` (букеты, цветы, коллекции, заказы, доставка с картой Leaflet, настройки) |
 
 Кнопка «В корзину» (витрина) кладёт букет вызовом `ArtfloraCart.add({bouquetId, size, qty}, cardText)`;
-корзина читает `ArtfloraCart.get()`. Пробное письмо в «Настройках» админки вызывает `Notify` из части 2:
-пока его нет, кнопку можно сделать, а отправку подключить, когда часть 2 будет в репозитории.
+корзина читает `ArtfloraCart.get()`. Пробное письмо в «Настройках» админки: `Notify::sendTestEmail($to)` →
+`['ok' => true]` или `['ok' => false, 'error' => текст]`. Предупреждение в заказе: поля `notifyError` / `emailError`.
 
 ## Проверка у себя
 
@@ -106,4 +106,4 @@ php tests/run.php                              # расчёты без базы,
 ## Установка на хостинг
 
 Будет описана, когда все три части готовы (база в панели ISPmanager, файлы в /www/test.artflora.by,
-app/config.php, cron для повторной отправки уведомлений).
+app/config.php, cron для повторной отправки уведомлений: раз в 5 минут `php /путь/к/сайту/app/cron.php`).
