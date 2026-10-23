@@ -27,3 +27,11 @@ test('день без точного времени (адрес уточним �
     eq(Slots::isDateAllowed('2026-10-15', 1, strtotime('2026-10-15T16:30:00Z')), false); // 19:30 по Минску: 20:00 уже не успеть
 });
 test('следующий день', fn () => eq(Slots::addDays('2026-12-31', 1), '2027-01-01'));
+test('плашка: сегодня до 21:00, а поздно вечером — завтра с 9:00', function () {
+    $at = fn (string $hm) => strtotime("2026-10-23 $hm:00 UTC") - 3 * 3600; // минское время
+    eq(Slots::nextDelivery(1, $at('10:00')), ['day' => 'сегодня', 'when' => 'до 21:00']);
+    eq(Slots::nextDelivery(1, $at('19:00')), ['day' => 'сегодня', 'when' => 'до 21:00']);
+    eq(Slots::nextDelivery(1, $at('19:01')), ['day' => 'завтра', 'when' => 'с 9:00']);
+    eq(Slots::nextDelivery(1, $at('22:22')), ['day' => 'завтра', 'when' => 'с 9:00']);
+    eq(Slots::nextDelivery(1, $at('03:00')), ['day' => 'сегодня', 'when' => 'до 21:00']);
+});

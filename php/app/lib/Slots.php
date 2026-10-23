@@ -46,6 +46,15 @@ final class Slots
         return (bool) self::available($isoDate, $leadHours, $now);
     }
 
+    // Для плашки вверху: успеем ли ещё сегодня. ['day' => 'сегодня', 'when' => 'до 21:00'] или ['day' => 'завтра', 'when' => 'с 9:00']
+    public static function nextDelivery(int|float $leadHours, ?int $now = null): array
+    {
+        $today = self::available(self::minskNow($now)['date'], $leadHours, $now);
+        return $today
+            ? ['day' => 'сегодня', 'when' => 'до ' . explode('–', end($today))[1]]
+            : ['day' => 'завтра', 'when' => 'с ' . explode('–', self::ALL[0])[0]];
+    }
+
     public static function isSlotAllowed(string $isoDate, string $slot, int|float $leadHours, ?int $now = null): bool
     {
         return in_array($slot, self::available($isoDate, $leadHours, $now), true);

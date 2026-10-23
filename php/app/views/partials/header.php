@@ -9,8 +9,10 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
 <?php /* На телефоне справа в полоске — номер магазина, нажал и звонишь (вариант Б, решение владельца 2026-10-23) */ ?>
 <div class="ribbon">
   <div class="wrap">
-    <b class="desktop-only">Сегодня доставим до 21:00</b>
-    <span class="mobile-only ribbon-when"><b>Доставим сегодня</b><span class="ribbon-till"> до 21:00</span></span>
+    <?php /* Сегодня или завтра — по минскому времени: если на сегодня интервалов уже нет, пишем «завтра с 9:00» */ ?>
+    <?php $next = Slots::nextDelivery($shop['leadHours']) ?>
+    <b class="desktop-only"><?= e(mb_strtoupper(mb_substr($next['day'], 0, 1)) . mb_substr($next['day'], 1)) ?> доставим <?= e($next['when']) ?></b>
+    <span class="mobile-only ribbon-when"><b>Доставим <?= e($next['day']) ?></b><span class="ribbon-till"> <?= e($next['when']) ?></span></span>
     <i aria-hidden="true" class="desktop-only">·</i>
     <span class="desktop-only">Доставка от <?= e(Money::format(Delivery::minKop($delivery))) ?>, бесплатно от <?= e(Money::format($delivery['freeFromKop'])) ?></span>
     <i aria-hidden="true" class="desktop-only">·</i>
