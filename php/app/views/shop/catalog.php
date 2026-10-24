@@ -7,8 +7,8 @@ $pageSize = 24; // сколько букетов показывать сразу
 // При смене фильтра список снова начинается с первых $pageSize букетов.
 $href = function (array $sp, array $patch): string {
     $next = array_merge(array_diff_key($sp, ['n' => 1]), $patch);
-    $next = array_filter($next, fn ($v) => $v !== null && $v !== '');
-    return $next ? '/catalog?' . http_build_query($next) : '/catalog';
+    // Один фильтр, у которого есть свой раздел, — понятный адрес раздела (/catalog/rozy), иначе /catalog?…
+    return Seo::catalogUrl($next);
 };
 $isOn = fn (array $sp, array $patch): bool => $patch && !array_filter(array_keys($patch), fn ($k) => ($sp[$k] ?? null) !== $patch[$k]);
 // Быстрые разделы над каталогом
@@ -40,7 +40,9 @@ $f = fn (array $patch) => e($href($sp, $patch));
   </nav>
   <div class="row between" style="align-items: flex-end; gap: 16px">
     <h1 class="h1">
-      <?php if ($val('collection')): ?>
+      <?php if (!empty($landing)): ?>
+        <?= e($landing['h1'][0]) ?> <span class="script"><?= e($landing['h1'][1]) ?></span>
+      <?php elseif ($val('collection')): ?>
         Коллекция <span class="script">«<?= e($list[0]['collectionName'] ?? $val('collection')) ?>»</span>
       <?php elseif ($val('q')): ?>
         Поиск: <span class="script"><?= e($val('q')) ?></span>

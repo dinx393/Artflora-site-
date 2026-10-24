@@ -58,7 +58,7 @@ final class Http
     {
         http_response_code($code);
         $title = match ($code) { 404 => 'Страница не найдена', 403 => 'Доступ запрещён', 405 => 'Так нельзя', default => 'Что-то пошло не так' };
-        echo View::page('error', ['title' => $title, 'code' => $code, 'message' => $message], $code === 404 ? 'shop' : null);
+        echo View::page('error', ['title' => $title, 'code' => $code, 'message' => $message, 'noindex' => true], $code === 404 ? 'shop' : null);
         exit;
     }
 

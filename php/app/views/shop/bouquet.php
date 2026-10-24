@@ -24,7 +24,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
     <a href="/catalog" class="nolink muted">Каталог</a>
     <?php if ($firstOcc): ?>
       <span>/</span>
-      <a href="/catalog?occasion=<?= e(rawurlencode($firstOcc)) ?>" class="nolink muted"><?= e(Occasions::label($firstOcc)) ?></a>
+      <a href="<?= e(Seo::catalogUrl(['occasion' => $firstOcc])) ?>" class="nolink muted"><?= e(Occasions::label($firstOcc)) ?></a>
     <?php endif ?>
     <span>/</span>
     <span style="color: var(--cherry)"><?= e($b['name']) ?></span>
@@ -50,7 +50,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
     <div class="buy" data-buybox data-bouquet="<?= e($b['id']) ?>" data-size="<?= e($b['defaultSize']) ?>">
       <div class="row" style="gap: 6px">
         <?php foreach ($b['occasions'] as $o): ?>
-          <a href="/catalog?occasion=<?= e(rawurlencode($o)) ?>" class="tag"><?= e(Occasions::label($o)) ?></a>
+          <a href="<?= e(Seo::catalogUrl(['occasion' => $o])) ?>" class="tag"><?= e(Occasions::label($o)) ?></a>
         <?php endforeach ?>
         <?php foreach ($tags as $t): ?>
           <a href="/catalog?q=<?= e(rawurlencode($t)) ?>" class="tag"><?= e($t) ?></a>

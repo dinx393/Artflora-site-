@@ -24,6 +24,7 @@ Http::get('/', function () {
     }
     if (!$tile) $tile[] = '/demo/autumn.jpg'; // каталог пока пуст — фото букета из магазина
     return View::page('shop/home', [
+        'jsonLd' => [Seo::business($shop, Settings::get('delivery'))],
         'all' => $all,
         'shop' => $shop,
         'delivery' => Settings::get('delivery'),
@@ -37,9 +38,12 @@ Http::get('/', function () {
     ]);
 });
 
-Http::get('/catalog', function () {
+// Каталог. $landing — раздел с понятным адресом (/catalog/svadebnye-bukety, Seo::LANDINGS): его фильтр уже выбран.
+function catalog_page(?string $landingSlug = null): string
+{
+    $landing = $landingSlug !== null ? Seo::LANDINGS[$landingSlug] : null;
     $keys = ['occasion', 'price', 'flower', 'color', 'format', 'collection', 'q', 'sort', 'n'];
-    $sp = [];
+    $sp = $landing['filter'] ?? [];
     foreach ($keys as $k) if (($v = Http::str($k, 100)) !== '') $sp[$k] = $v;
     $all = Catalog::visible();
     $colorList = Settings::get('colors');
@@ -58,8 +62,15 @@ Http::get('/catalog', function () {
     if ($sort === 'cheap') usort($list, fn ($a, $b) => $a['priceKop'] <=> $b['priceKop']);
     if ($sort === 'expensive') usort($list, fn ($a, $b) => $b['priceKop'] <=> $a['priceKop']);
     $occ = array_values(array_filter(Occasions::LIST, fn ($o) => $o['slug'] === ($sp['occasion'] ?? '')))[0] ?? null;
+    $canonical = Seo::catalogCanonical($sp);
+    $isLanding = $landing && $canonical === "/catalog/$landingSlug";
     return View::page('shop/catalog', [
-        'title' => $occ ? "Букеты {$occ['title']}" : 'Каталог букетов',
+        'title' => $isLanding ? $landing['title'] : ($occ ? "Букеты {$occ['title']} с доставкой по Минску" : 'Каталог букетов с доставкой по Минску'),
+        'description' => $isLanding ? $landing['description']
+            : 'Букеты, композиции в коробках и корзинах с доставкой по Минску в день заказа. Фото букета до отправки, самовывоз −10%.',
+        'canonical' => $canonical,
+        'noindex' => $canonical === null,
+        'landing' => $isLanding ? $landing : null,
         'sp' => $sp,
         'all' => $all,
         'list' => $list,
@@ -76,10 +87,14 @@ Http::get('/catalog', function () {
         'delivery' => Settings::get('delivery'),
         'scripts' => '<script src="' . View::asset('js/shop.js') . '"></script>',
     ]);
-});
+}
+
+Http::get('/catalog', fn () => catalog_page());
 
 Http::get('/bouquet/{slug}', function (string $slug) {
-    $b = Catalog::bySlug($slug) ?? Http::abort(404);
+    $b = Catalog::bySlug($slug);
+    // Букет есть, но сейчас скрыт (нет цветов): временно ведём в каталог, чтобы поиск не терял страницу
+    if (!$b) Catalog::load('b.slug = ?', [$slug]) ? Http::redirect('/catalog', 302) : Http::abort(404);
     $all = Catalog::visible();
     $siblings = $b['collectionId'] ? array_values(array_filter($all, fn ($x) => $x['collectionId'] === $b['collectionId'])) : [];
     $similar = [];
@@ -92,9 +107,14 @@ Http::get('/bouquet/{slug}', function (string $slug) {
     $def = array_values(array_filter($b['sizes'], fn ($s) => $s['code'] === $b['defaultSize']))[0];
     $delivery = Settings::get('delivery');
     return View::page('shop/bouquet', [
-        'title' => $b['name'] . ' — ' . Money::format($b['priceKop']),
+        'title' => $b['name'] . ' — купить в Минске за ' . Money::format($b['priceKop']),
         'description' => $b['description'] ?: Occasions::FORMATS[$b['format']]['label'] . ': ' . $def['composition'],
-        'head' => '<meta property="og:image" content="' . e($b['photos'][0]) . '">',
+        'ogImage' => $b['photos'][0],
+        'ogType' => 'product',
+        'jsonLd' => [
+            Seo::product($b, Seo::absUrl("/bouquet/{$b['slug']}")),
+            Seo::breadcrumbs([['Главная', '/'], ['Каталог', '/catalog'], [$b['name'], null]]),
+        ],
         'b' => $b,
         'def' => $def,
         'siblings' => $siblings,
@@ -108,13 +128,15 @@ Http::get('/bouquet/{slug}', function (string $slug) {
 });
 
 Http::get('/single', fn () => View::page('shop/single', [
-    'title' => 'Цветы поштучно',
+    'title' => 'Цветы поштучно в Минске',
+    'description' => 'Розы, хризантемы, эустома и другие цветы поштучно: соберём букет из выбранных цветов и доставим по Минску. Цены за штуку на сайте.',
     'flowers' => Db::all("SELECT id, name, unit, priceKop FROM flowers WHERE inStock = 1 ORDER BY kind = 'GREEN', sortOrder, name"),
     'shop' => Settings::get('shop'),
 ]));
 
 Http::get('/delivery', fn () => View::page('shop/delivery', [
-    'title' => 'Доставка и оплата',
+    'title' => 'Доставка цветов по Минску и оплата',
+    'description' => 'Сколько стоит доставка цветов по Минску и за МКАД, бесплатная доставка, самовывоз −10%, оплата картой, через ЕРИП или по ссылке.',
     'shop' => Settings::get('shop'),
     'd' => Settings::get('delivery'),
     'scripts' => ShopView::zonesMapScripts(),

@@ -21,10 +21,10 @@ $config = [
     <h1 class="h2">В корзине пока пусто</h1>
     <p class="muted">Выберите букет в каталоге или начните с повода.</p>
     <div class="row" style="justify-content: center; gap: 8px">
-      <a href="/catalog?occasion=mom" class="chip">Маме</a>
-      <a href="/catalog?occasion=love" class="chip">Любимой</a>
-      <a href="/catalog?q=розы" class="chip">Розы</a>
-      <a href="/catalog?price=to100" class="chip">До 100 BYN</a>
+      <a href="/catalog/den-materi" class="chip">Маме</a>
+      <a href="/catalog/lyubimoj" class="chip">Любимой</a>
+      <a href="/catalog/rozy" class="chip">Розы</a>
+      <a href="/catalog/buketykompozitsii-do-150-rublej-" class="chip">До 100 BYN</a>
     </div>
     <a href="/catalog" class="btn btn-lg">Перейти в каталог</a>
     <a href="/#hits">Хиты этой недели →</a>

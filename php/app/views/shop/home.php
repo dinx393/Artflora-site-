@@ -74,7 +74,7 @@ $cards = [
   <div class="scroll-row" data-scroll-row>
     <div class="occasions" data-scroll-items>
       <?php foreach (Occasions::LIST as $o): if ($o['slug'] === 'exotic') continue ?>
-        <a href="/catalog?occasion=<?= e($o['slug']) ?>" class="occasion"><span><?= Icons::occasion($o['slug']) ?></span><?= e($o['label']) ?></a>
+        <a href="<?= e(Seo::catalogUrl(['occasion' => $o['slug']])) ?>" class="occasion"><span><?= Icons::occasion($o['slug']) ?></span><?= e($o['label']) ?></a>
       <?php endforeach ?>
     </div>
     <div class="scroll-track" aria-hidden="true" hidden><i></i></div>

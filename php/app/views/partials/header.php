@@ -55,8 +55,8 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
     <nav class="nav" aria-label="Разделы">
       <a href="/catalog">Букеты</a>
       <a href="/#occasions">По поводу</a>
-      <a href="/catalog?format=BASKET">Композиции</a>
-      <a href="/catalog?occasion=wedding">Свадьба</a>
+      <a href="/catalog/korziny-s-tsvetami">Композиции</a>
+      <a href="/catalog/svadebnye-bukety">Свадьба</a>
       <a href="/single">Поштучно</a>
       <a href="/delivery">Доставка и оплата</a>
     </nav>
@@ -82,12 +82,12 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
         <span>По поводу</span>
         <div class="row" style="gap: 8px">
           <?php foreach ($menuOccasions as $o): ?>
-            <a href="/catalog?occasion=<?= e($o['slug']) ?>" class="tag"><?= e($o['label']) ?></a>
+            <a href="<?= e(Seo::catalogUrl(['occasion' => $o['slug']])) ?>" class="tag"><?= e($o['label']) ?></a>
           <?php endforeach ?>
         </div>
       </div>
-      <a href="/catalog?format=BASKET">Композиции<span aria-hidden="true">→</span></a>
-      <a href="/catalog?occasion=wedding">Свадьба<span aria-hidden="true">→</span></a>
+      <a href="/catalog/korziny-s-tsvetami">Композиции<span aria-hidden="true">→</span></a>
+      <a href="/catalog/svadebnye-bukety">Свадьба<span aria-hidden="true">→</span></a>
       <a href="/single">Поштучно<span aria-hidden="true">→</span></a>
       <a href="/delivery" class="plain">Доставка и оплата<span aria-hidden="true">→</span></a>
     </nav>

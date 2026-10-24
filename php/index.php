@@ -14,6 +14,13 @@ header("Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; form-a
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 
+// www.artflora.by → artflora.by: у сайта один адрес, поисковик не делит позиции между двумя
+$host = strtolower($_SERVER['HTTP_HOST'] ?? '');
+if (str_starts_with($host, 'www.')) {
+    header('Location: https://' . substr($host, 4) . ($_SERVER['REQUEST_URI'] ?? '/'), true, 301);
+    exit;
+}
+
 $debug = Config::isLocalUrl((string) Config::get('site_url'));
 set_exception_handler(function (Throwable $e) use ($debug): void {
     app_log(get_class($e) . ': ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());

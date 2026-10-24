@@ -1,5 +1,5 @@
 <?php
-// Общие адреса: вход в админку, robots.txt. Остальные страницы — в shop.php, cart.php, admin.php.
+// Общие адреса: вход в админку. robots.txt и sitemap.xml — в seo.php. Остальные страницы — в shop.php, cart.php, admin.php.
 
 Http::get('/admin', fn () => Http::redirect(Auth::isAdmin() ? '/admin/bouquets' : '/admin/login'));
 
@@ -29,9 +29,4 @@ Http::post('/admin/logout', function () {
     Auth::checkCsrf();
     Auth::endSession();
     Http::redirect('/admin/login');
-});
-
-Http::get('/robots.txt', function () {
-    header('Content-Type: text/plain; charset=utf-8');
-    return "User-Agent: *\nDisallow: /admin\nDisallow: /api/\n";
 });

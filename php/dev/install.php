@@ -75,8 +75,8 @@ foreach (array_diff(scandir($src), ['.', '..']) as $f) {
     }
     is_dir("$src/$f") ? $copy("$src/$f", "$site/$f") : copy("$src/$f", "$site/$f");
 }
-// Удалить из кода сайта файлы, которых больше нет в новой версии (только в app/ и assets/)
-foreach (['app/lib', 'app/routes', 'app/views', 'assets'] as $dir) {
+// Удалить из кода сайта файлы, которых больше нет в новой версии (только в app/lib, routes, views, content и assets/)
+foreach (['app/lib', 'app/routes', 'app/views', 'app/content', 'assets'] as $dir) {
     $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator("$site/$dir", FilesystemIterator::SKIP_DOTS));
     foreach ($it as $file) {
         $rel = substr($file->getPathname(), strlen($site) + 1);
