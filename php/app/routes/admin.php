@@ -679,10 +679,10 @@ Http::post('/admin/settings/save', function () {
     $in = admin_body();
     $s = $in['shop'] ?? null;
     if (!is_array($s)) admin_fail('Проверьте поля: shop');
-    $limits = ['phone' => 40, 'viber' => 300, 'telegram' => 300, 'whatsapp' => 300, 'instagram' => 300, 'sellerDetails' => 1000, 'promoLine' => 300, 'orderEmail' => 300, 'dayBouquet' => 200];
+    $limits = ['phone' => 40, 'viber' => 300, 'telegram' => 300, 'whatsapp' => 300, 'instagram' => 300, 'sellerDetails' => 1000, 'promoLine' => 300, 'orderEmail' => 300, 'dayBouquet' => 200, 'email' => 200, 'complaints' => 300, 'authority' => 300];
     $shop = [];
     foreach ($limits as $k => $max) {
-        $v = $s[$k] ?? (in_array($k, ['whatsapp', 'orderEmail', 'dayBouquet'], true) ? '' : null);
+        $v = $s[$k] ?? (in_array($k, ['whatsapp', 'orderEmail', 'dayBouquet', 'email', 'complaints', 'authority'], true) ? '' : null);
         if (admin_str($v, $max) === null) admin_fail("Проверьте поля: shop → $k");
         $shop[$k] = $v;
     }

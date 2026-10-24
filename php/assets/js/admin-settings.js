@@ -79,6 +79,9 @@
     h += "</select></label>";
     h += '<label class="field"><span>Реквизиты продавца в подвале (обязательно по закону РБ)</span><textarea class="input" rows="2" data-k="seller"' +
       on("input", function (e) { shop.sellerDetails = e.target.value; ui.render(); }) + ">" + esc(shop.sellerDetails) + "</textarea></label>";
+    h += field("Почта для покупателей (в подвале)", "email", "artflora-minsk@yandex.by");
+    h += field("Кто рассматривает обращения покупателей (ФИО, должность, телефон)", "complaints");
+    h += field("Телефоны райисполкома для обращений (обязательно по закону РБ)", "authority", "Администрация … района г. Минска, отдел торговли: +375 17 …");
     h += '<label class="sum-row" style="justify-content: flex-start; gap: 12px"><span>Принимаем заказ на сегодня минимум за, часов:</span>' +
       '<input class="num" style="width: 90px" type="number" step="0.5" data-k="lead" value="' + (isFinite(shop.leadHours) ? shop.leadHours : "") + '"' +
       on("input", function (e) { shop.leadHours = parseFloat(e.target.value); }) + "></label>";

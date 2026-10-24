@@ -33,6 +33,11 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
         <a href="/blog" class="soft">Статьи о цветах →</a>
       </div>
     </div>
-    <div class="footer-legal">© Артфлора, <?= date('Y') ?> · <?= e($shop['sellerDetails']) ?></div>
+    <div class="footer-legal">
+      © Артфлора, <?= date('Y') ?> · <?= e($shop['sellerDetails']) ?>
+      <?php if ($shop['email']): ?> · E-mail: <a href="mailto:<?= e($shop['email']) ?>"><?= e($shop['email']) ?></a><?php endif ?>
+      <?php if ($shop['complaints']): ?><br>Обращения покупателей рассматривает <?= e($shop['complaints']) ?><?php endif ?>
+      <?php if ($shop['authority']): ?> · <?= e($shop['authority']) ?><?php endif ?>
+    </div>
   </div>
 </footer>
