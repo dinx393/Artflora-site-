@@ -24,6 +24,12 @@ final class Settings
             $val = $raw === null ? null : json_decode($raw, true);
             // Списки (районы, цвета) храним целиком, объекты дополняем новыми полями по умолчанию
             self::$cache[$key] = !is_array($val) ? $def : (array_is_list($def) ? $val : array_merge($def, $val));
+            // Часы салонов, сохранённые ещё как «8:00–21:00» (ежедневно): с 2026-10-24 в воскресенье с 10:00
+            if ($key === 'delivery') {
+                foreach (self::$cache[$key]['shops'] ?? [] as $i => $s) {
+                    if (($s['hours'] ?? '') === '8:00–21:00') self::$cache[$key]['shops'][$i]['hours'] = 'пн–сб 8:00–21:00, вс 10:00–21:00';
+                }
+            }
             // Реквизиты, сохранённые в админке ещё заготовкой «[Наименование продавца]…», берём настоящие (со старого сайта, 2026-10-24)
             if ($key === 'shop' && str_contains((string) (self::$cache[$key]['sellerDetails'] ?? ''), '[Наименование')) {
                 self::$cache[$key]['sellerDetails'] = $def['sellerDetails'];

@@ -42,15 +42,21 @@
   function addDays(iso, n) {
     return new Date(Date.parse(iso + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10);
   }
+  function startHour(s) {
+    var hm = s.split("–")[0].split(":"); // «9:30–10:30» → 9.5
+    return parseInt(hm[0], 10) + (parseInt(hm[1] || "0", 10) / 60);
+  }
+  // В воскресенье — с 10:00 (Slots::forDate)
+  function slotsForDate(date) {
+    if (new Date(Date.parse(date + "T00:00:00Z")).getUTCDay() !== 0) return cfg.slots.slice();
+    return cfg.slots.filter(function (s) { return startHour(s) >= cfg.sundayFrom; });
+  }
   function availableSlots(date, lead) {
     var m = minskNow();
     if (date < m.date) return [];
-    if (date > m.date) return cfg.slots.slice();
+    if (date > m.date) return slotsForDate(date);
     var ready = m.hour + m.minute / 60 + lead;
-    return cfg.slots.filter(function (s) {
-      var hm = s.split("–")[0].split(":"); // «9:30–10:30» → 9.5
-      return parseInt(hm[0], 10) + (parseInt(hm[1] || "0", 10) / 60) >= ready;
-    });
+    return slotsForDate(date).filter(function (s) { return startHour(s) >= ready; });
   }
 
   var today = minskNow().date;

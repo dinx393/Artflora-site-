@@ -10,6 +10,16 @@ final class Slots
         '18:00–19:00', '18:30–19:30', '19:00–20:00', '19:30–20:30', '20:00–21:00',
     ];
 
+    // В воскресенье салоны открываются в 10:00, поэтому первый интервал 10:00–11:00 (решение владельца 2026-10-24)
+    public const SUNDAY_FROM = 10;
+
+    // Интервалы дня без учёта «сейчас»: в воскресенье — с 10:00
+    public static function forDate(string $isoDate): array
+    {
+        if (gmdate('N', strtotime($isoDate . ' 00:00:00 UTC')) !== '7') return self::ALL;
+        return array_values(array_filter(self::ALL, fn ($s) => self::startHour($s) >= self::SUNDAY_FROM));
+    }
+
     // ['date' => 'YYYY-MM-DD', 'hour' => 11, 'minute' => 30]; $now — метка времени (секунды)
     public static function minskNow(?int $now = null): array
     {
@@ -35,9 +45,9 @@ final class Slots
     {
         $m = self::minskNow($now);
         if ($isoDate < $m['date']) return [];
-        if ($isoDate > $m['date']) return self::ALL;
+        if ($isoDate > $m['date']) return self::forDate($isoDate);
         $ready = $m['hour'] + $m['minute'] / 60 + $leadHours;
-        return array_values(array_filter(self::ALL, fn ($s) => self::startHour($s) >= $ready));
+        return array_values(array_filter(self::forDate($isoDate), fn ($s) => self::startHour($s) >= $ready));
     }
 
     // Можно ли ещё привезти в этот день хоть в какой-то интервал (когда время уточним у получателя).
@@ -49,10 +59,11 @@ final class Slots
     // Для плашки вверху: успеем ли ещё сегодня. ['day' => 'сегодня', 'when' => 'до 21:00'] или ['day' => 'завтра', 'when' => 'с 9:00']
     public static function nextDelivery(int|float $leadHours, ?int $now = null): array
     {
-        $today = self::available(self::minskNow($now)['date'], $leadHours, $now);
+        $date = self::minskNow($now)['date'];
+        $today = self::available($date, $leadHours, $now);
         return $today
             ? ['day' => 'сегодня', 'when' => 'до ' . explode('–', end($today))[1]]
-            : ['day' => 'завтра', 'when' => 'с ' . explode('–', self::ALL[0])[0]];
+            : ['day' => 'завтра', 'when' => 'с ' . explode('–', self::forDate(self::addDays($date, 1))[0])[0]];
     }
 
     public static function isSlotAllowed(string $isoDate, string $slot, int|float $leadHours, ?int $now = null): bool

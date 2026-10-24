@@ -34,7 +34,15 @@ test('два фильтра сразу не индексируем', fn () => eq
 test('фильтр без раздела — обычный адрес', fn () => eq(Seo::catalogUrl(['flower' => 'Эустома']), '/catalog?flower=%D0%AD%D1%83%D1%81%D1%82%D0%BE%D0%BC%D0%B0'));
 
 group('поиск: разметка');
-test('часы работы', fn () => eq(Seo::hours('8:00–21:00'), ['08:00', '21:00']));
+test('часы работы', function () {
+    eq(Seo::hours('8:00–21:00'), ['08:00', '21:00']);
+    $o = Seo::openingHours('пн–сб 8:00–21:00, вс 10:00–21:00');
+    eq(count($o), 2);
+    eq($o[0]['dayOfWeek'], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']);
+    eq([$o[0]['opens'], $o[0]['closes']], ['08:00', '21:00']);
+    eq([$o[1]['dayOfWeek'], $o[1]['opens']], [['Sunday'], '10:00']);
+    eq(count(Seo::openingHours('8:00–21:00')[0]['dayOfWeek']), 7);
+});
 test('json без </script> внутри', fn () => ok(!str_contains(Seo::jsonLd(['x' => '</script>']), '</script><')));
 
 group('статьи');

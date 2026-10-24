@@ -193,6 +193,26 @@ final class Seo
         return [sprintf('%02d:%s', $m[1], $m[2]), sprintf('%02d:%s', $m[3], $m[4])];
     }
 
+    // «пн–сб 8:00–21:00, вс 10:00–21:00» → OpeningHoursSpecification по дням; без дней недели — каждый день
+    public static function openingHours(string $s): array
+    {
+        $days = ['пн' => 'Monday', 'вт' => 'Tuesday', 'ср' => 'Wednesday', 'чт' => 'Thursday', 'пт' => 'Friday', 'сб' => 'Saturday', 'вс' => 'Sunday'];
+        $keys = array_keys($days);
+        $out = [];
+        foreach (preg_split('/[,;]/u', $s) as $part) {
+            $h = self::hours($part);
+            if (!$h) continue;
+            $list = array_values($days);
+            if (preg_match('/(пн|вт|ср|чт|пт|сб|вс)(?:\s*[–-]\s*(пн|вт|ср|чт|пт|сб|вс))?/u', mb_strtolower($part), $m)) {
+                $from = array_search($m[1], $keys, true);
+                $to = isset($m[2]) && $m[2] !== '' ? array_search($m[2], $keys, true) : $from;
+                $list = array_slice(array_values($days), $from, $to - $from + 1);
+            }
+            $out[] = ['@type' => 'OpeningHoursSpecification', 'dayOfWeek' => $list, 'opens' => $h[0], 'closes' => $h[1]];
+        }
+        return $out;
+    }
+
     // Магазин и салоны для поиска и карт (Яндекс, Google): тип Florist = цветочный магазин
     public static function business(array $shop, array $delivery): array
     {
@@ -208,7 +228,7 @@ final class Seo
             'potentialAction' => ['@type' => 'SearchAction', 'target' => "$site/catalog?q={q}", 'query-input' => 'required name=q'],
         ]];
         foreach ($delivery['shops'] as $s) {
-            $h = self::hours($s['hours'] ?? '');
+            $h = self::openingHours($s['hours'] ?? '');
             $graph[] = array_filter([
                 '@type' => 'Florist', '@id' => "$site/#shop-{$s['code']}",
                 'name' => "Артфлора, {$s['name']}", 'url' => "$site/", 'telephone' => $phone,
@@ -217,11 +237,7 @@ final class Seo
                 'address' => ['@type' => 'PostalAddress', 'streetAddress' => $s['address'], 'addressLocality' => 'Минск', 'addressCountry' => 'BY'],
                 'geo' => isset($s['location']) ? ['@type' => 'GeoCoordinates', 'latitude' => $s['location']['lat'], 'longitude' => $s['location']['lng']] : null,
                 'hasMap' => $s['mapUrl'] ?? null,
-                'openingHoursSpecification' => $h ? [[
-                    '@type' => 'OpeningHoursSpecification',
-                    'dayOfWeek' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                    'opens' => $h[0], 'closes' => $h[1],
-                ]] : null,
+                'openingHoursSpecification' => $h ?: null,
                 'areaServed' => 'Минск',
             ], fn ($v) => $v !== null);
         }

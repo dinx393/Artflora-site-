@@ -11,7 +11,7 @@ $payments = [
 $byn = fn (int $kop) => e(preg_replace('/ BYN$/', '', Money::format($kop))) . '<small class="cur">BYN</small>';
 $config = [
     'shops' => $shops, 'pickupPct' => $pickupPct, 'freeFromKop' => $freeFromKop, 'districts' => $districts, 'leadHours' => $leadHours,
-    'today' => Slots::minskNow()['date'], 'slots' => Slots::ALL, 'zones' => $delivery['zones'],
+    'today' => Slots::minskNow()['date'], 'slots' => Slots::ALL, 'sundayFrom' => Slots::SUNDAY_FROM, 'zones' => $delivery['zones'],
 ];
 ?>
 <script type="application/json" id="checkout-config"><?= json_encode($config, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>

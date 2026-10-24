@@ -35,3 +35,12 @@ test('плашка: сегодня до 21:00, а поздно вечером �
     eq(Slots::nextDelivery(1, $at('22:22')), ['day' => 'завтра', 'when' => 'с 9:00']);
     eq(Slots::nextDelivery(1, $at('03:00')), ['day' => 'сегодня', 'when' => 'до 21:00']);
 });
+test('воскресенье — с 10:00 (салоны открываются в 10)', function () use ($now) {
+    eq(Slots::forDate('2026-10-25')[0], '10:00–11:00'); // воскресенье
+    eq(count(Slots::forDate('2026-10-25')), 21);
+    eq(Slots::forDate('2026-10-24')[0], '9:00–10:00'); // суббота
+    eq(Slots::isSlotAllowed('2026-10-25', '9:30–10:30', 1, $now), false);
+    eq(Slots::isSlotAllowed('2026-10-25', '10:00–11:00', 1, $now), true);
+    $at = fn (string $hm) => strtotime("2026-10-24 $hm:00 UTC") - 3 * 3600;
+    eq(Slots::nextDelivery(1, $at('22:00')), ['day' => 'завтра', 'when' => 'с 10:00']); // суббота вечером
+});
