@@ -38,8 +38,10 @@ $ogImageUrl = Seo::absUrl($ogImage ?? '/assets/img/og.jpg');
 <link rel="stylesheet" href="<?= View::asset('css/fonts.css') ?>">
 <link rel="stylesheet" href="<?= View::asset('css/site.css') ?>">
 <?= $head ?? '' ?>
+<?= View::render('partials/counters', ['part' => 'head']) ?>
 </head>
 <body>
+<?= View::render('partials/counters', ['part' => 'body']) ?>
 <?= View::render('partials/header', ['shop' => $shop, 'delivery' => $delivery, 'contacts' => $contacts]) ?>
 <main><?= $content ?></main>
 <?= View::render('partials/footer', ['shop' => $shop, 'delivery' => $delivery]) ?>
