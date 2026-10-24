@@ -115,7 +115,7 @@ final class Seo
 
     // Старые страницы магазина → новые адреса
     public const OLD_PAGES = [
-        '/dostavka' => '/delivery', '/oplata' => '/delivery', '/obmen-i-vozvrat-tovara-' => '/delivery',
+        '/dostavka' => '/delivery', '/oplata' => '/delivery', '/obmen-i-vozvrat-tovara-' => '/delivery#vozvrat',
         '/actions' => '/catalog', '/products' => '/catalog', '/catalog/katalog' => '/catalog',
     ];
 
