@@ -98,7 +98,7 @@ Http::get('/bouquet/{slug}', function (string $slug) {
   canonical каталога, разметка schema.org (Florist для двух салонов, Product, Article, хлебные крошки).
 - `app/routes/seo.php` — `robots.txt`, `sitemap.xml`, `/catalog/<раздел>`, `/products/<старый букет>` и старые страницы.
   Если в админке завести букет с тем же адресом, что на старом сайте, `/products/<адрес>` поведёт прямо на него.
-- `app/views/partials/counters.php` — счётчики старого сайта (Метрика 57278797, GTM, пиксель Facebook, JivoSite),
+- `app/views/partials/counters.php` — счётчики старого сайта (Метрика 57278797, GTM, пиксель Facebook),
   выводятся только на artflora.by.
 - Сайт открыт поисковикам только на `Seo::MAIN_HOST` (artflora.by). На test.artflora.by и других адресах —
   `noindex` и `Disallow: /`, чтобы поиск не видел копию. `www.` перенаправляется на адрес без `www` (index.php).

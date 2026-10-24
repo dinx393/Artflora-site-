@@ -1,6 +1,6 @@
 <?php
 // Счётчики со старого artflora.by (решение владельца 2026-10-24: «всё как было»): Яндекс Метрика, Google Tag Manager,
-// пиксель Facebook и чат JivoSite. Только на основном домене, чтобы проверки на test.artflora.by не портили статистику.
+// пиксель Facebook (чат JivoSite не переносим, решение 2026-10-24). Только на основном домене, чтобы проверки на test.artflora.by не портили статистику.
 // $part: 'head' — в <head>, 'body' — сразу после <body>. Google Analytics UA-157357072-1 не переносим: Google его закрыл в 2023.
 if (!Seo::isMainSite()) return;
 ?>
@@ -11,7 +11,6 @@ if (!Seo::isMainSite()) return;
 ym(57278797,'init',{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});</script>
 <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('init','112703594081498');fbq('track','PageView');</script>
-<script src="https://code.jivosite.com/widget/0HGe0YpigH" async></script>
 <?php else: ?>
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MLZM36Z" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <noscript><div><img src="https://mc.yandex.ru/watch/57278797" style="position:absolute;left:-9999px" alt=""></div></noscript>
