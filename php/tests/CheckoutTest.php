@@ -3,7 +3,7 @@ group('оформление заказа');
 $order = [
     'cart' => ['lines' => [['bouquetId' => 1, 'size' => 'M', 'qty' => 1]], 'addons' => [], 'cardText' => ''],
     'method' => 'DELIVERY', 'address' => 'пр. Независимости, 180', 'district' => ' Уручье ', 'date' => '2026-10-24', 'slot' => '14:00–15:00',
-    'customerName' => ' Анна ', 'customerPhone' => '+375 (29) 111-22-33', 'payment' => 'ERIP',
+    'customerName' => ' Анна ', 'customerPhone' => '+375 (29) 111-22-33', 'payment' => 'ERIP', 'consent' => true,
 ];
 test('корзина: только id, размер и количество; цены из браузера отбрасываются', function () {
     $c = Checkout::parseCart(['lines' => [['bouquetId' => 5, 'size' => 'L', 'qty' => 2, 'priceKop' => 1]], 'addons' => [], 'cardText' => 'Люблю']);
@@ -24,6 +24,7 @@ test('заявка: ошибки с полем', function () use ($order) {
     eq(Checkout::validate(['customerPhone' => '123'] + $order)['field'], 'customerPhone');
     eq(Checkout::validate(['address' => 'ул'] + $order)['field'], 'address');
     eq(Checkout::validate(['payment' => 'CASH'] + $order)['field'], 'payment');
+    eq(Checkout::validate(['consent' => false] + $order)['field'], 'consent');
     eq(Checkout::validate(['addressUnknown' => true, 'address' => ''] + $order)['field'], 'recipientPhone');
     eq(Checkout::validate(['addressUnknown' => true, 'address' => '', 'recipientPhone' => '+375291234567'] + $order)['ok'], true);
     eq(Checkout::validate(['method' => 'PICKUP', 'address' => ''] + $order)['ok'], true);

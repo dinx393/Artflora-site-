@@ -169,6 +169,8 @@ final class Checkout
         if (!preg_match('/^\+?\d{9,13}$/', $o['customerPhone'])) return $bad('Проверьте номер телефона', 'customerPhone');
         if (!in_array($raw['payment'] ?? null, self::PAYMENTS, true)) return $bad('Выберите способ оплаты', 'payment');
         $o['payment'] = $raw['payment'];
+        // Согласие на обработку персональных данных (закон № 99-З), галочка в корзине. Сохранять отдельно не нужно: без него заказа нет.
+        if (!$bool('consent')) return $bad('Отметьте согласие на обработку персональных данных', 'consent');
 
         // Один ключ на одно оформление: повтор запроса (двойной клик, обрыв связи) вернёт уже созданный заказ.
         $key = $raw['idempotencyKey'] ?? null;

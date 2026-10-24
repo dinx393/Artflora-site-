@@ -41,11 +41,11 @@ $ogImageUrl = Seo::absUrl($ogImage ?? '/assets/img/og.jpg');
 <?= View::render('partials/counters', ['part' => 'head']) ?>
 </head>
 <body>
-<?= View::render('partials/counters', ['part' => 'body']) ?>
 <?= View::render('partials/header', ['shop' => $shop, 'delivery' => $delivery, 'contacts' => $contacts]) ?>
 <main><?= $content ?></main>
 <?= View::render('partials/footer', ['shop' => $shop, 'delivery' => $delivery]) ?>
 <script src="<?= View::asset('js/site.js') ?>"></script>
 <?= $scripts ?? '' ?>
+<?= View::render('partials/counters', ['part' => 'body']) ?>
 </body>
 </html>

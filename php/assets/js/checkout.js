@@ -83,6 +83,7 @@
     call: $("[data-co-call]"),
     anonymous: $("[data-co-anonymous]"),
     comment: $("[data-co-comment]"),
+    consent: $("[data-co-consent]"),
     date: $("[data-co-date]"),
   };
   inputs.date.min = addDays(today, 1);
@@ -314,7 +315,7 @@
     var deliveryReady = st.method === "PICKUP" || unknown || !!d;
     var canNext1 = lines.length > 0;
     var canNext2 = unknown ? slots.length > 0 : deliveryReady && !!st.slot && (st.method === "PICKUP" || address.length > 3);
-    var canSubmit = canNext1 && canNext2 && recipientOk && inputs.customerName.value.trim().length > 0 && digits(inputs.customerPhone.value).length >= 9;
+    var canSubmit = canNext1 && canNext2 && recipientOk && inputs.customerName.value.trim().length > 0 && digits(inputs.customerPhone.value).length >= 9 && inputs.consent.checked;
 
     var err = $("[data-co-error]");
     err.hidden = !(st.error && st.error.field !== "slot");
@@ -329,7 +330,8 @@
       (!unknown && (!deliveryReady || (st.method === "DELIVERY" && address.length <= 3)) ? (d ? "Укажите адрес доставки. " : "Выберите на карте или кнопкой, куда везти. ") : "") +
       (!unknown && !st.slot ? "Выберите время. " : "") +
       (!recipientOk ? "Укажите телефон получателя. " : "") +
-      (!inputs.customerName.value.trim() ? "Укажите имя и телефон." : "");
+      (!inputs.customerName.value.trim() ? "Укажите имя и телефон. " : "") +
+      (!inputs.consent.checked ? "Отметьте согласие на обработку данных." : "");
 
     // Нижняя панель на телефоне
     $("[data-co-back]").hidden = st.step === 1;
@@ -369,6 +371,7 @@
         anonymous: inputs.anonymous.checked,
         comment: inputs.comment.value,
         payment: st.payment,
+        consent: inputs.consent.checked,
         idempotencyKey: st.key,
       }),
     })
@@ -423,6 +426,10 @@
   });
   ["address", "customerName", "customerPhone", "recipientPhone"].forEach(function (k) {
     inputs[k].addEventListener("input", render);
+  });
+  inputs.consent.addEventListener("change", function () {
+    if (st.error && st.error.field === "consent") st.error = null;
+    render();
   });
   $$("[data-co-submit]").forEach(function (b) { b.addEventListener("click", submit); });
   $("[data-co-next]").addEventListener("click", function () { st.step = 2; render(); window.scrollTo({ top: 0 }); });

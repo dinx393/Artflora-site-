@@ -31,6 +31,7 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
         <a href="/delivery" class="soft">Доставка и оплата →</a>
         <a href="/delivery#vozvrat" class="soft">Обмен и возврат →</a>
         <a href="/blog" class="soft">Статьи о цветах →</a>
+        <a href="/privacy" class="soft">Персональные данные и cookie →</a>
       </div>
     </div>
     <div class="footer-legal">

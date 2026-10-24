@@ -731,3 +731,17 @@ tr.dragging { opacity: .45; }
   .article-wrap { gap: 28px; }
   .article-aside { margin-top: 0; max-width: none; position: static; }
 }
+
+/* Плашка про cookie (partials/counters.php): внизу экрана, пока не выбрали «Принять» или «Отклонить» */
+.cookie-bar {
+  position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 50; margin: 0 auto; max-width: 760px;
+  display: flex; gap: 12px 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  padding: 14px 18px; background: var(--white); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(94, 16, 41, .12); font-size: 14px;
+}
+.cookie-bar[hidden] { display: none; }
+.cookie-bar .btn { padding: 10px 18px; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--cherry); text-decoration: underline; cursor: pointer; font: inherit; }
+.check.consent { align-items: flex-start; font-size: 14px; line-height: 1.45; }
+.check.consent input { flex: 0 0 auto; margin-top: 1px; }
+.privacy h2 { font-size: 22px; margin-top: 24px; }

@@ -134,6 +134,12 @@ Http::get('/single', fn () => View::page('shop/single', [
     'shop' => Settings::get('shop'),
 ]));
 
+Http::get('/privacy', fn () => View::page('shop/privacy', [
+    'title' => 'Политика обработки персональных данных',
+    'description' => 'Как «Артфлора» обрабатывает и защищает данные покупателей и получателей букетов, cookie и счётчики на сайте.',
+    'shop' => Settings::get('shop'),
+]));
+
 Http::get('/delivery', fn () => View::page('shop/delivery', [
     'title' => 'Доставка цветов по Минску и оплата',
     'description' => 'Сколько стоит доставка цветов по Минску и за МКАД, бесплатная доставка, самовывоз −10%, оплата картой, через ЕРИП или по ссылке.',

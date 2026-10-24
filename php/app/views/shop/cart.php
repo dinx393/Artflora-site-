@@ -194,6 +194,9 @@ $config = [
             </button>
           <?php endforeach ?>
         </div>
+        <label class="check consent"><input type="checkbox" data-co-consent>
+          <span>Согласен(на) на обработку моих данных и данных получателя для выполнения заказа по <a href="/privacy" target="_blank">Политике обработки персональных данных</a></span>
+        </label>
       </section>
     </div>
 
