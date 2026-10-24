@@ -91,6 +91,23 @@ Http::get('/bouquet/{slug}', function (string $slug) {
 корзина читает `ArtfloraCart.get()`. Пробное письмо в «Настройках» админки: `Notify::sendTestEmail($to)` →
 `['ok' => true]` или `['ok' => false, 'error' => текст]`. Предупреждение в заказе: поля `notifyError` / `emailError`.
 
+## Поиск (SEO) и статьи (2026-10-24, только в PHP-версии)
+
+- `app/lib/Seo.php` — разделы каталога с понятными адресами (`LANDINGS`: `/catalog/svadebnye-bukety`, `/catalog/rozy`…;
+  первые взяты со старого artflora.by как есть), 301 со старых адресов (`OLD_CATALOG`, `OLD_PAGES`, `PRODUCT_WORDS`),
+  canonical каталога, разметка schema.org (Florist для двух салонов, Product, Article, хлебные крошки).
+- `app/routes/seo.php` — `robots.txt`, `sitemap.xml`, `/catalog/<раздел>`, `/products/<старый букет>` и старые страницы.
+  Если в админке завести букет с тем же адресом, что на старом сайте, `/products/<адрес>` поведёт прямо на него.
+- Сайт открыт поисковикам только на `Seo::MAIN_HOST` (artflora.by). На test.artflora.by и других адресах —
+  `noindex` и `Disallow: /`, чтобы поиск не видел копию. `www.` перенаправляется на адрес без `www` (index.php).
+- Шаблон `layouts/shop.php` принимает `title`, `description`, `canonical` (null — без canonical и с noindex),
+  `ogImage`, `ogType`, `jsonLd` (список массивов).
+- Статьи: список `app/content/articles.php`, тексты `app/content/articles/<адрес>.html`, картинки `assets/blog/`,
+  класс `Articles`, страницы `/blog` и `/blog/<адрес>` (`routes/articles.php`, `views/shop/articles.php`, `article.php`).
+  В тексте `{{phone}}` и `{{freeFrom}}` подставляются из настроек. Статьи сверены с нынешними условиями магазина;
+  про Грушевку и букеты из фруктов не переносили (`Articles::REMOVED`, старые адреса — 301).
+- Тесты: `tests/SeoTest.php` проверяет, что все 245 адресов старого сайта (`tests/old-urls.txt`) ведут на живую страницу.
+
 ## Проверка у себя
 
 ```bash
