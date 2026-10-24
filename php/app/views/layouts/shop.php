@@ -31,9 +31,9 @@ $ogImageUrl = Seo::absUrl($ogImage ?? '/assets/img/og.jpg');
 <?php if ($canonicalUrl): ?><meta property="og:url" content="<?= e($canonicalUrl) ?>"><?php endif ?>
 <meta property="og:image" content="<?= e($ogImageUrl) ?>">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/icon-192.png">
-<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico?v=2" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="<?= View::asset('img/icon-192.png') ?>">
+<link rel="apple-touch-icon" href="<?= View::asset('img/apple-touch-icon.png') ?>">
 <?php foreach ($jsonLd ?? [] as $ld) echo Seo::jsonLd($ld) ?>
 <link rel="stylesheet" href="<?= View::asset('css/fonts.css') ?>">
 <link rel="stylesheet" href="<?= View::asset('css/site.css') ?>">
