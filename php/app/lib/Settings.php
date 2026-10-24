@@ -24,6 +24,10 @@ final class Settings
             $val = $raw === null ? null : json_decode($raw, true);
             // Списки (районы, цвета) храним целиком, объекты дополняем новыми полями по умолчанию
             self::$cache[$key] = !is_array($val) ? $def : (array_is_list($def) ? $val : array_merge($def, $val));
+            // Реквизиты, сохранённые в админке ещё заготовкой «[Наименование продавца]…», берём настоящие (со старого сайта, 2026-10-24)
+            if ($key === 'shop' && str_contains((string) (self::$cache[$key]['sellerDetails'] ?? ''), '[Наименование')) {
+                self::$cache[$key]['sellerDetails'] = $def['sellerDetails'];
+            }
         }
         return self::$cache[$key];
     }
