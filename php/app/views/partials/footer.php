@@ -34,6 +34,10 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
         <a href="/privacy" class="soft">Персональные данные и cookie →</a>
       </div>
     </div>
+    <div class="footer-pay" aria-label="Принимаем к оплате">
+      <img src="<?= View::asset('img/pay-1.png') ?>" alt="Visa, Visa Secure, Mastercard, Mastercard SecureCode" width="554" height="52" loading="lazy">
+      <img src="<?= View::asset('img/pay-2.png') ?>" alt="Белкарт, Белкарт ИнтернетПароль, bePaid, webpay, МТБанк" width="852" height="60" loading="lazy">
+    </div>
     <div class="footer-legal">
       © Артфлора, <?= date('Y') ?> · <?= e($shop['sellerDetails']) ?>
       <?php if ($shop['email']): ?> · E-mail: <a href="mailto:<?= e($shop['email']) ?>"><?= e($shop['email']) ?></a><?php endif ?>

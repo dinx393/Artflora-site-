@@ -745,3 +745,6 @@ tr.dragging { opacity: .45; }
 .check.consent { align-items: flex-start; font-size: 14px; line-height: 1.45; }
 .check.consent input { flex: 0 0 auto; margin-top: 1px; }
 .privacy h2 { font-size: 22px; margin-top: 24px; }
+/* Логотипы платёжных систем в подвале (со старого сайта, обычно их требует банк) — на белой полосе, подвал тёмный */
+.footer-pay { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; margin: 28px 0 20px; padding: 12px 18px; background: #fff; border-radius: 14px; width: fit-content; max-width: 100%; }
+.footer-pay img { height: 28px; width: auto; max-width: 100%; }
