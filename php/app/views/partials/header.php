@@ -1,6 +1,6 @@
 <?php
 // Шапка магазина. Переменные: $shop, $delivery, $contacts
-$menuOccasions = array_filter(Occasions::LIST, fn ($o) => in_array($o['slug'], ['mom', 'love', 'birthday', 'colleague', 'nothing'], true));
+$menuOccasions = array_filter(Occasions::LIST, fn ($o) => in_array($o['slug'], ['love', 'birthday', 'mom', 'colleague', 'nothing', 'wedding'], true));
 $call = array_values(array_filter($contacts, fn ($c) => $c['code'] === 'call'))[0] ?? null;
 $msg = array_filter($contacts, fn ($c) => in_array($c['code'], ['viber', 'telegram'], true));
 $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_blank" rel="noopener"' : '';

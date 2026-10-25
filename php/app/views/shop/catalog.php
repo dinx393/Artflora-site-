@@ -96,7 +96,7 @@ $f = fn (array $patch) => e($href($sp, $patch));
           <?php if ($occ): ?><span class="fgroup-val"><?= e($occ['label']) ?></span><?php endif ?>
         </summary>
         <div class="chips-wrap">
-          <?php foreach (Occasions::LIST as $o): if (!in_array($o['slug'], ['mom', 'love', 'colleague', 'birthday', 'nothing'], true)) continue; $on = $val('occasion') === $o['slug'] ?>
+          <?php foreach (Occasions::LIST as $o): if (!in_array($o['slug'], ['love', 'birthday', 'mom', 'colleague', 'nothing', 'wedding'], true)) continue; $on = $val('occasion') === $o['slug'] ?>
             <a href="<?= $f(['occasion' => $on ? null : $o['slug']]) ?>" data-keep-scroll class="chip chip-sm <?= $on ? 'on' : '' ?>"><?= e($o['label']) ?></a>
           <?php endforeach ?>
         </div>
