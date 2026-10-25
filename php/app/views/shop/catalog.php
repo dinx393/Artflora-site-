@@ -17,7 +17,7 @@ $sections = [
     ['Экзотика', ['occasion' => 'exotic']],
     ['Шляпные коробки', ['format' => 'HATBOX']],
     ['Сумки с цветами', ['format' => 'BAG']],
-    ['Композиции', ['format' => 'BASKET']],
+    ['Корзины', ['format' => 'BASKET']],
     ['Поштучно', [], '/single'],
 ];
 $val = fn (string $k) => $sp[$k] ?? null;

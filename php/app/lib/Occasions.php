@@ -27,7 +27,7 @@ final class Occasions
         'exotic' => 'Экзотика',
         'HATBOX' => 'Шляпные коробки',
         'BAG' => 'Сумки с цветами',
-        'BASKET' => 'Композиции',
+        'BASKET' => 'Корзины',
     ];
 
     public const PRICE_RANGES = [
