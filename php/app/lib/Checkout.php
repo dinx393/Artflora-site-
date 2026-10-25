@@ -219,7 +219,7 @@ final class Checkout
         if (mb_strlen($c['name']) < 2) return $bad('Укажите название организации', 'name');
         if (!preg_match('/^\d{9}$/', $c['unp'])) return $bad('УНП — это 9 цифр', 'unp');
         if (mb_strlen($c['address']) < 5) return $bad('Укажите юридический адрес организации', 'address');
-        if (!self::ibanOk($c['iban'])) return $bad('Проверьте расчётный счёт: BY и 26 знаков, как в выписке банка', 'iban');
+        if (!self::ibanOk($c['iban'])) return $bad('Проверьте расчётный счёт (IBAN): BY и 26 знаков, сверьте с выпиской банка', 'iban');
         if (mb_strlen($c['bank']) < 2) return $bad('Укажите банк', 'bank');
         if (!preg_match('/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/', $c['bic'])) return $bad('Проверьте БИК банка: 8 или 11 латинских букв и цифр, например AKBBBY2X', 'bic');
         if ($c['email'] !== '' && !filter_var($c['email'], FILTER_VALIDATE_EMAIL)) return $bad('Проверьте e-mail для счёта', 'email');

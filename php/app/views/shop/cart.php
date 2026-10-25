@@ -208,7 +208,7 @@ $config = [
           <p class="small muted" style="margin: 0">Реквизиты организации-плательщика: на них выставим счёт. Без реквизитов заказ по безналу не оформить.</p>
           <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
             <?php foreach ($companyInputs as $k => [$ph, $ac, $req]): ?>
-              <label class="field"<?= $k === 'name' || $k === 'address' ? ' style="grid-column: 1 / -1"' : '' ?>>
+              <label class="field"<?= in_array($k, ['name', 'address', 'iban'], true) ? ' style="grid-column: 1 / -1"' : '' ?>>
                 <span><?= e(Checkout::COMPANY_FIELDS[$k][0]) ?><?= $req ? '' : ' (необязательно)' ?></span>
                 <input class="input" placeholder="<?= e($ph) ?>" autocomplete="<?= e($ac) ?>"<?= $k === 'unp' ? ' inputmode="numeric" maxlength="9"' : '' ?><?= $k === 'email' ? ' type="email"' : '' ?> data-co-company-field="<?= e($k) ?>">
               </label>
