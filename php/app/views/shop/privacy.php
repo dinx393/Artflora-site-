@@ -8,7 +8,7 @@
   <p class="small muted">Действует с 24 октября 2026 года</p>
 
   <h2>1. Кто обрабатывает данные</h2>
-  <p>Оператор — <?= e($shop['sellerDetails']) ?>. Сайт artflora.by, салоны «Артфлора» в Минске. Почта для вопросов о данных: <a href="mailto:<?= e($shop['email']) ?>"><?= e($shop['email']) ?></a>, телефон <?= e($shop['phone']) ?>.</p>
+  <p>Оператор — <?= e($shop['sellerDetails']) ?>. Сайт artflora.by, салоны «Артфлора.by» в Минске. Почта для вопросов о данных: <a href="mailto:<?= e($shop['email']) ?>"><?= e($shop['email']) ?></a>, телефон <?= e($shop['phone']) ?>.</p>
 
   <h2>2. Какие данные мы получаем</h2>
   <ul>

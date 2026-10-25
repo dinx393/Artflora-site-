@@ -5,7 +5,7 @@
 $shop = Settings::get('shop');
 $delivery = Settings::get('delivery');
 $contacts = Text::contactLinks($shop);
-$title = isset($title) && $title !== '' ? (str_contains($title, 'Артфлор') ? $title : "$title — Артфлора") : 'Доставка цветов в Минске: букеты с доставкой на дом — Артфлора';
+$title = isset($title) && $title !== '' ? (str_contains($title, 'Артфлор') ? $title : "$title — Артфлора.by") : 'Доставка цветов в Минске: букеты с доставкой на дом — Артфлора.by';
 $description ??= 'Цветы и букеты с доставкой по Минску в день заказа. Салоны в Уручье и Малиновке, радуем букетами уже 19 лет. Пришлём фото букета до отправки, самовывоз −10%.';
 // Копии сайта (test.artflora.by) поисковикам не показываем
 $noindex = !empty($noindex) || !Seo::isMainSite();
@@ -24,7 +24,7 @@ $ogImageUrl = Seo::absUrl($ogImage ?? '/assets/img/og.jpg');
 <?php if ($noindex): ?><meta name="robots" content="noindex"><?php endif ?>
 <?php if ($canonicalUrl && !$noindex): ?><link rel="canonical" href="<?= e($canonicalUrl) ?>"><?php endif ?>
 <meta property="og:type" content="<?= e($ogType ?? 'website') ?>">
-<meta property="og:site_name" content="Артфлора">
+<meta property="og:site_name" content="Артфлора.by">
 <meta property="og:locale" content="ru_RU">
 <meta property="og:title" content="<?= e($title) ?>">
 <meta property="og:description" content="<?= e($description) ?>">

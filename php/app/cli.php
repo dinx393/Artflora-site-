@@ -129,7 +129,7 @@ if ($cmd === 'migrate') {
         foreach ([465, 587] as $port) {
             echo "Пробую {$host}:{$port}… ";
             try {
-                (new Smtp($host, $port, $user, $pass, 15))->send($user, 'Артфлора — заказы', array_map('trim', explode(',', $to)), 'Пробное письмо с сайта Артфлоры', '',
+                (new Smtp($host, $port, $user, $pass, 15))->send($user, 'Артфлора.by — заказы', array_map('trim', explode(',', $to)), 'Пробное письмо с сайта Артфлора.by', '',
                     'Это пробное письмо. Раз оно дошло, письма о новых заказах будут приходить сюда же.');
                 echo "получилось\n";
                 $found = [$host, $port];

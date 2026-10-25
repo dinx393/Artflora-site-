@@ -116,7 +116,7 @@ final class OrderEmail
 <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px\">
   <tr><td style=\"height:6px;background:{$C['lavender']};border-radius:6px 6px 0 0\"></td></tr>
   <tr><td style=\"padding:22px 4px 6px\">
-    <div style=\"font-family:'Playfair Display',Georgia,serif;font-size:26px;color:{$C['cherry']};letter-spacing:.5px\">Артфлора</div>
+    <div style=\"font-family:'Playfair Display',Georgia,serif;font-size:26px;color:{$C['cherry']};letter-spacing:.5px\">Артфлора.by</div>
   </td></tr>
   <tr><td style=\"padding:8px 4px 18px\">
     <div style=\"font-family:'Playfair Display',Georgia,serif;font-size:32px;line-height:1.15;color:{$C['ink']}\">

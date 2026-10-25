@@ -68,7 +68,7 @@ final class Seo
         'gortenzii' => [
             'filter' => ['flower' => 'Гортензия'], 'h1' => ['Букеты с', 'гортензией'],
             'title' => 'Гортензии и букеты с гортензией с доставкой по Минску',
-            'description' => 'Букеты с гортензией с доставкой по Минску. Свежие гортензии в салонах «Артфлора» в Уручье и Малиновке.',
+            'description' => 'Букеты с гортензией с доставкой по Минску. Свежие гортензии в салонах «Артфлора.by» в Уручье и Малиновке.',
         ],
         'alstromeriya-' => [
             'filter' => ['flower' => 'Альстромерия'], 'h1' => ['Букеты с', 'альстромерией'],
@@ -219,11 +219,11 @@ final class Seo
         $site = Config::siteUrl();
         $phone = '+' . preg_replace('/\D/', '', $shop['phone']);
         $graph = [[
-            '@type' => 'Organization', '@id' => "$site/#org", 'name' => 'Артфлора', 'url' => "$site/",
+            '@type' => 'Organization', '@id' => "$site/#org", 'name' => 'Артфлора.by', 'url' => "$site/",
             'logo' => self::absUrl('/assets/img/og.jpg'), 'telephone' => $phone,
             'sameAs' => array_values(array_filter([$shop['instagram'] ?? ''])),
         ], [
-            '@type' => 'WebSite', '@id' => "$site/#site", 'name' => 'Артфлора', 'url' => "$site/", 'inLanguage' => 'ru',
+            '@type' => 'WebSite', '@id' => "$site/#site", 'name' => 'Артфлора.by', 'url' => "$site/", 'inLanguage' => 'ru',
             'publisher' => ['@id' => "$site/#org"],
             'potentialAction' => ['@type' => 'SearchAction', 'target' => "$site/catalog?q={q}", 'query-input' => 'required name=q'],
         ]];
@@ -231,7 +231,7 @@ final class Seo
             $h = self::openingHours($s['hours'] ?? '');
             $graph[] = array_filter([
                 '@type' => 'Florist', '@id' => "$site/#shop-{$s['code']}",
-                'name' => "Артфлора, {$s['name']}", 'url' => "$site/", 'telephone' => $phone,
+                'name' => "Артфлора.by, {$s['name']}", 'url' => "$site/", 'telephone' => $phone,
                 'image' => self::absUrl('/assets/img/og.jpg'), 'priceRange' => 'BYN',
                 'parentOrganization' => ['@id' => "$site/#org"],
                 'address' => ['@type' => 'PostalAddress', 'streetAddress' => $s['address'], 'addressLocality' => 'Минск', 'addressCountry' => 'BY'],
@@ -257,7 +257,7 @@ final class Seo
             'name' => $b['name'],
             'description' => $b['description'] ?: null,
             'image' => array_map([self::class, 'absUrl'], $b['photos']),
-            'brand' => ['@type' => 'Brand', 'name' => 'Артфлора'],
+            'brand' => ['@type' => 'Brand', 'name' => 'Артфлора.by'],
             'offers' => $offer + ['priceCurrency' => 'BYN', 'availability' => 'https://schema.org/InStock', 'seller' => ['@id' => Config::siteUrl() . '/#org']],
         ];
     }

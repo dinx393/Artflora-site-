@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title><?= e(($title ?? '') !== '' ? "$title — Артфлора" : 'Артфлора') ?></title>
+<title><?= e(($title ?? '') !== '' ? "$title — Артфлора.by" : 'Артфлора.by') ?></title>
 <link rel="stylesheet" href="<?= View::asset('css/fonts.css') ?>">
 <link rel="stylesheet" href="<?= View::asset('css/site.css') ?>">
 </head>

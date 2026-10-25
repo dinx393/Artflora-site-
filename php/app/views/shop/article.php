@@ -13,7 +13,7 @@ $rubric = Articles::RUBRICS[$a['rubric']];
       <a href="/blog#<?= e($a['rubric']) ?>"><?= e($rubric) ?></a>
     </nav>
     <h1><?= e($a['h1']) ?></h1>
-    <span class="small muted">Флористы «Артфлоры» · <time datetime="<?= e($a['date']) ?>"><?= e(Articles::date($a['date'])) ?></time></span>
+    <span class="small muted">Флористы «Артфлора.by» · <time datetime="<?= e($a['date']) ?>"><?= e(Articles::date($a['date'])) ?></time></span>
     <div class="article-text"><?= $html ?></div>
   </article>
   <aside class="article-aside">
