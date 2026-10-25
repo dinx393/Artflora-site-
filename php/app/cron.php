@@ -3,7 +3,9 @@
 //   php /путь/к/сайту/app/cron.php
 // Сейчас: повтор уведомлений о заказах (Telegram и письмо), которые не дошли с первого раза.
 require __DIR__ . '/bootstrap.php';
-if (PHP_SAPI !== 'cli') exit;
+// На хостинге php в Shell-клиенте бывает не «cli», а «cgi» — пускаем любой запуск не из браузера
+if (PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_METHOD'])) exit;
+$argv = $_SERVER['argv'] ?? $argv ?? [];
 
 // Не запускаем второй раз, пока не закончил первый (медленная почта)
 @mkdir(APP_DIR . '/storage', 0750, true);

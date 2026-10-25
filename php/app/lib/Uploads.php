@@ -67,14 +67,24 @@ final class Uploads
     public static function shrinkJpeg(string $jpeg): string
     {
         if (!function_exists('imagecreatefromstring') || !self::needsShrink($jpeg)) return $jpeg;
+        // Фото 3024×4032 занимает в памяти ~60 МБ, а на хостинге лимит бывает 64–128 МБ
+        $size = @getimagesizefromstring($jpeg);
+        if (!$size) return $jpeg;
+        $need = (int) ($size[0] * $size[1] * 5 * 2.2) + memory_get_usage() + 16 * 1024 * 1024;
+        if (self::bytes(ini_get('memory_limit')) < $need) @ini_set('memory_limit', (string) max($need, 256 * 1024 * 1024));
+        if (self::bytes(ini_get('memory_limit')) < $need) return $jpeg;
         $img = @imagecreatefromstring($jpeg);
         if (!$img) return $jpeg;
         $angle = [3 => 180, 6 => -90, 8 => 90][self::orientation($jpeg)] ?? 0;
-        if ($angle) $img = imagerotate($img, $angle, 0);
         $w = imagesx($img);
         $h = imagesy($img);
         $k = min(1, self::MAX_SIDE / max($w, $h));
-        if ($k < 1) $img = imagescale($img, (int) round($w * $k), (int) round($h * $k), IMG_BICUBIC);
+        if ($k < 1) {
+            $small = imagescale($img, (int) round($w * $k), (int) round($h * $k), IMG_BICUBIC);
+            imagedestroy($img);
+            $img = $small;
+        }
+        if ($angle) $img = imagerotate($img, $angle, 0);
         ob_start();
         imagejpeg($img, null, 85);
         $out = ob_get_clean();
@@ -82,14 +92,31 @@ final class Uploads
         return $out ? "\xFF\xD8" . self::iccSegments($jpeg) . substr($out, 2) : $jpeg;
     }
 
-    // Пересохранить уже загруженные фото (при обновлении сайта). Имена файлов не меняются. Возвращает число исправленных.
-    public static function shrinkAll(): int
+    // «128M» → байты; -1 — без лимита
+    public static function bytes(string|false $v): int
     {
+        $v = trim((string) $v);
+        if ($v === '' || $v === '-1') return PHP_INT_MAX;
+        $n = (int) $v;
+        return match (strtolower(substr($v, -1))) { 'g' => $n << 30, 'm' => $n << 20, 'k' => $n << 10, default => $n };
+    }
+
+    // Пересохранить уже загруженные фото (при обновлении сайта). Имена файлов не меняются. Возвращает число исправленных.
+    public static function shrinkAll(bool $verbose = false): int
+    {
+        if (!function_exists('imagecreatefromstring')) {
+            if ($verbose) echo "В PHP на хостинге нет модуля GD — фото пересохранить нечем\n";
+            return 0;
+        }
         $n = 0;
         foreach (glob(self::dir() . '/*.jpg') ?: [] as $file) {
             $data = (string) file_get_contents($file);
+            if (!self::needsShrink($data)) continue;
+            if ($verbose) echo basename($file) . ' … ';
             $new = self::shrinkJpeg($data);
-            if ($new !== $data && file_put_contents("$file.tmp", $new) && rename("$file.tmp", $file)) $n++;
+            $done = $new !== $data && file_put_contents("$file.tmp", $new) && rename("$file.tmp", $file);
+            if ($done) $n++;
+            if ($verbose) echo $done ? round(strlen($data) / 1048576, 1) . ' МБ → ' . round(strlen($new) / 1024) . " КБ\n" : "не получилось (память: " . ini_get('memory_limit') . ")\n";
         }
         return $n;
     }

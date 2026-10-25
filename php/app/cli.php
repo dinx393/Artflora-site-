@@ -10,15 +10,18 @@
 //                                — перенести каталог с сайта на Node.js (файл даёт prisma/export-for-php.js);
 //                                  --replace сначала убирает букеты, коллекции и цветы, которые уже есть на сайте
 require __DIR__ . '/bootstrap.php';
-if (PHP_SAPI !== 'cli') exit;
+// На хостинге php в Shell-клиенте бывает не «cli», а «cgi» — пускаем любой запуск не из браузера
+if (PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_METHOD'])) exit;
+$argv = $_SERVER['argv'] ?? $argv ?? [];
 
+ini_set('display_errors', '1');
 $cmd = $argv[1] ?? '';
 Db::migrate();
 
 if ($cmd === 'migrate') {
     echo "База в порядке\n";
 } elseif ($cmd === 'photos') {
-    $n = Uploads::shrinkAll();
+    $n = Uploads::shrinkAll(true);
     echo $n ? "Уменьшено фото с iPhone: $n\n" : "Фото в порядке\n";
 } elseif ($cmd === 'demo') {
     if (Db::value('SELECT COUNT(*) FROM flowers')) exit("В базе уже есть цветы, примеры не добавляю.\n");
@@ -153,5 +156,5 @@ if ($cmd === 'migrate') {
     Settings::save('shop', array_merge($shop, ['orderEmail' => $to]));
     echo "\nГотово: пробное письмо отправлено на $to. Проверьте почту (и папку «Спам»). Письма о заказах будут приходить туда же.\n";
 } else {
-    echo "Команды: migrate, demo, clean-demo, import, mail\n";
+    echo "Команды: migrate, demo, clean-demo, import, mail, photos\n";
 }
