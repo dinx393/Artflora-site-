@@ -104,6 +104,7 @@ main > .section:last-child { padding-bottom: 0; }
   border: 1px solid var(--line); background: var(--white); color: var(--cherry); outline: none;
 }
 .input:focus { border-color: var(--cherry); }
+.input[aria-invalid="true"] { border-color: var(--danger); }
 textarea.input { resize: vertical; min-height: 60px; }
 /* Выпадающие списки: своя стрелка с тем же отступом справа, что и текст слева */
 select.input {

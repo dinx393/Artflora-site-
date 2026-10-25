@@ -4,7 +4,12 @@
 // всё остальное считаем здесь по текущим ценам из базы.
 final class Checkout
 {
-    public const PAYMENTS = ['CARD', 'ERIP', 'VIBER_LINK'];
+    public const PAYMENTS = ['CARD', 'ERIP', 'VIBER_LINK', 'INVOICE'];
+    // Реквизиты для безнала (INVOICE): поле => [подпись, длина]. E-mail необязателен, остальное нужно для счёта.
+    public const COMPANY_FIELDS = [
+        'name' => ['Организация', 200], 'unp' => ['УНП', 9], 'address' => ['Юридический адрес', 300],
+        'iban' => ['Расчётный счёт', 34], 'bank' => ['Банк', 200], 'bic' => ['БИК', 11], 'email' => ['E-mail для счёта', 100],
+    ];
 
     // Корзина из браузера → ['lines' => [['bouquetId','size','qty']], 'addons' => [['addonId','qty']], 'cardText'].
     // Что-то не так (не те типы, слишком много строк) — null.
@@ -169,6 +174,12 @@ final class Checkout
         if (!preg_match('/^\+?\d{9,13}$/', $o['customerPhone'])) return $bad('Проверьте номер телефона', 'customerPhone');
         if (!in_array($raw['payment'] ?? null, self::PAYMENTS, true)) return $bad('Выберите способ оплаты', 'payment');
         $o['payment'] = $raw['payment'];
+        $o['company'] = null;
+        if ($o['payment'] === 'INVOICE') {
+            $c = self::parseCompany($raw['company'] ?? null);
+            if (!$c['ok']) return $c;
+            $o['company'] = $c['company'];
+        }
         // Согласие на обработку персональных данных (закон № 99-З), галочка в корзине. Сохранять отдельно не нужно: без него заказа нет.
         if (!$bool('consent')) return $bad('Отметьте согласие на обработку персональных данных', 'consent');
 
@@ -184,6 +195,52 @@ final class Checkout
             return $bad('Укажите телефон получателя: по нему уточним адрес', 'recipientPhone');
         }
         return ['ok' => true, 'order' => $o];
+    }
+
+    // Реквизиты организации для безнала (как в счёте по практике РБ): название, УНП (9 цифр), юр. адрес,
+    // расчётный счёт IBAN (BY…, 28 знаков, с проверкой контрольных цифр), банк, БИК; e-mail — по желанию.
+    // → ['ok' => true, 'company' => […]] | ['ok' => false, 'error', 'field' => 'company.<поле>']
+    public static function parseCompany(mixed $raw): array
+    {
+        $bad = fn (string $error, string $k) => ['ok' => false, 'error' => $error, 'field' => "company.$k"];
+        if (!is_array($raw)) return $bad('Укажите реквизиты организации', 'name');
+        $c = [];
+        foreach (self::COMPANY_FIELDS as $k => [$label, $max]) {
+            $v = $raw[$k] ?? '';
+            if (!is_string($v)) return $bad('Обновите страницу и попробуйте ещё раз', $k);
+            $v = trim(preg_replace('/\s+/u', ' ', $v));
+            // В номерах пробелы и регистр не важны: «by13 nbrb 3600…» → «BY13NBRB3600…»
+            if (in_array($k, ['unp', 'iban', 'bic'], true)) $v = mb_strtoupper(str_replace(' ', '', $v));
+            if (mb_strlen($v) > max($max, 40)) return $bad('Слишком длинный текст, сократите', $k);
+            $c[$k] = $v;
+        }
+        if (mb_strlen($c['name']) < 2) return $bad('Укажите название организации', 'name');
+        if (!preg_match('/^\d{9}$/', $c['unp'])) return $bad('УНП — это 9 цифр', 'unp');
+        if (mb_strlen($c['address']) < 5) return $bad('Укажите юридический адрес организации', 'address');
+        if (!self::ibanOk($c['iban'])) return $bad('Проверьте расчётный счёт: BY и 26 знаков, как в выписке банка', 'iban');
+        if (mb_strlen($c['bank']) < 2) return $bad('Укажите банк', 'bank');
+        if (!preg_match('/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/', $c['bic'])) return $bad('Проверьте БИК банка: 8 или 11 латинских букв и цифр, например AKBBBY2X', 'bic');
+        if ($c['email'] !== '' && !filter_var($c['email'], FILTER_VALIDATE_EMAIL)) return $bad('Проверьте e-mail для счёта', 'email');
+        return ['ok' => true, 'company' => $c];
+    }
+
+    // Белорусский IBAN: BY, 2 контрольные цифры, 4 буквы банка, 4 цифры балансового счёта, 16 знаков; остаток от деления на 97 равен 1.
+    public static function ibanOk(string $iban): bool
+    {
+        if (!preg_match('/^BY\d{2}[A-Z0-9]{4}\d{4}[A-Z0-9]{16}$/', $iban)) return false;
+        $digits = '';
+        foreach (str_split(substr($iban, 4) . substr($iban, 0, 4)) as $ch) $digits .= ctype_digit($ch) ? $ch : (string) (ord($ch) - 55);
+        $rest = 0;
+        foreach (str_split($digits, 7) as $part) $rest = (int) ($rest . $part) % 97;
+        return $rest === 1;
+    }
+
+    // Реквизиты одной строкой на поле — для админки, письма и Telegram: [['Организация', 'ООО «Ромашка»'], …]
+    public static function companyRows(?array $c): array
+    {
+        $rows = [];
+        foreach (self::COMPANY_FIELDS as $k => [$label]) if (($c[$k] ?? '') !== '') $rows[] = [$label, $c[$k]];
+        return $rows;
     }
 
     // Создать заказ. → ['ok' => true, 'number', 'token', 'id', 'new' (false — это повтор уже созданного)]
@@ -251,6 +308,7 @@ final class Checkout
                     'deliveryDate' => $o['date'],
                     'deliverySlot' => $unknown ? '' : $o['slot'],
                     'paymentMethod' => $o['payment'],
+                    'company' => $o['company'] ? json_encode($o['company'], JSON_UNESCAPED_UNICODE) : null,
                     'itemsKop' => $t['priced']['bouquetsKop'] + $t['priced']['addonsKop'],
                     'discountKop' => $t['discountKop'],
                     'deliveryKop' => $t['deliveryKop'],
@@ -291,6 +349,7 @@ final class Checkout
         if (!$o) return null;
         foreach (['id', 'number', 'itemsKop', 'discountKop', 'deliveryKop', 'totalKop', 'notifyAttempts', 'emailAttempts'] as $k) $o[$k] = (int) $o[$k];
         foreach (['callRecipient', 'anonymous', 'addressUnknown', 'paid'] as $k) $o[$k] = (bool) $o[$k];
+        $o['company'] = isset($o['company']) ? Db::fromJson($o['company'], null) : null;
         $o['deliveryZone'] = $o['deliveryZone'] === null ? null : (int) $o['deliveryZone'];
         $o['items'] = array_map(fn ($i) => [
             'id' => (int) $i['id'], 'bouquetId' => $i['bouquetId'] === null ? null : (int) $i['bouquetId'], 'name' => $i['name'],

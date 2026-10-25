@@ -80,6 +80,9 @@ final class Notify
                     : "Доставка: {$o['address']} (зона " . ($o['deliveryZone'] ?? '?') . ')'),
             "Когда: {$o['deliveryDate']}, " . ($o['deliverySlot'] ?: 'время уточнить'),
             "Клиент: {$o['customerName']}, {$o['customerPhone']}",
+            ...(!empty($o['company'])
+                ? ['💼 Безнал, счёт на организацию:', ...array_map(fn ($c) => "{$c[0]}: {$c[1]}", Checkout::companyRows($o['company']))]
+                : []),
             Config::siteUrl() . "/admin/orders/{$o['id']}",
         ];
         return implode("\n", $lines);
@@ -178,6 +181,7 @@ final class Notify
             'deliveryKop' => $o['deliveryKop'],
             'totalKop' => $o['totalKop'],
             'adminUrl' => Config::siteUrl() . "/admin/orders/{$o['id']}",
+            'company' => $o['company'],
         ]);
     }
 

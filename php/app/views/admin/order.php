@@ -65,6 +65,14 @@ $created = date('d.m.Y, H:i:s', strtotime($o['createdAt']));
       <?php if ($o['comment']): ?><span class="muted">Комментарий: <?= e($o['comment']) ?></span><?php endif ?>
       <span class="small muted">Заказ оформлен <?= e($created) ?></span>
     </div>
+    <?php if (!empty($o['company'])): ?>
+      <div class="card stack" style="gap: 6px">
+        <span class="label">Безнал: реквизиты для счёта</span>
+        <?php foreach (Checkout::companyRows($o['company']) as [$k, $v]): ?>
+          <div class="sum-row"><span class="muted"><?= e($k) ?></span><b style="text-align: right; overflow-wrap: anywhere"><?= e($v) ?></b></div>
+        <?php endforeach ?>
+      </div>
+    <?php endif ?>
   </div>
   <div class="card stack" style="gap: 10px">
     <div class="sum-row"><span>Товары</span><span><?= e(Money::format($o['itemsKop'])) ?></span></div>

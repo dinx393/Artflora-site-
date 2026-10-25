@@ -4,14 +4,15 @@
 // Данные письма: number, createdAt (метка времени), status («Новый»), paid, payment («ЕРИП»), customerName, customerPhone,
 // recipientName, recipientPhone, callRecipient, anonymous, method (DELIVERY/PICKUP), address, addressUnknown,
 // shopName («Уручье, пр. Независимости 168/1»), deliveryDate ('YYYY-MM-DD'), deliverySlot, comment, cardText,
-// items [['name','size','qty','priceKop','photo' (полный адрес или null)]], itemsKop, discountKop, deliveryKop, totalKop, adminUrl.
+// items [['name','size','qty','priceKop','photo' (полный адрес или null)]], itemsKop, discountKop, deliveryKop, totalKop, adminUrl,
+// company (реквизиты для безнала, см. Checkout::parseCompany, или null).
 final class OrderEmail
 {
     public const STATUS_LABEL = [
         'NEW' => 'Новый', 'CONFIRMED' => 'Собираем', 'PHOTO_SENT' => 'Фото отправлено',
         'ON_THE_WAY' => 'В пути / ждёт', 'DONE' => 'Выполнен', 'CANCELLED' => 'Отменён',
     ];
-    public const PAY_LABEL = ['CARD' => 'Картой (ссылкой)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber'];
+    public const PAY_LABEL = ['CARD' => 'Картой (ссылкой)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber', 'INVOICE' => 'Безнал (счёт организации)'];
 
     private const C = [
         'cherry' => '#7E1F3C', 'ink' => '#3a2a30', 'muted' => '#7a6a72', 'lavender' => '#D6CBE3',
@@ -53,6 +54,9 @@ final class OrderEmail
             ['Имя', $o['customerName']],
             ['Телефон', Text::phone($o['customerPhone'])],
         ];
+        if (!empty($o['company'])) {
+            $r[] = ['Реквизиты для счёта', implode("\n", array_map(fn ($c) => "{$c[0]}: {$c[1]}", Checkout::companyRows($o['company'])))];
+        }
         if ($o['method'] === 'DELIVERY') {
             $r[] = ['Получатель', $o['recipientName'] ?: '—'];
             if ($o['recipientPhone']) $r[] = ['Телефон получателя', Text::phone($o['recipientPhone'])];

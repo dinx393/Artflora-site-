@@ -15,7 +15,7 @@ const ADMIN_STATUS_LABEL = [
     'DONE' => 'Выполнен',
     'CANCELLED' => 'Отменён',
 ];
-const ADMIN_PAY_LABEL = ['CARD' => 'Картой (ссылкой)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber'];
+const ADMIN_PAY_LABEL = ['CARD' => 'Картой (ссылкой)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber', 'INVOICE' => 'Безнал (счёт организации)'];
 
 function admin_page(string $template, array $data): string
 {
@@ -512,6 +512,7 @@ Http::get('/admin/orders/{id}', function (string $id) {
     if (!ctype_digit($id)) Http::abort(404);
     $o = Db::one('SELECT * FROM orders WHERE id = ?', [(int) $id]) ?? Http::abort(404);
     $o['items'] = Db::all('SELECT * FROM order_items WHERE orderId = ? ORDER BY id', [$o['id']]);
+    $o['company'] = Db::fromJson($o['company'] ?? null, null);
     $shop = null;
     foreach (Settings::get('delivery')['shops'] as $s) if ($s['code'] === $o['shop']) $shop = $s;
     return admin_page('order', ['title' => "Заказ № {$o['number']}", 'o' => $o, 'shop' => $shop]);
