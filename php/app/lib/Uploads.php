@@ -67,12 +67,11 @@ final class Uploads
     public static function shrinkJpeg(string $jpeg): string
     {
         if (!function_exists('imagecreatefromstring') || !self::needsShrink($jpeg)) return $jpeg;
-        // Фото 3024×4032 занимает в памяти ~60 МБ, а на хостинге лимит бывает 64–128 МБ
+        // Фото 3024×4032 занимает в памяти ~60 МБ, а на хостинге лимит бывает 64–128 МБ — на всякий случай поднимаем
         $size = @getimagesizefromstring($jpeg);
         if (!$size) return $jpeg;
         $need = (int) ($size[0] * $size[1] * 5 * 2.2) + memory_get_usage() + 16 * 1024 * 1024;
         if (self::bytes(ini_get('memory_limit')) < $need) @ini_set('memory_limit', (string) max($need, 256 * 1024 * 1024));
-        if (self::bytes(ini_get('memory_limit')) < $need) return $jpeg;
         $img = @imagecreatefromstring($jpeg);
         if (!$img) return $jpeg;
         $angle = [3 => 180, 6 => -90, 8 => 90][self::orientation($jpeg)] ?? 0;
