@@ -18,6 +18,7 @@ $ogImageUrl = Seo::absUrl($ogImage ?? '/assets/img/og.jpg');
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
 <meta name="theme-color" content="#7E1F3C">
 <title><?= e($title) ?></title>
 <meta name="description" content="<?= e($description) ?>">

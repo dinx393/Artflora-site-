@@ -15,6 +15,7 @@ $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
 <meta name="robots" content="noindex">
 <meta name="csrf" content="<?= e(Auth::csrfToken()) ?>">
 <title><?= e(($title ?? '') !== '' ? "$title — Управление сайтом" : 'Управление сайтом') ?></title>

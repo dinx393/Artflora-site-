@@ -20,8 +20,11 @@
 }
 
 * { box-sizing: border-box; }
+/* Сайт всегда светлый. Без этого iPhone в тёмной теме рисует внизу тёмную «стеклянную»
+   панель Safari и затемняет букеты под ней (на телефоне со светлой темой всё нормально). */
+:root { color-scheme: light only; }
 /* Ссылки-якоря («По поводу») не прячут начало блока под липкой шапкой. */
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: 130px; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 130px; background: var(--white); }
 body {
   margin: 0;
   background: var(--white);
