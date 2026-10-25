@@ -35,6 +35,15 @@ final class ShopView
         return 'букетов';
     }
 
+    // Подписи на фото букета: «Хит недели», «Эксклюзив недели» (галочки в карточке букета)
+    public static function badges(array $b, string $style = ''): string
+    {
+        $list = array_filter([$b['isHit'] ? 'Хит недели' : null, $b['isExclusive'] ? 'Эксклюзив недели' : null]);
+        if (!$list) return '';
+        return '<span class="badges"' . ($style ? ' style="' . e($style) . '"' : '') . '>'
+            . implode('', array_map(fn ($t) => '<span class="badge">' . e($t) . '</span>', $list)) . '</span>';
+    }
+
     // Активные допы (ваза, шары…) по порядку. $withCard = false — без открытки (она и так бесплатно).
     public static function addons(bool $withCard = true): array
     {

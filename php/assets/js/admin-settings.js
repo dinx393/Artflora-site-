@@ -74,7 +74,7 @@
     h += U.msgHtml(state.mailMsg, "align-self: flex-start");
     h += field("Строка над каталогом (акция)", "promoLine", "До Дня матери 14 октября · предзаказ −10%");
     h += '<label class="field"><span>«Букет дня» на главной (фото лучше вертикальное, букет по центру)</span><select class="input"' +
-      on("change", function (e) { shop.dayBouquet = e.target.value; ui.render(); }) + '><option value="">Сам выберет: первый хит</option>';
+      on("change", function (e) { shop.dayBouquet = e.target.value; ui.render(); }) + '><option value="">Сам выберет: первый букет каталога</option>';
     data.bouquets.forEach(function (b) { h += '<option value="' + esc(b.slug) + '"' + U.attr("selected", shop.dayBouquet === b.slug) + ">" + esc(b.name) + "</option>"; });
     h += "</select></label>";
     h += '<label class="field"><span>Реквизиты продавца в подвале (обязательно по закону РБ)</span><textarea class="input" rows="2" data-k="seller"' +

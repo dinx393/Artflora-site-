@@ -227,6 +227,7 @@
     h += '<div class="row" style="gap: 12px"><label class="field" style="flex: 1 1 200px"><span>Формат</span><select class="input"' + on("change", function (e) { set({ format: e.target.value }); }) + ">";
     Object.keys(FORMATS).forEach(function (k) { h += '<option value="' + k + '"' + on_("selected", b.format === k) + ">" + esc(FORMATS[k].label) + "</option>"; });
     h += "</select></label>";
+    h += '<label class="check" style="margin-top: 22px" title="Большой блок «Букет дня · собран сегодня» на главной, один на сайт"><input type="checkbox"' + on_("checked", b.isDayBouquet) + on("change", function (e) { set({ isDayBouquet: e.target.checked }); }) + "> Букет дня (на главной)</label>";
     h += '<label class="check" style="margin-top: 22px"><input type="checkbox"' + on_("checked", b.isHit) + on("change", function (e) { set({ isHit: e.target.checked }); }) + "> Хит недели</label>";
     h += '<label class="check" style="margin-top: 22px"><input type="checkbox"' + on_("checked", b.isExclusive) + on("change", function (e) { set({ isExclusive: e.target.checked }); }) + "> Эксклюзив недели</label></div>";
 

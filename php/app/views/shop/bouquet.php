@@ -34,7 +34,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
     <div class="gallery" data-gallery>
       <div class="gallery-main">
         <img src="<?= e($photos[0]) ?>" alt="<?= e($b['name']) ?>" data-gallery-main>
-        <?php if ($b['isHit']): ?><span class="badge" style="left: 16px; top: 16px">Хит недели</span><?php endif ?>
+        <?= ShopView::badges($b, 'left: 16px; top: 16px') ?>
         <span class="badge" style="left: 16px; top: auto; bottom: 16px; font-weight: 400" data-gallery-label><?= e($views[0]) ?></span>
       </div>
       <?php if (count($photos) > 1): ?>

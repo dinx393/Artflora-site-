@@ -10,9 +10,9 @@ Http::get('/', function () {
     $hitsOnly = array_values(array_filter($all, fn ($b) => $b['isHit']));
     $hitsAll = count($hitsOnly) >= 4 ? $hitsOnly : $all;
     $hits = $range ? array_filter($hitsAll, fn ($b) => $b['priceKop'] >= $range['min'] && $b['priceKop'] < $range['max']) : $hitsAll;
-    // «Букет дня» выбирают в админке → «Настройки»; если не выбран или скрыт — первый хит.
+    // «Букет дня» — галочка в карточке букета (или «Настройки»); если не выбран или скрыт — первый букет каталога.
     $find = fn (callable $fn) => array_values(array_filter($all, $fn))[0] ?? null;
-    $ofDay = $find(fn ($b) => $b['slug'] === $shop['dayBouquet']) ?? $find(fn ($b) => $b['isHit']) ?? ($all[0] ?? null);
+    $ofDay = $find(fn ($b) => $b['slug'] === $shop['dayBouquet']) ?? ($all[0] ?? null);
     // Плитка «Весь каталог» — три разных букета рядом: вертикальные фото так обрезаются меньше, чем одно на всю ширину.
     $tile = [];
     foreach ($all as $b) {

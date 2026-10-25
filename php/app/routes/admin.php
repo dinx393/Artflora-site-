@@ -204,6 +204,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
     $initial = [
         'id' => (int) $b['id'], 'name' => $b['name'], 'slug' => $b['slug'], 'description' => $b['description'], 'format' => $b['format'],
         'enabled' => (bool) $b['enabled'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'], 'photoSize' => $b['photoSize'],
+        'isDayBouquet' => Settings::get('shop')['dayBouquet'] === $b['slug'],
         'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']), 'photos' => Db::fromJson($b['photos']),
         'sections' => Db::fromJson($b['sections']),
         'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
@@ -282,6 +283,7 @@ Http::post('/admin/bouquets/save', function () {
     // упаковка размера «на фото» — её же подставляем новым размерам
     $photo = $sizes[0];
     foreach ($sizes as $s) if ($s['code'] === $photoSize) $photo = $s;
+    $oldSlug = Db::value('SELECT slug FROM bouquets WHERE id = ?', [$id]);
     try {
         Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes, $sections) {
             Db::update('bouquets', $id, [
@@ -297,6 +299,11 @@ Http::post('/admin/bouquets/save', function () {
                 foreach ($s['items'] as $flowerId => $qty) Db::insert('bouquet_items', ['sizeId' => $sizeId, 'flowerId' => $flowerId, 'qty' => $qty]);
             }
         });
+        // «Букет дня» на главной — один на весь сайт (галочка в карточке букета, решение владельца 2026-10-25)
+        $shop = Settings::get('shop');
+        $wasDay = $shop['dayBouquet'] !== '' && ($shop['dayBouquet'] === $slug || $shop['dayBouquet'] === $oldSlug);
+        $isDay = ($in['isDayBouquet'] ?? $wasDay) === true;
+        if ($isDay !== $wasDay || ($isDay && $shop['dayBouquet'] !== $slug)) Settings::save('shop', ['dayBouquet' => $isDay ? $slug : ''] + $shop);
     } catch (Throwable $e) {
         app_log('saveBouquet: ' . $e->getMessage());
         admin_fail('Не удалось сохранить букет, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз.');

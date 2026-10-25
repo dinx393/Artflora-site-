@@ -306,6 +306,8 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .pcard-add { padding: 0 16px; font-size: 14px; }
 .pcard-add.done { background: var(--blush); }
 .more { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 40px; }
+.badges { position: absolute; left: 14px; top: 14px; right: 14px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.badges .badge { position: static; }
 .badge { position: absolute; left: 14px; top: 14px; background: rgba(255,255,255,.9); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; }
 
 /* Каталог */
