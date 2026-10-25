@@ -8,7 +8,7 @@ $zmap = [
     'delivery' => [
         'shops' => array_map(fn ($s) => ['name' => $s['name'], 'location' => $s['location']], $delivery['shops']),
         'zones' => $delivery['zones'], 'mkadCenter' => $delivery['mkadCenter'], 'mkadRadiusKm' => $delivery['mkadRadiusKm'],
-        'outsideMkadKop' => $delivery['outsideMkadKop'], 'maxOutsideMkadKm' => $delivery['maxOutsideMkadKm'],
+        'outsideMkadKop' => $delivery['outsideMkadKop'],
         'freeFromKop' => $delivery['freeFromKop'], 'outsideColor' => $delivery['outsideColor'] ?? null,
         'areas' => array_values(array_map(fn ($a) => ['name' => $a['name'], 'color' => $a['color'], 'priceKop' => $a['priceKop'], 'noDelivery' => !empty($a['noDelivery']), 'points' => $a['points']], $delivery['areas'] ?? [])),
     ],

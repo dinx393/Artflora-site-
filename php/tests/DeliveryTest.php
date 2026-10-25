@@ -6,9 +6,11 @@ $at = function (string $name): array {
 };
 $cfg = Defaults::DELIVERY;
 
-test('возим до 30 км за МКАД, дальше — нет', function () use ($cfg) {
-    eq(Delivery::quote(['lat' => 54.2279, 'lng' => 28.505], 13000, $cfg)['ok'], false); // Борисов
-    eq(Delivery::quote(['lat' => 54.0285, 'lng' => 28.0886], 13000, $cfg)['ok'], true); // Смолевичи
+test('предела «до N км за МКАД» нет: дальность задают участки на карте', function () use ($cfg) {
+    eq(Delivery::quote(['lat' => 54.2279, 'lng' => 28.505], 13000, $cfg)['priceKop'], $cfg['outsideMkadKop']); // Борисов
+    $no = ['areas' => [['name' => 'Борисов', 'color' => '#999999', 'priceKop' => 0, 'noDelivery' => true,
+        'points' => [['lat' => 54.1, 'lng' => 28.4], ['lat' => 54.3, 'lng' => 28.4], ['lat' => 54.3, 'lng' => 28.6], ['lat' => 54.1, 'lng' => 28.6]]]]] + $cfg;
+    eq(Delivery::quote(['lat' => 54.2279, 'lng' => 28.505], 13000, $no)['ok'], false, 'участок «не возим»');
 });
 test('рядом с магазином — первая зона, 6 BYN', function () use ($at, $cfg) {
     $q = Delivery::quote($at('Уручье'), 13000, $cfg);
@@ -31,7 +33,7 @@ test('за МКАД — одна цена, без доплаты за км', fun
 });
 test('бесплатно от 200 BYN внутри МКАД', fn () => eq(Delivery::quote($at('Центр'), 20000, $cfg)['priceKop'], 0));
 test('за МКАД бесплатной доставки нет', fn () => eq(Delivery::quote($at('Заславль'), 25000, $cfg)['priceKop'], $cfg['outsideMkadKop']));
-test('слишком далеко — отказ', fn () => eq(Delivery::quote(['lat' => 53.13, 'lng' => 26.01], 13000, $cfg)['ok'], false));
+test('далеко за МКАД — та же цена «за МКАД»', fn () => eq(Delivery::quote(['lat' => 53.13, 'lng' => 26.01], 13000, $cfg)['priceKop'], $cfg['outsideMkadKop']));
 test('самовывоз −10% на букеты', fn () => eq(Delivery::pickupDiscountKop(13000, $cfg), 1300));
 test('свой участок важнее кругов: своя цена или «не возим»', function () use ($at, $cfg) {
     $box = fn ($lat, $lng, $d = 0.05) => [['lat' => $lat - $d, 'lng' => $lng - $d], ['lat' => $lat - $d, 'lng' => $lng + $d], ['lat' => $lat + $d, 'lng' => $lng + $d], ['lat' => $lat + $d, 'lng' => $lng - $d]];
@@ -61,7 +63,11 @@ test('у каждого района своя цена, по алфавиту', 
     eq($names, $sorted);
     eq($names[0], 'Боровляны');
 });
-test('слишком далёкие районы не показываем', fn () => eq(Delivery::districtOptions([['name' => 'Борисов', 'lat' => 54.2279, 'lng' => 28.505]], $cfg), []));
+test('районы на участке «не возим» не показываем', function () use ($cfg) {
+    $cfg['areas'] = [['name' => 'Не возим', 'color' => '#999999', 'priceKop' => 0, 'noDelivery' => true,
+        'points' => [['lat' => 54.1, 'lng' => 28.4], ['lat' => 54.3, 'lng' => 28.4], ['lat' => 54.3, 'lng' => 28.6], ['lat' => 54.1, 'lng' => 28.6]]]];
+    eq(Delivery::districtOptions([['name' => 'Борисов', 'lat' => 54.2279, 'lng' => 28.505]], $cfg), []);
+});
 test('свой участок — пунктом в списке «куда везти» (Логойск)', function () use ($cfg) {
     $far = ['lat' => 54.206, 'lng' => 27.853]; // Логойск
     $cfg['areas'] = [

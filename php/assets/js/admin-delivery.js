@@ -150,8 +150,7 @@
     }) + ">+ Добавить зону</button>";
     h += '<div class="zone-edit"><input type="color" class="color-pick sm" value="' + esc(cfg.outsideColor || OUTSIDE_COLOR) + '" aria-label="Цвет «за МКАД»"' +
       on("input", function (e) { changeCfg(withCfg({ outsideColor: e.target.value })); }) + '><b>За МКАД</b><span class="small muted">цена</span>' +
-      '<span class="row" style="gap: 4px">' + money(on, "outside-price", cfg.outsideMkadKop, function (k) { changeCfg(withCfg({ outsideMkadKop: k })); }) + " BYN</span>" +
-      '<span class="row small" style="gap: 4px; grid-column: 3 / -1">не дальше ' + num(on, "max-outside", cfg.maxOutsideMkadKm, 1, 60, function (n) { changeCfg(withCfg({ maxOutsideMkadKm: n })); }) + " км</span></div>";
+      '<span class="row" style="gap: 4px">' + money(on, "outside-price", cfg.outsideMkadKop, function (k) { changeCfg(withCfg({ outsideMkadKop: k })); }) + " BYN</span></div>";
     h += '<span class="small muted">За МКАД — одна цена, бесплатная доставка от суммы там не действует.</span>';
     h += '<div class="stack" style="gap: 8px; margin-top: 6px">';
     h += '<label class="sum-row" style="justify-content: flex-start; gap: 12px"><span>Бесплатно от, BYN</span>' + money(on, "free-from", cfg.freeFromKop, function (k) { changeCfg(withCfg({ freeFromKop: k })); }) + "</label>";
@@ -321,17 +320,8 @@
     var cfg = state.cfg;
     var g = marks;
     g.clearLayers();
-    // МКАД и предел «дальше не возим» — пунктиром
+    // МКАД — пунктиром
     L.circle([cfg.mkadCenter.lat, cfg.mkadCenter.lng], { radius: cfg.mkadRadiusKm * 1000, color: "#7E1F3C", weight: 1.5, dashArray: "6 6", fill: false, interactive: false }).addTo(g);
-    L.circle([cfg.mkadCenter.lat, cfg.mkadCenter.lng], {
-      radius: (cfg.mkadRadiusKm + cfg.maxOutsideMkadKm) * 1000,
-      color: "#7E1F3C",
-      weight: 1,
-      opacity: 0.5,
-      dashArray: "2 6",
-      fill: false,
-      interactive: false,
-    }).addTo(g);
 
     // Свои участки: контур, подпись; у выбранного — точки, которые можно тянуть
     cfg.areas.forEach(function (a, i) {

@@ -2,7 +2,7 @@
 // Корзина и оформление (повторяет src/components/Checkout.tsx). Разметка здесь, оживляет её assets/js/checkout.js:
 // строки корзины и суммы приходят с сервера (/api/cart), заказ уходит на /api/orders.
 // На телефоне два шага: «Корзина и доставка» → «Получатель и оплата» (нижняя панель «Далее»).
-// Переменные: $shops, $pickupPct, $freeFromKop, $maxOutsideKm, $districts, $leadHours, $delivery
+// Переменные: $shops, $pickupPct, $freeFromKop, $districts, $leadHours, $delivery
 $payments = [
     ['code' => 'ERIP', 'title' => 'ЕРИП', 'note' => 'Покажем, как оплатить, сразу после оформления'],
     ['code' => 'CARD', 'title' => 'WebPay', 'note' => 'Картой онлайн: администратор пришлёт ссылку для оплаты'],
@@ -83,7 +83,7 @@ $config = [
             <div class="label">Куда везём?</div>
             <span class="small muted">
               Найдите своё место на карте и нажмите на него, или нажмите кнопку зоны нужного цвета.
-              Минск и до <?= e($maxOutsideKm) ?> км за МКАД. Не нашли? Отметьте «Не знаю адрес» выше или напишите нам.
+              Не нашли? Отметьте «Не знаю адрес» выше или напишите нам.
             </span>
             <?= View::render('partials/zones-map', ['delivery' => $delivery, 'districts' => $districts, 'open' => true, 'pick' => true]) ?>
           </div>

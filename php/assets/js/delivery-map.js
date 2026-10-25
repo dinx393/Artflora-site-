@@ -125,9 +125,9 @@
         maxZoom: 18,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
-      // Показываем всё, куда возим: круг «до N км за МКАД» и свои участки
+      // Показываем Минск с запасом за МКАД и свои участки
       var c = cfg.mkadCenter;
-      var dLat = (cfg.mkadRadiusKm + cfg.maxOutsideMkadKm) / 111;
+      var dLat = (cfg.mkadRadiusKm + 5) / 111;
       var dLng = dLat / Math.cos((c.lat * Math.PI) / 180);
       var bounds = L.latLngBounds([c.lat - dLat, c.lng - dLng], [c.lat + dLat, c.lng + dLng]);
       cfg.areas.forEach(function (a) {

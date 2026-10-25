@@ -46,10 +46,6 @@ $last = count($d['zones']) - 1;
           <b class="price" style="font-size: 22px"><?= ShopView::byn((int) $a['priceKop']) ?></b>
         </div>
       <?php endforeach ?>
-      <div class="sum-row zone-row">
-        <span>Как далеко возим</span>
-        <b>до <?= e($d['maxOutsideMkadKm']) ?> км за МКАД</b>
-      </div>
     </div>
     <p class="small muted">Выберите район в корзине, и цена появится сразу. Нет вашего района в списке? Напишите нам, договоримся.</p>
   </div>

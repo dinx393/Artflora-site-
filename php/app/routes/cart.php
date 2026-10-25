@@ -11,7 +11,6 @@ Http::get('/cart', function () {
         'shops' => array_map(fn ($s) => ['code' => $s['code'], 'name' => $s['name'], 'address' => $s['address']], $delivery['shops']),
         'pickupPct' => $delivery['pickupDiscountPct'],
         'freeFromKop' => $delivery['freeFromKop'],
-        'maxOutsideKm' => $delivery['maxOutsideMkadKm'],
         'districts' => Delivery::districtOptions(Settings::get('districts'), $delivery),
         'leadHours' => $shop['leadHours'],
         'delivery' => $delivery,

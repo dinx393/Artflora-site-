@@ -45,7 +45,6 @@
       return { ok: true, km: Math.round(km * 10) / 10, zone: 0, outsideMkadKm: 0, priceKop: area.priceKop, area: tag };
     }
     var outside = Math.max(0, Math.ceil(distanceKm(point, cfg.mkadCenter) - cfg.mkadRadiusKm));
-    if (outside > cfg.maxOutsideMkadKm) return { ok: false, km: outside };
     var last = cfg.zones.length - 1;
     var zi = cfg.zones.findIndex(function (z) { return km <= z.maxKm; });
     if (zi === -1 || outside > 0) zi = last;

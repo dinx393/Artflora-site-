@@ -40,7 +40,6 @@ final class Defaults
         'outsideMkadKop' => 2500, // за МКАД — одна цена (решение владельца 2026-10-23: без «+1 BYN за км»)
         'freeFromKop' => 20000,
         'pickupDiscountPct' => 10,
-        'maxOutsideMkadKm' => 30, // дальше этого за МКАД не возим (владелец: до 30 км от Минска)
         'areas' => [], // свои участки: ['name','color','priceKop','noDelivery','points' => [точки]]; верхний в списке важнее
     ];
 

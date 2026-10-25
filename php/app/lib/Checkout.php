@@ -247,7 +247,7 @@ final class Checkout
         }
         if (!$t['priced']['lines']) return ['ok' => false, 'error' => 'Корзина пуста'];
         if ($o['method'] === 'DELIVERY' && !$unknown && !($t['quote']['ok'] ?? false)) {
-            return ['ok' => false, 'error' => "Мы возим по Минску и до {$cfg['maxOutsideMkadKm']} км за МКАД. Этот район дальше: позвоните нам, что-нибудь придумаем", 'field' => 'address'];
+            return ['ok' => false, 'error' => 'Сюда мы не возим. Позвоните нам, что-нибудь придумаем', 'field' => 'address'];
         }
 
         if ($o['method'] === 'PICKUP') {

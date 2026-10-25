@@ -10,7 +10,8 @@
 //  - свои участки (нарисованы в админке на карте) важнее кругов: там своя цена или «не возим».
 //
 // Настройки — массив как Defaults::DELIVERY: shops, zones, mkadCenter, mkadRadiusKm, outsideMkadKop,
-// freeFromKop, pickupDiscountPct, maxOutsideMkadKm, outsideColor?, areas?. Точка — ['lat' => .., 'lng' => ..].
+// freeFromKop, pickupDiscountPct, outsideColor?, areas?.
+// Предела «до N км за МКАД» нет (владелец, 2026-10-25): куда не возим, задают участки «не возим» на карте. Точка — ['lat' => .., 'lng' => ..].
 final class Delivery
 {
     // Точка внутри многоугольника (луч вправо, считаем пересечения). Для участков в пару десятков км плоской карты хватает.
@@ -59,7 +60,7 @@ final class Delivery
 
     // Удачно: ['ok' => true, 'shop', 'km' (до магазина), 'zone' (1..N, за МКАД — последняя; 0 — свой участок),
     //          'outsideMkadKm', 'baseKop' (без бесплатной), 'priceKop' (к оплате), 'free', 'leftToFreeKop', 'area'? => ['name','color']]
-    // Не возим: ['ok' => false, 'reason' => 'too-far', 'km' (сколько за МКАД), 'area'?]
+    // Не возим (участок «не возим»): ['ok' => false, 'reason' => 'too-far', 'km' => 0, 'area']
     public static function quote(array $point, int $subtotalKop, array $cfg): array
     {
         ['shop' => $shop, 'km' => $km] = self::nearestShop($point, $cfg['shops']);
@@ -76,7 +77,6 @@ final class Delivery
         }
         $fromCenter = self::distanceKm($point, $cfg['mkadCenter']);
         $outside = (int) max(0, ceil($fromCenter - $cfg['mkadRadiusKm']));
-        if ($outside > $cfg['maxOutsideMkadKm']) return ['ok' => false, 'reason' => 'too-far', 'km' => $outside];
         $last = count($cfg['zones']) - 1;
 
         $zoneIdx = -1;
