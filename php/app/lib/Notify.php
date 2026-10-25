@@ -73,6 +73,7 @@ final class Notify
         $lines = [
             "🌸 Новый заказ №{$o['number']} — " . Money::format($o['totalKop']),
             ...array_map(fn ($i) => "• {$i['name']}" . ($i['size'] ? ", {$i['size']}" : '') . " × {$i['qty']}", $o['items']),
+            '🎁 В подарок: ' . mb_strtolower(OrderEmail::GIFT),
             $o['deliveryMethod'] === 'PICKUP'
                 ? "Самовывоз: {$o['shop']}"
                 : ($o['addressUnknown']

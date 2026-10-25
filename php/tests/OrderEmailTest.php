@@ -18,6 +18,8 @@ test('тема и главное в тексте', function () use ($base) {
     contains($m['text'], 'не говорить, от кого букет');
     contains($m['html'], 'https://artflora.by/a.jpg');
     contains($m['html'], 'бесплатно');
+    contains($m['text'], 'В подарок положить: Открытка и 2 пакетика подкормки (кризал)');
+    contains($m['html'], 'В подарок: открытка и 2 пакетика подкормки (кризал)');
 });
 test('данные клиента экранируются', function () use ($base) {
     $m = OrderEmail::render($base);

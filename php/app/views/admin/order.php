@@ -18,6 +18,7 @@ $created = date('d.m.Y, H:i:s', strtotime($o['createdAt']));
           <?php if ($i['composition']): ?><span class="small muted"><?= e($i['composition']) ?></span><?php endif ?>
         </div>
       <?php endforeach ?>
+      <div class="sum-row"><b>🎁 В подарок: <?= e(mb_strtolower(OrderEmail::GIFT)) ?></b></div>
       <div class="sum-row"><span>Открытка</span><span class="small"><?= $o['cardText'] ? e("«{$o['cardText']}»") : 'без текста' ?></span></div>
     </div>
     <div class="card stack" style="gap: 6px">

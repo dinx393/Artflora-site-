@@ -18,6 +18,9 @@ final class OrderEmail
         'cherry' => '#7E1F3C', 'ink' => '#3a2a30', 'muted' => '#7a6a72', 'lavender' => '#D6CBE3',
         'lavenderInk' => '#6B4E8C', 'blush' => '#F6F3FA', 'line' => '#E7E0EF', 'green' => '#5E6B32',
     ];
+    // Что кладём к каждому заказу бесплатно (обещано в корзине) — чтобы флорист не забыл (решение владельца 2026-10-25)
+    public const GIFT = 'Открытка и 2 пакетика подкормки (кризал)';
+
     private const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
     private const WEEKDAYS = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
 
@@ -63,6 +66,7 @@ final class OrderEmail
         $r[] = ['Когда', self::day($o['deliveryDate']) . ', ' . ($o['deliverySlot'] ?: 'время уточнить')];
         $notes = array_filter([$o['callRecipient'] ? 'позвонить получателю перед доставкой' : '', $o['anonymous'] ? 'не говорить, от кого букет' : '']);
         if ($notes) $r[] = ['Важно', implode('; ', $notes)];
+        $r[] = ['В подарок положить', self::GIFT];
         $r[] = ['Открытка', $o['cardText'] !== '' ? "«{$o['cardText']}»" : 'без текста'];
         if ($o['comment'] !== '') $r[] = ['Комментарий', $o['comment']];
         $r[] = ['Дата заказа', self::dateTime($o['createdAt'])];
@@ -95,6 +99,11 @@ final class OrderEmail
         <td style=\"$td;text-align:right;white-space:nowrap;color:{$C['ink']}\">{$i['qty']} шт × " . Money::format($i['priceKop']) . '</td>
       </tr>';
         }
+
+        // подарок — отдельной строкой в списке «что собрать», заметно
+        $items .= "<tr><td style=\"$td;width:64px;padding-right:0;font-size:30px;text-align:center\">🎁</td>
+        <td colspan=\"2\" style=\"$td;background:{$C['blush']}\"><div style=\"font-weight:700;color:{$C['cherry']}\">В подарок: " . mb_strtolower(self::GIFT) . "</div>
+        <div style=\"color:{$C['muted']};font-size:14px\">Не забыть положить к заказу</div></td></tr>";
 
         $sum = function (string $k, string $v, bool $strong = false) use ($C): string {
             $extra = $strong ? 'font-weight:700;font-size:17px' : '';
