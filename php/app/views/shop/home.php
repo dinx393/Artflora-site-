@@ -108,7 +108,7 @@ $cards = [
       <h2>Не нашли свой? Соберём <span class="script">вместе.</span></h2>
       <p>Напишите повод, любимые цвета и бюджет. Флорист предложит состав и пришлёт фото до отправки.</p>
     </div>
-    <a href="<?= e($shop['viber']) ?>" class="btn btn-pink btn-lg">Написать флористу</a>
+    <a href="<?= e($shop[\'telegram\']) ?>" class="btn btn-pink btn-lg" target="_blank" rel="noopener">Написать флористу</a>
   </div>
 </section>
 
