@@ -5,7 +5,7 @@
 // Переменные: $shops, $pickupPct, $freeFromKop, $districts, $leadHours, $delivery
 $payments = [
     ['code' => 'ERIP', 'title' => 'ЕРИП', 'note' => 'Покажем, как оплатить, сразу после оформления'],
-    ['code' => 'CARD', 'title' => 'WebPay', 'note' => 'Картой онлайн: администратор пришлёт ссылку для оплаты'],
+    ['code' => 'CARD', 'title' => 'Картой Visa, MasterCard, МИР', 'note' => 'Онлайн через WebPay: администратор пришлёт ссылку для оплаты'],
     ['code' => 'INVOICE', 'title' => 'Безнал для организаций', 'note' => 'Выставим счёт на реквизиты компании'],
     ['code' => 'SHOP', 'title' => 'В магазине', 'note' => 'При получении, картой или наличными', 'show' => 'pickup'],
 ];

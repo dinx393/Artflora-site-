@@ -764,3 +764,4 @@ tr.dragging { opacity: .45; }
 /* Логотипы платёжных систем в подвале (со старого сайта, обычно их требует банк) — на белой полосе, подвал тёмный */
 .footer-pay { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; margin: 28px 0 20px; padding: 12px 18px; background: #fff; border-radius: 14px; width: fit-content; max-width: 100%; }
 .footer-pay img { height: 28px; width: auto; max-width: 100%; }
+.pay-mir { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 6px; background: linear-gradient(90deg, #0F754E, #00A0E3); color: #fff; font: 800 italic 17px/1 Arial, sans-serif; letter-spacing: .5px; }

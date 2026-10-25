@@ -143,7 +143,7 @@ Http::get('/privacy', fn () => View::page('shop/privacy', [
 
 Http::get('/delivery', fn () => View::page('shop/delivery', [
     'title' => 'Доставка цветов по Минску и оплата',
-    'description' => 'Сколько стоит доставка цветов по Минску и за МКАД, бесплатная доставка, самовывоз −10%, оплата через ЕРИП, картой через WebPay или безналичным расчётом для организаций.',
+    'description' => 'Сколько стоит доставка цветов по Минску и за МКАД, бесплатная доставка, самовывоз −10%, оплата через ЕРИП, картой Visa, MasterCard, МИР через WebPay или безналичным расчётом для организаций.',
     'shop' => Settings::get('shop'),
     'd' => Settings::get('delivery'),
     'scripts' => ShopView::zonesMapScripts(),

@@ -45,7 +45,7 @@ const ADMIN_STATUS_LABEL = [
     'DONE' => 'Выполнен',
     'CANCELLED' => 'Отменён',
 ];
-const ADMIN_PAY_LABEL = ['CARD' => 'WebPay (картой по ссылке)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber', 'INVOICE' => 'Безнал (счёт организации)', 'SHOP' => 'В магазине при получении (карта/наличные)'];
+const ADMIN_PAY_LABEL = ['CARD' => 'Картой Visa, MasterCard, МИР (WebPay, по ссылке)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber', 'INVOICE' => 'Безнал (счёт организации)', 'SHOP' => 'В магазине при получении (карта/наличные)'];
 
 function admin_page(string $template, array $data): string
 {

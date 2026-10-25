@@ -27,7 +27,7 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
       </div>
       <div class="stack" style="gap: 6px">
         <b>Оплата</b>
-        <span class="soft">Через ЕРИП, картой через WebPay, безнал для организаций</span>
+        <span class="soft">Через ЕРИП, картой Visa, MasterCard, МИР через WebPay, безнал для организаций</span>
         <a href="/delivery" class="soft">Доставка и оплата →</a>
         <a href="/delivery#vozvrat" class="soft">Обмен и возврат →</a>
         <a href="/blog" class="soft">Статьи о цветах →</a>
@@ -36,6 +36,7 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
     </div>
     <div class="footer-pay" aria-label="Принимаем к оплате">
       <img src="<?= View::asset('img/pay-1.png') ?>" alt="Visa, Visa Secure, Mastercard, Mastercard SecureCode" width="554" height="52" loading="lazy">
+      <span class="pay-mir" aria-label="МИР">МИР</span>
       <img src="<?= View::asset('img/pay-2.png') ?>" alt="Белкарт, Белкарт ИнтернетПароль, bePaid, webpay, МТБанк" width="852" height="60" loading="lazy">
     </div>
     <div class="footer-legal">
