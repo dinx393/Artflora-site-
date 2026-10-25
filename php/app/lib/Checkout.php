@@ -6,7 +6,7 @@ final class Checkout
 {
     // ЕРИП, WebPay (код CARD: картой по ссылке от администратора), безнал (решение владельца 2026-10-25).
     // VIBER_LINK больше не предлагаем, он остался только в старых заказах.
-    public const PAYMENTS = ['ERIP', 'CARD', 'INVOICE'];
+    public const PAYMENTS = ['ERIP', 'CARD', 'INVOICE', 'SHOP']; // SHOP — в магазине при получении, только самовывоз
 
     // Корзина из браузера → ['lines' => [['bouquetId','size','qty']], 'addons' => [['addonId','qty']], 'cardText'].
     // Что-то не так (не те типы, слишком много строк) — null.
@@ -171,6 +171,12 @@ final class Checkout
         if (!preg_match('/^\+?\d{9,13}$/', $o['customerPhone'])) return $bad('Проверьте номер телефона', 'customerPhone');
         if (!in_array($raw['payment'] ?? null, self::PAYMENTS, true)) return $bad('Выберите способ оплаты', 'payment');
         $o['payment'] = $raw['payment'];
+        if ($o['payment'] === 'SHOP' && $method !== 'PICKUP') return $bad('Оплата в магазине — только при самовывозе', 'payment');
+        // Самовывоз забирает сам покупатель: получателю не звоним, «от кого» не скрываем (решение владельца 2026-10-25)
+        if ($method === 'PICKUP') {
+            $o['callRecipient'] = $o['anonymous'] = false;
+            $o['recipientName'] = $o['recipientPhone'] = '';
+        }
         $o['company'] = null;
         if ($o['payment'] === 'INVOICE') {
             $c = self::parseCompany($raw['company'] ?? null);

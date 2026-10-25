@@ -82,3 +82,11 @@ test('куда везти из браузера: только понятные �
     eq(Checkout::parsePlace(['type' => 'other']), null);
     eq(Checkout::parsePlace(null, ''), null);
 });
+
+test('самовывоз: оплата в магазине, получателю не звоним', function () use ($order) {
+    $pickup = ['method' => 'PICKUP', 'address' => '', 'shop' => 'Уручье', 'callRecipient' => true, 'anonymous' => true, 'recipientName' => 'Галина'] + $order;
+    $v = Checkout::validate(['payment' => 'SHOP'] + $pickup);
+    eq($v['ok'], true);
+    eq([$v['order']['callRecipient'], $v['order']['anonymous'], $v['order']['recipientName']], [false, false, '']);
+    eq(Checkout::validate(['payment' => 'SHOP'] + $order)['field'], 'payment', 'в магазине — не для доставки');
+});

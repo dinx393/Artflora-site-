@@ -7,6 +7,7 @@ $payments = [
     ['code' => 'ERIP', 'title' => 'ЕРИП', 'note' => 'Покажем, как оплатить, сразу после оформления'],
     ['code' => 'CARD', 'title' => 'WebPay', 'note' => 'Картой онлайн: администратор пришлёт ссылку для оплаты'],
     ['code' => 'INVOICE', 'title' => 'Безнал для организаций', 'note' => 'Выставим счёт на реквизиты компании'],
+    ['code' => 'SHOP', 'title' => 'В магазине', 'note' => 'При получении, картой или наличными', 'show' => 'pickup'],
 ];
 $byn = fn (int $kop) => e(preg_replace('/ BYN$/', '', Money::format($kop))) . '<small class="cur">BYN</small>';
 $config = [
@@ -188,7 +189,7 @@ $config = [
         <div class="label">Оплата</div>
         <div class="row" style="gap: 8px; align-items: stretch">
           <?php foreach ($payments as $i => $p): ?>
-            <button type="button" class="opt<?= $i === 0 ? ' on' : '' ?>" style="flex: 1 1 180px" data-co-payment="<?= e($p['code']) ?>">
+            <button type="button" class="opt<?= $i === 0 ? ' on' : '' ?>" style="flex: 1 1 180px" data-co-payment="<?= e($p['code']) ?>"<?= isset($p['show']) ? ' data-co-show="' . e($p['show']) . '" hidden' : '' ?>>
               <b style="font-size: 16px"><?= e($p['title']) ?></b>
               <span class="note"><?= e($p['note']) ?></span>
             </button>

@@ -308,6 +308,7 @@
     inputs.recipientPhone.placeholder = unknown ? "+375 …" : "";
     inputs.recipientPhone.setAttribute("aria-invalid", String(!!(st.error && st.error.field === "recipientPhone") || (unknown && !recipientOk && inputs.recipientPhone.value.length > 0)));
     inputs.customerPhone.setAttribute("aria-invalid", String(!!(st.error && st.error.field === "customerPhone")));
+    if (st.payment === "SHOP" && st.method !== "PICKUP") st.payment = "ERIP"; // в магазине — только при самовывозе
     setOn("[data-co-payment]", "data-co-payment", st.payment);
     var invoice = st.payment === "INVOICE";
     $("[data-co-company]").hidden = !invoice;
@@ -392,8 +393,8 @@
         customerPhone: inputs.customerPhone.value,
         recipientName: inputs.recipientName.value,
         recipientPhone: inputs.recipientPhone.value,
-        callRecipient: inputs.call.checked,
-        anonymous: inputs.anonymous.checked,
+        callRecipient: st.method === "DELIVERY" && inputs.call.checked,
+        anonymous: st.method === "DELIVERY" && inputs.anonymous.checked,
         comment: inputs.comment.value,
         payment: st.payment,
         company: st.payment === "INVOICE" ? { text: companyText.value } : null,
