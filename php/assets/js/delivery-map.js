@@ -15,6 +15,7 @@
     var map = null;
     var pin = null;
     var selected = null; // ключ выбранной кнопки: "zone:1", "outside", "area:Имя"
+    var subtotalKop = 0; // сумма букетов в корзине (событие «zmap:subtotal» от checkout.js): от неё бесплатная доставка
 
     function esc(s) {
       return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
@@ -24,11 +25,13 @@
       return String(Math.floor(Math.round(kop) / 100)) + (k ? "," + (k < 10 ? "0" : "") + k : "") + " BYN";
     }
 
-    // Зоны с подписями и ценами: и для кнопок, и для подписей под картой
+    // Зоны с подписями и ценами: и для кнопок, и для подписей под картой.
+    // Бесплатно — как Delivery::quotePlace: только зоны по Минску (до МКАД); за МКАД и участки всегда платные.
     function places() {
       var last = cfg.zones.length - 1;
+      var free = subtotalKop >= cfg.freeFromKop;
       var list = cfg.zones.map(function (z, i) {
-        return { key: "zone:" + (i + 1), place: { type: "zone", zone: i + 1 }, color: Z.zoneColor(i + 1, z.color), title: i === last ? "Дальше, до МКАД" : "До " + z.maxKm + " км от магазина", price: byn(z.priceKop) };
+        return { key: "zone:" + (i + 1), place: { type: "zone", zone: i + 1 }, color: Z.zoneColor(i + 1, z.color), title: i === last ? "Дальше, до МКАД" : "До " + z.maxKm + " км от магазина", price: free ? "Бесплатно" : byn(z.priceKop), free: free };
       });
       list.push({ key: "outside", place: { type: "outside" }, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД", price: byn(cfg.outsideMkadKop) });
       cfg.areas.forEach(function (a) {
@@ -61,7 +64,7 @@
       var wrap = box.querySelector("[data-zmap-places]");
       wrap.innerHTML = places().map(function (p) {
         return '<button type="button" class="zmap-place' + (selected === p.key ? " on" : "") + '" data-zmap-key="' + esc(p.key) + '" aria-pressed="' + (selected === p.key) + '">' +
-          '<i style="background: ' + esc(p.color) + '"></i><span>' + esc(p.title) + "</span><b>" + esc(p.price) + "</b></button>";
+          '<i style="background: ' + esc(p.color) + '"></i><span>' + esc(p.title) + "</span><b" + (p.free ? ' class="gift"' : "") + ">" + esc(p.price) + "</b></button>";
       }).join("");
     }
     function choose(place, key) {
@@ -75,7 +78,7 @@
     }
     function pickPoint(latlng) {
       var point = { lat: Math.round(latlng.lat * 100000) / 100000, lng: Math.round(latlng.lng * 100000) / 100000 };
-      var q = Z.quote(point, 0, cfg);
+      var q = Z.quote(point, subtotalKop, cfg);
       var L = window.L;
       if (!q.ok) {
         L.popup({ closeButton: false, className: "zmap-popup" }).setLatLng(latlng).setContent("<b>Сюда не возим</b><br>Напишите нам, может быть, договоримся.").openOn(map);
@@ -85,13 +88,18 @@
       pin = L.marker(latlng, { icon: L.divIcon({ className: "zmap-pin", iconSize: [22, 22], iconAnchor: [11, 11] }), interactive: false, zIndexOffset: 2000 }).addTo(map);
       var where = q.area ? q.area.name : q.outside ? "за МКАД" : "по Минску";
       L.popup({ closeButton: false, className: "zmap-popup", offset: [0, -8] }).setLatLng(latlng)
-        .setContent('<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor)) + '"></span><b>Везём сюда · ' + esc(byn(q.priceKop)) + "</b><br>" + esc(where))
+        .setContent('<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor)) + '"></span><b>Везём сюда · ' + esc(q.priceKop === 0 ? "бесплатно" : byn(q.priceKop)) + "</b><br>" + esc(where))
         .openOn(map);
       say("");
       choose({ type: "point", lat: point.lat, lng: point.lng }, keyOf(q));
     }
     if (pickMode) {
       renderPlaces();
+      document.addEventListener("zmap:subtotal", function (e) {
+        if (e.detail === subtotalKop) return;
+        subtotalKop = e.detail;
+        renderPlaces();
+      });
       box.querySelector("[data-zmap-places]").addEventListener("click", function (e) {
         var b = e.target.closest("[data-zmap-key]");
         if (!b) return;

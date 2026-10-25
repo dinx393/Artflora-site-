@@ -274,6 +274,8 @@
     var zone = $("[data-co-zone]");
     zone.hidden = !d;
     var deliveryKop = t ? t.deliveryKop : 0;
+    // Кнопкам зон под картой — сумма букетов, чтобы и там было «Бесплатно» (delivery-map.js)
+    if (t) document.dispatchEvent(new CustomEvent("zmap:subtotal", { detail: t.priced.bouquetsKop }));
     if (d) {
       setText("[data-co-zone-name]", placeTitle(d));
       setHtml("[data-co-zone-price]", t.deliveryKop === 0 ? "Бесплатно" : byn(t.deliveryKop));
