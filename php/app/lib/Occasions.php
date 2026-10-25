@@ -19,6 +19,15 @@ final class Occasions
         'BASKET' => ['label' => 'Корзина', 'inForm' => 'Корзина'],
     ];
 
+    // Разделы над каталогом, которые можно отметить у букета вручную (несколько сразу). «Экзотика» хранится как повод exotic.
+    public const SECTIONS = [
+        'roses' => 'Розы',
+        'exotic' => 'Экзотика',
+        'HATBOX' => 'Шляпные коробки',
+        'BAG' => 'Сумки с цветами',
+        'BASKET' => 'Композиции',
+    ];
+
     public const PRICE_RANGES = [
         ['slug' => 'to100', 'label' => 'До 100 BYN', 'min' => 0, 'max' => 10000],
         ['slug' => '100-150', 'label' => '100–150 BYN', 'min' => 10000, 'max' => 15000],

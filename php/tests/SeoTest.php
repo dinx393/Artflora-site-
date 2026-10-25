@@ -61,3 +61,16 @@ test('в текстах нет устаревшего', function () {
         }
     }
 });
+
+group('Разделы каталога');
+$secB = fn (string $format, array $flowers, array $sections) => ['format' => $format, 'flowerNames' => $flowers, 'sections' => $sections,
+    'occasions' => [], 'colors' => [], 'priceKop' => 10000, 'collectionSlug' => null, 'name' => '', 'description' => ''];
+test('шляпная коробка: по формату и отмеченные вручную', function () use ($secB) {
+    $list = [$secB('HATBOX', [], []), $secB('BOUQUET', [], ['HATBOX']), $secB('BOUQUET', [], ['BAG'])];
+    eq(count(Catalog::filter($list, ['format' => 'HATBOX'])), 2);
+});
+test('розы: по составу и отмеченные вручную', function () use ($secB) {
+    $list = [$secB('BOUQUET', ['Роза Кения'], []), $secB('BOUQUET', ['Эустома'], ['roses']), $secB('BOUQUET', ['Эустома'], [])];
+    eq(count(Catalog::filter($list, ['flower' => 'Роза'])), 2);
+    eq(count(Catalog::filter($list, ['flower' => 'Роза Кения'])), 1, 'конкретный цветок — только по составу');
+});

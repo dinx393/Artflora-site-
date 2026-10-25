@@ -167,7 +167,7 @@ Http::post('/admin/bouquets/new', function () {
     Auth::checkCsrf();
     $id = Db::insert('bouquets', [
         'name' => 'Новый букет', 'slug' => admin_free_slug('bouquets', 'novyy-buket'), 'description' => '',
-        'enabled' => 0, 'packagingKop' => 800, 'colors' => '[]', 'occasions' => '[]', 'photos' => '[]',
+        'enabled' => 0, 'packagingKop' => 800, 'colors' => '[]', 'occasions' => '[]', 'sections' => '[]', 'photos' => '[]',
     ]);
     Http::redirect("/admin/bouquets/$id");
 });
@@ -182,6 +182,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
         'id' => (int) $b['id'], 'name' => $b['name'], 'slug' => $b['slug'], 'description' => $b['description'], 'format' => $b['format'],
         'enabled' => (bool) $b['enabled'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'], 'photoSize' => $b['photoSize'],
         'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']), 'photos' => Db::fromJson($b['photos']),
+        'sections' => Db::fromJson($b['sections']),
         'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
         'sizes' => array_map(function ($code) use ($sizes, $items, $b) {
             $s = null;
@@ -208,7 +209,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
         'title' => $b['name'],
         'editor' => [
             'initial' => $initial, 'flowers' => $flowers, 'collections' => $collections, 'siblings' => $siblings,
-            'colors' => Settings::get('colors'), 'occasions' => Occasions::LIST, 'formats' => Occasions::FORMATS,
+            'colors' => Settings::get('colors'), 'occasions' => Occasions::LIST, 'formats' => Occasions::FORMATS, 'sections' => Occasions::SECTIONS,
         ],
         'scripts' => admin_scripts('admin-bouquet.js'),
     ]);
@@ -233,6 +234,8 @@ Http::post('/admin/bouquets/save', function () {
         || !is_bool($in['enabled'] ?? null) || !is_bool($in['isHit'] ?? null) || !is_bool($in['isExclusive'] ?? null)
         || !(($in['collectionId'] ?? null) === null || admin_is_int($in['collectionId']))
         || !is_array($in['sizes'] ?? null) || count($in['sizes']) > count(Pricing::SIZE_ORDER)) admin_fail($bad);
+    $sections = $in['sections'] ?? [];
+    if (!is_array($sections) || !array_is_list($sections) || array_diff($sections, ['roses', 'HATBOX', 'BAG', 'BASKET'])) admin_fail($bad);
     foreach ($lists as $k => [$max, $len]) {
         $l = $in[$k] ?? null;
         if (!is_array($l) || !array_is_list($l) || count($l) > $max) admin_fail($bad);
@@ -257,12 +260,13 @@ Http::post('/admin/bouquets/save', function () {
     $photo = $sizes[0];
     foreach ($sizes as $s) if ($s['code'] === $photoSize) $photo = $s;
     try {
-        Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes) {
+        Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes, $sections) {
             Db::update('bouquets', $id, [
                 'name' => $name, 'slug' => $slug, 'description' => $in['description'], 'format' => $in['format'],
                 'packagingKop' => $photo['packagingKop'], 'enabled' => (int) $in['enabled'], 'isHit' => (int) $in['isHit'],
                 'isExclusive' => (int) $in['isExclusive'], 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
-                'occasions' => Db::json($in['occasions']), 'photos' => Db::json($in['photos']), 'collectionId' => $in['collectionId'],
+                'occasions' => Db::json($in['occasions']), 'sections' => Db::json(array_values(array_unique($sections))),
+                'photos' => Db::json($in['photos']), 'collectionId' => $in['collectionId'],
             ]);
             Db::exec('DELETE FROM bouquet_sizes WHERE bouquetId = ?', [$id]);
             foreach ($sizes as $s) {
@@ -297,7 +301,7 @@ Http::post('/admin/bouquets/{id}/clone', function (string $id) {
             'name' => $name, 'slug' => admin_free_slug('bouquets', admin_slugify($name)), 'description' => $src['description'],
             'format' => $format, 'packagingKop' => $src['packagingKop'],
             'enabled' => 0, // включите, когда добавите фото
-            'colors' => '[]', 'occasions' => $src['occasions'], 'photos' => '[]', 'collectionId' => $collectionId,
+            'colors' => '[]', 'occasions' => $src['occasions'], 'sections' => $src['sections'] ?? '[]', 'photos' => '[]', 'collectionId' => $collectionId,
         ]);
         foreach (Db::all('SELECT * FROM bouquet_sizes WHERE bouquetId = ?', [$src['id']]) as $s) {
             $sizeId = Db::insert('bouquet_sizes', ['bouquetId' => $copyId, 'code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop']]);

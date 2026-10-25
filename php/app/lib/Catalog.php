@@ -47,7 +47,7 @@ final class Catalog
             'id' => (int) $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'enabled' => (bool) $b['enabled'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'],
             'photoSize' => $b['photoSize'], 'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']),
-            'photos' => Db::fromJson($b['photos']), 'sortOrder' => (int) $b['sortOrder'],
+            'sections' => Db::fromJson($b['sections']), 'photos' => Db::fromJson($b['photos']), 'sortOrder' => (int) $b['sortOrder'],
             'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
             'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
             'sizes' => $byBouquet[$b['id']] ?? [],
@@ -72,7 +72,7 @@ final class Catalog
         return [
             'id' => $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'],
-            'colors' => $b['colors'], 'occasions' => $b['occasions'],
+            'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $b['sections'],
             'photos' => $b['photos'] ?: [self::PLACEHOLDER],
             'collectionId' => $b['collectionId'], 'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
             'flowerNames' => array_keys($names),
@@ -104,9 +104,11 @@ final class Catalog
             if (!empty($f['price']) && ($b['priceKop'] < $f['price']['min'] || $b['priceKop'] >= $f['price']['max'])) return false;
             if (!empty($f['flower'])) {
                 $needle = mb_strtolower($f['flower']);
-                if (!array_filter($b['flowerNames'], fn ($n) => str_contains(mb_strtolower($n), $needle))) return false;
+                // раздел «Розы» (flower=Роза): ещё и букеты, отмеченные в админке
+                $marked = $needle === 'роза' && in_array('roses', $b['sections'] ?? [], true);
+                if (!$marked && !array_filter($b['flowerNames'], fn ($n) => str_contains(mb_strtolower($n), $needle))) return false;
             }
-            if (!empty($f['format']) && $b['format'] !== $f['format']) return false;
+            if (!empty($f['format']) && $b['format'] !== $f['format'] && !in_array($f['format'], $b['sections'] ?? [], true)) return false;
             if (!empty($f['collection']) && $b['collectionSlug'] !== $f['collection']) return false;
             if ($q !== '') {
                 $hay = mb_strtolower(implode(' ', [$b['name'], $b['description'], ...$b['flowerNames']]));
