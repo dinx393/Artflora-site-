@@ -17,6 +17,7 @@
       priceText: U.kopToInput(f.priceKop),
       prevPriceKop: f.prevPriceKop,
       inStock: f.inStock,
+      inFilter: f.inFilter,
       substitutes: f.substitutes.slice(),
     };
   }
@@ -112,7 +113,7 @@
     state.pending = true;
     ui.render();
     var body = state.rows.map(function (x) {
-      return { id: x.id, name: x.name, kind: x.kind, unit: x.unit, priceKop: U.parseByn(x.priceText), inStock: x.inStock, substitutes: x.substitutes };
+      return { id: x.id, name: x.name, kind: x.kind, unit: x.unit, priceKop: U.parseByn(x.priceText), inStock: x.inStock, inFilter: x.inFilter, substitutes: x.substitutes };
     });
     U.post("/admin/flowers/save", body).then(function (r) {
       state.pending = false;
@@ -181,9 +182,9 @@
     var h = "";
     h += '<div class="row between"><div class="stack" style="gap: 4px"><h1>Цветы</h1>';
     h += '<span class="muted">Розничная цена за штуку или ветку. Меняете цену здесь, и все букеты с этим цветком пересчитаются сами.</span>';
-    h += '<span class="small muted">Порядок меняется перетаскиванием за ⠿ (или стрелками ▲▼), потом «Сохранить».</span></div>';
+    h += '<span class="small muted">Порядок меняется перетаскиванием за ⠿ (или стрелками ▲▼), потом «Сохранить». «В фильтре» — цветок виден в фильтре «Цветок» в каталоге (только основные, акцентные цветы).</span></div>';
     h += '<button type="button" class="btn"' + on("click", function () {
-      state.rows.push({ key: "new-" + Date.now(), name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, substitutes: [] });
+      state.rows.push({ key: "new-" + Date.now(), name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, inFilter: false, substitutes: [] });
       ui.render();
     }) + ">+ Добавить цветок</button></div>";
 
@@ -193,7 +194,7 @@
     });
     h += "</div>";
 
-    h += '<div class="admin-grid"><div class="table-wrap"><table class="table"><thead><tr><th aria-label="Порядок"></th><th>Цветок</th><th>Цена, BYN</th><th>Было</th><th>Наличие</th><th>Букетов</th><th></th></tr></thead><tbody>';
+    h += '<div class="admin-grid"><div class="table-wrap"><table class="table"><thead><tr><th aria-label="Порядок"></th><th>Цветок</th><th>Цена, BYN</th><th>Было</th><th>Наличие</th><th title="Показывать в фильтре «Цветок» в каталоге">В фильтре</th><th>Букетов</th><th></th></tr></thead><tbody>';
     shown().forEach(function (r) {
       var k = r.key;
       h += '<tr data-row="' + esc(k) + '" class="' + (r.inStock ? "" : "off") + (state.dragKey === k ? " dragging" : "") + '"' +
@@ -253,6 +254,11 @@
       h += '<td class="small muted">' + (r.prevPriceKop !== null ? U.kopToInput(r.prevPriceKop) : "—") + "</td>";
       h += '<td><button type="button" class="chip ' + (r.inStock ? "on" : "") + '" style="min-height: 34px; padding: 4px 12px"' +
         on("click", function () { patch(k, { inStock: !r.inStock }); }) + ">" + (r.inStock ? "Есть" : "Нет") + "</button></td>";
+      // фильтр «Цветок» в каталоге: только основные цветы, зелени там нет
+      h += r.kind === "FLOWER"
+        ? '<td><button type="button" class="chip ' + (r.inFilter ? "on" : "") + '" style="min-height: 34px; padding: 4px 12px" title="Показывать в фильтре «Цветок» в каталоге"' +
+          on("click", function () { patch(k, { inFilter: !r.inFilter }); }) + ">" + (r.inFilter ? "Да" : "Нет") + "</button></td>"
+        : '<td class="small muted">—</td>';
       h += "<td>" + (r.id ? usage[r.id] || 0 : 0) + "</td>";
       h += '<td><button type="button" class="btn-ghost" aria-label="Удалить цветок"' + on("click", function () { remove(r); }) + ">×</button></td>";
       h += "</tr>";

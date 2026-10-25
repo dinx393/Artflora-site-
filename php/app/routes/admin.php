@@ -332,7 +332,7 @@ function admin_flowers(): array
     return array_map(fn ($f) => [
         'id' => (int) $f['id'], 'name' => $f['name'], 'kind' => $f['kind'], 'unit' => $f['unit'], 'priceKop' => (int) $f['priceKop'],
         'prevPriceKop' => $f['prevPriceKop'] === null ? null : (int) $f['prevPriceKop'], 'inStock' => (bool) $f['inStock'],
-        'substitutes' => $subs[$f['id']] ?? [],
+        'inFilter' => (bool) $f['inFilter'], 'substitutes' => $subs[$f['id']] ?? [],
     ], Db::all('SELECT * FROM flowers ORDER BY sortOrder, name'));
 }
 
@@ -369,9 +369,9 @@ Http::post('/admin/flowers/save', function () {
         $subs = $r['substitutes'] ?? [];
         if ($name === '' || mb_strlen($name) > 80 || !in_array($r['kind'] ?? '', ['FLOWER', 'GREEN'], true)
             || !in_array($r['unit'] ?? '', ['STEM', 'PIECE'], true) || !admin_is_int($r['priceKop'] ?? null, 0, 1_000_000)
-            || !is_bool($r['inStock'] ?? null) || !(($r['id'] ?? null) === null || admin_is_int($r['id']))
+            || !is_bool($r['inStock'] ?? null) || !is_bool($r['inFilter'] ?? true) || !(($r['id'] ?? null) === null || admin_is_int($r['id']))
             || !is_array($subs) || count($subs) > 20 || array_filter($subs, fn ($s) => !is_int($s))) admin_fail($bad);
-        $clean[] = ['id' => $r['id'] ?? null, 'name' => $name, 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => $r['inStock'], 'substitutes' => array_values($subs)];
+        $clean[] = ['id' => $r['id'] ?? null, 'name' => $name, 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => $r['inStock'], 'inFilter' => $r['inFilter'] ?? true, 'substitutes' => array_values($subs)];
     }
     $names = array_map(fn ($r) => admin_norm($r['name']), $clean);
     foreach ($names as $i => $n) {
@@ -402,7 +402,7 @@ Http::post('/admin/flowers/save', function () {
             // Сначала временные названия: так можно поменять двум цветкам названия местами.
             foreach ($plan as [, , $old]) if ($old) Db::update('flowers', (int) $old['id'], ['name' => "__tmp_{$old['id']}"]);
             foreach ($plan as [$r, $i, $old]) {
-                $row = ['name' => $r['name'], 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => (int) $r['inStock'], 'sortOrder' => $i];
+                $row = ['name' => $r['name'], 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => (int) $r['inStock'], 'inFilter' => (int) $r['inFilter'], 'sortOrder' => $i];
                 if ($old) {
                     $id = (int) $old['id'];
                     $row['prevPriceKop'] = (int) $old['priceKop'] !== $r['priceKop'] ? (int) $old['priceKop'] : $old['prevPriceKop'];

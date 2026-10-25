@@ -81,7 +81,8 @@ function catalog_page(?string $landingSlug = null): string
         // В фильтре только цвета, которые есть хотя бы у одного букета (и уже выбранные).
         'palette' => array_values(array_filter($colorList, fn ($c) => in_array($c['slug'], $colors, true)
             || array_filter($all, fn ($b) => in_array($c['slug'], $b['colors'], true)))),
-        'flowers' => Db::all("SELECT id, name FROM flowers WHERE kind = 'FLOWER' ORDER BY sortOrder, name"),
+        // В фильтре «Цветок» только основные цветы (галочка «В фильтре» в админке), дополняющие не показываем
+        'flowers' => Db::all("SELECT id, name FROM flowers WHERE kind = 'FLOWER' AND inFilter = 1 ORDER BY sortOrder, name"),
         'addons' => ShopView::addons(),
         'shop' => Settings::get('shop'),
         'delivery' => Settings::get('delivery'),
