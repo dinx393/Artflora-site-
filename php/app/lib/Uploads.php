@@ -79,16 +79,21 @@ final class Uploads
         $h = imagesy($img);
         $k = min(1, self::MAX_SIDE / max($w, $h));
         if ($k < 1) {
-            $small = imagescale($img, (int) round($w * $k), (int) round($h * $k), IMG_BICUBIC);
+            // imagecopyresampled, а не imagescale: на хостинге imagescale вернул false
+            $nw = (int) round($w * $k);
+            $nh = (int) round($h * $k);
+            $small = @imagecreatetruecolor($nw, $nh);
+            if (!$small || !@imagecopyresampled($small, $img, 0, 0, 0, 0, $nw, $nh, $w, $h)) return $jpeg;
             imagedestroy($img);
             $img = $small;
         }
-        if ($angle) $img = imagerotate($img, $angle, 0);
+        if ($angle) $img = @imagerotate($img, $angle, 0);
+        if (!$img) return $jpeg;
         ob_start();
-        imagejpeg($img, null, 85);
+        $okJpeg = @imagejpeg($img, null, 85);
         $out = ob_get_clean();
         // GD теряет цветовой профиль — возвращаем его сразу после начала файла
-        return $out ? "\xFF\xD8" . self::iccSegments($jpeg) . substr($out, 2) : $jpeg;
+        return $okJpeg && $out ? "\xFF\xD8" . self::iccSegments($jpeg) . substr($out, 2) : $jpeg;
     }
 
     // «128M» → байты; -1 — без лимита
