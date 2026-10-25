@@ -15,7 +15,7 @@ const ADMIN_STATUS_LABEL = [
     'DONE' => 'Выполнен',
     'CANCELLED' => 'Отменён',
 ];
-const ADMIN_PAY_LABEL = ['CARD' => 'Картой (ссылкой)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber', 'INVOICE' => 'Безнал (счёт организации)'];
+const ADMIN_PAY_LABEL = ['CARD' => 'WebPay (картой по ссылке)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber', 'INVOICE' => 'Безнал (счёт организации)'];
 
 function admin_page(string $template, array $data): string
 {
@@ -680,10 +680,10 @@ Http::post('/admin/settings/save', function () {
     $in = admin_body();
     $s = $in['shop'] ?? null;
     if (!is_array($s)) admin_fail('Проверьте поля: shop');
-    $limits = ['phone' => 40, 'viber' => 300, 'telegram' => 300, 'whatsapp' => 300, 'instagram' => 300, 'sellerDetails' => 1000, 'promoLine' => 300, 'orderEmail' => 300, 'dayBouquet' => 200, 'email' => 200, 'complaints' => 300, 'authority' => 300];
+    $limits = ['phone' => 40, 'viber' => 300, 'telegram' => 300, 'whatsapp' => 300, 'instagram' => 300, 'sellerDetails' => 1000, 'promoLine' => 300, 'orderEmail' => 300, 'dayBouquet' => 200, 'email' => 200, 'complaints' => 300, 'authority' => 300, 'eripCode' => 40, 'eripPath' => 300];
     $shop = [];
     foreach ($limits as $k => $max) {
-        $v = $s[$k] ?? (in_array($k, ['whatsapp', 'orderEmail', 'dayBouquet', 'email', 'complaints', 'authority'], true) ? '' : null);
+        $v = $s[$k] ?? (in_array($k, ['whatsapp', 'orderEmail', 'dayBouquet', 'email', 'complaints', 'authority', 'eripCode', 'eripPath'], true) ? '' : null);
         if (admin_str($v, $max) === null) admin_fail("Проверьте поля: shop → $k");
         $shop[$k] = $v;
     }

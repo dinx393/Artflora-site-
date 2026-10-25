@@ -12,7 +12,7 @@ final class OrderEmail
         'NEW' => 'Новый', 'CONFIRMED' => 'Собираем', 'PHOTO_SENT' => 'Фото отправлено',
         'ON_THE_WAY' => 'В пути / ждёт', 'DONE' => 'Выполнен', 'CANCELLED' => 'Отменён',
     ];
-    public const PAY_LABEL = ['CARD' => 'Картой (ссылкой)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber', 'INVOICE' => 'Безнал (счёт организации)'];
+    public const PAY_LABEL = ['CARD' => 'WebPay (картой по ссылке)', 'ERIP' => 'ЕРИП', 'VIBER_LINK' => 'Ссылкой в Viber', 'INVOICE' => 'Безнал (счёт организации)'];
 
     private const C = [
         'cherry' => '#7E1F3C', 'ink' => '#3a2a30', 'muted' => '#7a6a72', 'lavender' => '#D6CBE3',

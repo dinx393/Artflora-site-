@@ -69,7 +69,7 @@
     dayMode: "today",
     otherDate: addDays(today, 2),
     slot: "",
-    payment: "CARD",
+    payment: "ERIP",
     totals: null,
     error: null, // { text, field }
     sending: false,

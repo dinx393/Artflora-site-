@@ -4,7 +4,9 @@
 // всё остальное считаем здесь по текущим ценам из базы.
 final class Checkout
 {
-    public const PAYMENTS = ['CARD', 'ERIP', 'VIBER_LINK', 'INVOICE'];
+    // ЕРИП, WebPay (код CARD: картой по ссылке от администратора), безнал (решение владельца 2026-10-25).
+    // VIBER_LINK больше не предлагаем, он остался только в старых заказах.
+    public const PAYMENTS = ['ERIP', 'CARD', 'INVOICE'];
     // Реквизиты для безнала (INVOICE): поле => [подпись, длина]. E-mail необязателен, остальное нужно для счёта.
     public const COMPANY_FIELDS = [
         'name' => ['Организация', 200], 'unp' => ['УНП', 9], 'address' => ['Юридический адрес', 300],

@@ -27,7 +27,7 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
       </div>
       <div class="stack" style="gap: 6px">
         <b>Оплата</b>
-        <span class="soft">Картой, через ЕРИП или ссылкой в Viber после подтверждения заказа</span>
+        <span class="soft">Через ЕРИП, картой через WebPay, безнал для организаций</span>
         <a href="/delivery" class="soft">Доставка и оплата →</a>
         <a href="/delivery#vozvrat" class="soft">Обмен и возврат →</a>
         <a href="/blog" class="soft">Статьи о цветах →</a>

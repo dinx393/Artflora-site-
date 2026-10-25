@@ -1,6 +1,6 @@
 <?php
 // «Спасибо! Заказ принят» (повторяет src/app/(shop)/order/[number]/page.tsx). Переменные: $order, $shop, $pickupShop
-$pay = ['CARD' => 'картой, ссылку пришлём', 'ERIP' => 'через ЕРИП, код пришлём', 'VIBER_LINK' => 'ссылкой в Viber после фото', 'INVOICE' => 'безнал, счёт выставим на организацию'];
+$pay = ['CARD' => 'WebPay, ссылку пришлём', 'ERIP' => 'через ЕРИП', 'VIBER_LINK' => 'ссылкой в Viber после фото', 'INVOICE' => 'безнал, счёт выставим на организацию'];
 $months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 $t = strtotime($order['deliveryDate'] . ' 00:00:00 UTC');
 $day = (int) gmdate('j', $t) . ' ' . $months[(int) gmdate('n', $t) - 1];
@@ -35,6 +35,24 @@ $o = $order;
         <?php endif ?>
       </li>
     </ol>
+    <?php /* Как оплатить — у каждого способа своё (решение владельца 2026-10-25) */ ?>
+    <div class="card stack" style="gap: 8px; background: var(--blush)">
+      <h2 style="font-size: 26px">Как оплатить</h2>
+      <?php if ($o['paymentMethod'] === 'ERIP'): ?>
+        <p style="margin: 0">Через ЕРИП в интернет-банке, мобильном банке, банкомате или кассе банка:</p>
+        <ul class="stack" style="gap: 6px; padding-left: 20px; margin: 0">
+          <li>код услуги <b><?= e($shop['eripCode']) ?></b> («Оплата товара»)</li>
+          <li>или путь: <b><?= e($shop['eripPath']) ?></b></li>
+          <li>номер телефона заказчика: <b><?= e(Text::phone($o['customerPhone'])) ?></b></li>
+          <li>сумма: <b><?= e(Money::format($o['totalKop'])) ?></b></li>
+        </ul>
+        <?php if ($o['addressUnknown']): ?><p class="small muted" style="margin: 0">Доплату за доставку пришлём отдельно, когда уточним адрес.</p><?php endif ?>
+      <?php elseif ($o['paymentMethod'] === 'INVOICE'): ?>
+        <p style="margin: 0">Выставим счёт на <?= e($o['company']['name'] ?? 'организацию') ?><?= !empty($o['company']['email']) ? ' и пришлём его на ' . e($o['company']['email']) : '' ?>. Администратор свяжется с вами, если что-то нужно уточнить.</p>
+      <?php else: ?>
+        <p style="margin: 0">В ближайшее время с вами свяжется администратор и пришлёт ссылку для оплаты картой через WebPay.</p>
+      <?php endif ?>
+    </div>
     <div class="row">
       <a href="<?= e($shop['telegram']) ?>" class="btn btn-lg" target="_blank" rel="noopener">Открыть чат в Telegram</a>
       <a href="/" class="btn btn-lg btn-outline">На главную</a>
