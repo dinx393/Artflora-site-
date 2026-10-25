@@ -4,6 +4,7 @@
   var U = window.AdminUI;
   var esc = U.esc;
   var data = U.json("admin-data");
+  var stamp = data.stamp; // отпечаток данных: сервер не даст молча затереть правки с другого устройства
   var bouquets = data.bouquets;
   var initial = data.initial;
 
@@ -115,9 +116,10 @@
     var body = state.rows.map(function (x) {
       return { id: x.id, name: x.name, kind: x.kind, unit: x.unit, priceKop: U.parseByn(x.priceText), inStock: x.inStock, inFilter: x.inFilter, substitutes: x.substitutes };
     });
-    U.post("/admin/flowers/save", body).then(function (r) {
+    U.post("/admin/flowers/save", { rows: body, stamp: stamp }).then(function (r) {
       state.pending = false;
       state.msg = r.ok ? { ok: true, text: "Сохранено, цены на сайте обновлены" } : { ok: false, text: r.error || "Ошибка" };
+      if (r.ok) stamp = r.stamp;
       if (r.ok && r.flowers) {
         // новые цветки получили номера в базе — без этого следующее сохранение создавало бы их второй раз
         state.rows = r.flowers.map(toRow);
@@ -132,7 +134,8 @@
       state.rows = state.rows.filter(function (x) { return x.key !== r.key; });
       return ui.render();
     }
-    U.post("/admin/flowers/delete", { id: r.id }).then(function (res) {
+    U.post("/admin/flowers/delete", { id: r.id, stamp: stamp }).then(function (res) {
+      if (res.ok && res.stamp) stamp = res.stamp;
       if (res.ok) state.rows = state.rows.filter(function (x) { return x.key !== r.key; });
       else state.msg = { ok: false, text: res.error === U.OFFLINE ? "Не удалось удалить: нет связи с сервером" : res.error || "Ошибка" };
       ui.render();

@@ -5,6 +5,7 @@
   var esc = U.esc;
   var on_ = U.attr;
   var data = U.json("admin-data");
+  var stamp = data.stamp; // отпечаток данных: сервер не даст молча затереть правки с другого устройства
   var flowers = data.flowers;
   var collections = data.collections;
   var siblings = data.siblings;
@@ -114,10 +115,11 @@
     }
     state.pending = true;
     ui.render();
-    U.post("/admin/bouquets/save", state.b).then(function (r) {
+    U.post("/admin/bouquets/save", Object.assign({}, state.b, { stamp: stamp })).then(function (r) {
       state.pending = false;
       state.msg = r.ok ? { ok: true, text: "Сохранено, сайт обновлён" } : { ok: false, text: r.error || "Ошибка" };
       if (r.ok) {
+        stamp = r.stamp;
         initial = clone(state.b);
         document.title = (state.b.name || "Без названия") + " — Управление сайтом";
       }

@@ -6,6 +6,7 @@
   var esc = U.esc;
   var formatByn = U.formatByn;
   var data = U.json("admin-data");
+  var stamp = data.stamp; // отпечаток данных: сервер не даст молча затереть правки с другого устройства
 
   // ---------- расчёт: assets/js/delivery-zones.js ----------
   var Z = window.DeliveryZones;
@@ -76,10 +77,13 @@
   function save() {
     state.pending = true;
     render();
-    U.post("/admin/delivery/save", { delivery: state.cfg, districts: state.districts }).then(function (r) {
+    U.post("/admin/delivery/save", { delivery: state.cfg, districts: state.districts, stamp: stamp }).then(function (r) {
       state.pending = false;
       state.msg = r.ok ? { ok: true, text: "Сохранено, на сайте уже новые цены" } : { ok: false, text: r.error || "Ошибка" };
-      if (r.ok) state.dirty = false;
+      if (r.ok) {
+        stamp = r.stamp;
+        state.dirty = false;
+      }
       render();
     });
   }

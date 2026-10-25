@@ -7,6 +7,36 @@
 // Ошибка с понятным текстом для админки
 final class AdminError extends RuntimeException {}
 
+// В админку можно зайти с нескольких устройств сразу. Редактор (букет, цветы, доставка, настройки) получает
+// «отпечаток» данных на момент открытия и присылает его при сохранении. Отпечаток другой — значит, кто-то
+// уже сохранил эту страницу с другого устройства или из другой вкладки: не затираем его правки молча.
+const ADMIN_CONFLICT = 'Пока страница была открыта, здесь уже сохранили изменения с другого устройства или из другой вкладки. '
+    . 'Чтобы не стереть их, ваши правки не сохранены. Обновите страницу (F5) и внесите их ещё раз.';
+
+function admin_stamp(string $what, int $id = 0): string
+{
+    $setting = fn (string $k) => Db::value('SELECT value FROM settings WHERE `key` = ?', [$k]);
+    $data = match ($what) {
+        'bouquet' => [
+            Db::one('SELECT name, slug, description, format, enabled, isHit, isExclusive, photoSize, packagingKop, colors, occasions, sections, photos, collectionId FROM bouquets WHERE id = ?', [$id]),
+            Db::all('SELECT s.code, s.note, s.packagingKop, i.flowerId, i.qty FROM bouquet_sizes s LEFT JOIN bouquet_items i ON i.sizeId = s.id WHERE s.bouquetId = ? ORDER BY s.code, i.id', [$id]),
+        ],
+        'flowers' => [
+            Db::all('SELECT id, name, kind, unit, priceKop, inStock, inFilter, sortOrder FROM flowers ORDER BY id'),
+            Db::all('SELECT flowerId, substituteId FROM flower_substitutes ORDER BY flowerId, substituteId'),
+        ],
+        'settings' => [$setting('shop'), $setting('colors'), Db::all('SELECT id, code, name, priceKop, included, active, sortOrder FROM addons ORDER BY id')],
+        'delivery' => [$setting('delivery'), $setting('districts')],
+    };
+    return substr(hash('sha256', json_encode($data, JSON_UNESCAPED_UNICODE)), 0, 20);
+}
+
+// Вызывать внутри Db::tx, после блокировки строк (FOR UPDATE): два сохранения в одну секунду не проскочат оба.
+function admin_check_stamp(mixed $stamp, string $what, int $id = 0): void
+{
+    if (!is_string($stamp) || !hash_equals(admin_stamp($what, $id), $stamp)) throw new AdminError(ADMIN_CONFLICT);
+}
+
 const ADMIN_STATUS_LABEL = [
     'NEW' => 'Новый',
     'CONFIRMED' => 'Собираем',
@@ -232,6 +262,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
     return admin_page('bouquet', [
         'title' => $b['name'],
         'editor' => [
+            'stamp' => admin_stamp('bouquet', (int) $b['id']),
             'initial' => $initial, 'flowers' => $flowers, 'collections' => $collections, 'siblings' => $siblings,
             'colors' => Settings::get('colors'), 'occasions' => Occasions::LIST, 'formats' => Occasions::FORMATS, 'sections' => Occasions::SECTIONS,
         ],
@@ -286,6 +317,8 @@ Http::post('/admin/bouquets/save', function () {
     $oldSlug = Db::value('SELECT slug FROM bouquets WHERE id = ?', [$id]);
     try {
         Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes, $sections) {
+            Db::all('SELECT id FROM bouquets WHERE id = ? FOR UPDATE', [$id]);
+            admin_check_stamp($in['stamp'] ?? null, 'bouquet', $id);
             Db::update('bouquets', $id, [
                 'name' => $name, 'slug' => $slug, 'description' => $in['description'], 'format' => $in['format'],
                 'packagingKop' => $photo['packagingKop'], 'enabled' => (int) $in['enabled'], 'isHit' => (int) $in['isHit'],
@@ -304,11 +337,13 @@ Http::post('/admin/bouquets/save', function () {
         $wasDay = $shop['dayBouquet'] !== '' && ($shop['dayBouquet'] === $slug || $shop['dayBouquet'] === $oldSlug);
         $isDay = ($in['isDayBouquet'] ?? $wasDay) === true;
         if ($isDay !== $wasDay || ($isDay && $shop['dayBouquet'] !== $slug)) Settings::save('shop', ['dayBouquet' => $isDay ? $slug : ''] + $shop);
+    } catch (AdminError $e) {
+        admin_fail($e->getMessage());
     } catch (Throwable $e) {
         app_log('saveBouquet: ' . $e->getMessage());
         admin_fail('Не удалось сохранить букет, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз.');
     }
-    Http::json(['ok' => true]);
+    Http::json(['ok' => true, 'stamp' => admin_stamp('bouquet', $id)]);
 });
 
 // «+ Создать с этим составом»: копия букета в другом формате, в той же коллекции.
@@ -386,7 +421,7 @@ Http::get('/admin/flowers', function () {
     ], Db::all('SELECT id, name, enabled FROM bouquets ORDER BY id'));
     return admin_page('flowers', [
         'title' => 'Цветы',
-        'editor' => ['initial' => admin_flowers(), 'bouquets' => $bouquets],
+        'editor' => ['initial' => admin_flowers(), 'bouquets' => $bouquets, 'stamp' => admin_stamp('flowers')],
         'scripts' => admin_scripts('admin-flowers.js'),
     ]);
 });
@@ -394,9 +429,10 @@ Http::get('/admin/flowers', function () {
 Http::post('/admin/flowers/save', function () {
     Auth::requireAdmin();
     Auth::checkCsrf();
-    $rows = admin_body();
+    $in = admin_body();
+    $rows = $in['rows'] ?? null;
     $bad = 'Проверьте названия и цены';
-    if (!array_is_list($rows) || count($rows) > 500) admin_fail($bad);
+    if (!is_array($rows) || !array_is_list($rows) || count($rows) > 500) admin_fail($bad);
     $clean = [];
     foreach ($rows as $r) {
         $name = is_array($r) && is_string($r['name'] ?? null) ? trim($r['name']) : '';
@@ -413,7 +449,9 @@ Http::post('/admin/flowers/save', function () {
     }
 
     try {
-        Db::tx(function () use ($clean, $names) {
+        Db::tx(function () use ($clean, $names, $in) {
+            Db::all('SELECT id FROM flowers FOR UPDATE');
+            admin_check_stamp($in['stamp'] ?? null, 'flowers');
             $existing = [];
             foreach (Db::all('SELECT * FROM flowers') as $f) $existing[(int) $f['id']] = $f;
             // Строка без id, но с названием уже существующего цветка (например, страницу не обновили
@@ -456,24 +494,28 @@ Http::post('/admin/flowers/save', function () {
         app_log('saveFlowers: ' . $e->getMessage());
         admin_fail('Не удалось сохранить, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз.');
     }
-    Http::json(['ok' => true, 'flowers' => admin_flowers()]);
+    Http::json(['ok' => true, 'flowers' => admin_flowers(), 'stamp' => admin_stamp('flowers')]);
 });
 
 Http::post('/admin/flowers/delete', function () {
     Auth::requireAdmin();
     Auth::checkCsrf();
-    $id = admin_body()['id'] ?? null;
+    $b = admin_body();
+    $id = $b['id'] ?? null;
     if (!admin_is_int($id)) admin_fail('Ошибка');
     if (Db::value('SELECT COUNT(*) FROM bouquet_items WHERE flowerId = ?', [$id]) > 0) {
         admin_fail('Цветок есть в букетах. Сначала уберите его из состава или просто отметьте «Нет».');
     }
+    $before = admin_stamp('flowers');
     try {
         Db::exec('DELETE FROM flowers WHERE id = ?', [$id]);
     } catch (Throwable $e) {
         app_log('deleteFlower: ' . $e->getMessage());
         admin_fail('Не удалось удалить цветок. Обновите страницу (F5) и попробуйте ещё раз.');
     }
-    Http::json(['ok' => true]);
+    // Новый отпечаток — только если до удаления список был тот же, что на странице: иначе чужие правки
+    // в нём остались бы незамеченными.
+    Http::json(['ok' => true, 'stamp' => ($b['stamp'] ?? null) === $before ? admin_stamp('flowers') : null]);
 });
 
 // ---------- Коллекции ----------
@@ -587,7 +629,7 @@ Http::get('/admin/delivery', function () {
     Auth::requireAdmin();
     return admin_page('delivery', [
         'title' => 'Доставка',
-        'editor' => ['delivery' => Settings::get('delivery'), 'districts' => Settings::get('districts')],
+        'editor' => ['delivery' => Settings::get('delivery'), 'districts' => Settings::get('districts'), 'stamp' => admin_stamp('delivery')],
         'head' => '<link rel="stylesheet" href="' . View::asset('vendor/leaflet/leaflet.css') . '">',
         'scripts' => '<script src="' . View::asset('vendor/leaflet/leaflet.js') . '"></script>' . admin_scripts('delivery-zones.js', 'admin-delivery.js'),
     ]);
@@ -669,9 +711,17 @@ Http::post('/admin/delivery/save', function () {
         'outsideMkadKop' => $d['outsideMkadKop'], 'freeFromKop' => $d['freeFromKop'], 'pickupDiscountPct' => $d['pickupDiscountPct'],
     ];
     if (isset($d['outsideColor'])) $cfg['outsideColor'] = $d['outsideColor'];
-    Settings::save('delivery', $cfg);
-    Settings::save('districts', $districts);
-    Http::json(['ok' => true]);
+    try {
+        Db::tx(function () use ($in, $cfg, $districts) {
+            Db::all("SELECT `key` FROM settings WHERE `key` IN ('delivery', 'districts') FOR UPDATE");
+            admin_check_stamp($in['stamp'] ?? null, 'delivery');
+            Settings::save('delivery', $cfg);
+            Settings::save('districts', $districts);
+        });
+    } catch (AdminError $e) {
+        admin_fail($e->getMessage());
+    }
+    Http::json(['ok' => true, 'stamp' => admin_stamp('delivery')]);
 });
 
 // ---------- Настройки ----------
@@ -702,6 +752,7 @@ Http::get('/admin/settings', function () {
             'addons' => admin_addons(),
             'bouquets' => Db::all('SELECT slug, name FROM bouquets WHERE enabled = 1 ORDER BY name'),
             'smtpReady' => admin_smtp_ready(),
+            'stamp' => admin_stamp('settings'),
         ],
         'scripts' => admin_scripts('admin-settings.js'),
     ]);
@@ -746,11 +797,14 @@ Http::post('/admin/settings/save', function () {
             || !(($a['id'] ?? null) === null || admin_is_int($a['id']))) admin_fail('Проверьте дополнения');
     }
 
-    Settings::save('shop', $shop);
-    Settings::save('colors', $colors);
     try {
         // по code (он уникальный): новое дополнение, сохранённое второй раз без обновления страницы, не создаётся дважды
-        Db::tx(function () use ($addons) {
+        Db::tx(function () use ($in, $shop, $colors, $addons) {
+            Db::all("SELECT `key` FROM settings WHERE `key` IN ('shop', 'colors') FOR UPDATE");
+            Db::all('SELECT id FROM addons FOR UPDATE');
+            admin_check_stamp($in['stamp'] ?? null, 'settings');
+            Settings::save('shop', $shop);
+            Settings::save('colors', $colors);
             foreach (array_values($addons) as $i => $a) {
                 $row = ['code' => $a['code'], 'name' => trim($a['name']), 'priceKop' => $a['priceKop'], 'included' => (int) $a['included'], 'active' => (int) $a['active'], 'sortOrder' => $i];
                 if (isset($a['id'])) {
@@ -761,11 +815,13 @@ Http::post('/admin/settings/save', function () {
                 }
             }
         });
+    } catch (AdminError $e) {
+        admin_fail($e->getMessage());
     } catch (Throwable $e) {
-        app_log('saveAddons: ' . $e->getMessage());
-        admin_fail('Не удалось сохранить дополнения. Обновите страницу (F5) и попробуйте ещё раз.');
+        app_log('saveSettings: ' . $e->getMessage());
+        admin_fail('Не удалось сохранить настройки, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз.');
     }
-    Http::json(['ok' => true, 'addons' => admin_addons()]);
+    Http::json(['ok' => true, 'addons' => admin_addons(), 'stamp' => admin_stamp('settings')]);
 });
 
 // Кнопка «Отправить пробное письмо»: шлём на адреса из поля (даже если ещё не сохранены).

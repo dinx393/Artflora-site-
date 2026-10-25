@@ -4,6 +4,7 @@
   var U = window.AdminUI;
   var esc = U.esc;
   var data = U.json("admin-data");
+  var stamp = data.stamp; // отпечаток данных: сервер не даст молча затереть правки с другого устройства
   var state = {
     shop: data.shop,
     colors: data.colors,
@@ -36,9 +37,10 @@
   function save() {
     state.pending = true;
     ui.render();
-    U.post("/admin/settings/save", { shop: state.shop, colors: state.colors, addons: state.addons }).then(function (r) {
+    U.post("/admin/settings/save", { shop: state.shop, colors: state.colors, addons: state.addons, stamp: stamp }).then(function (r) {
       state.pending = false;
       state.msg = r.ok ? { ok: true, text: "Настройки сохранены" } : { ok: false, text: r.error || "Ошибка" };
+      if (r.ok) stamp = r.stamp;
       if (r.ok && r.addons) {
         state.addons = r.addons; // новые дополнения получили номера в базе
         state.addonPrice = {};
