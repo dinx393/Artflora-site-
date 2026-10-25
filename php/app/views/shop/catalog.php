@@ -143,7 +143,7 @@ $f = fn (array $patch) => e($href($sp, $patch));
       <div class="help">
         <b>Нужна подсказка?</b>
         <span class="small muted">Флорист поможет выбрать в Telegram.</span>
-        <a href="<?= e($shop[\'telegram\']) ?>" class="small" style="font-weight: 700" target="_blank" rel="noopener">Написать флористу →</a>
+        <a href="<?= e($shop['telegram']) ?>" class="small" style="font-weight: 700" target="_blank" rel="noopener">Написать флористу →</a>
       </div>
       <button type="button" class="btn btn-lg filters-done mobile-only" data-filters-done>Показать <?= count($list) ?> <?= ShopView::bouquets(count($list)) ?></button>
     </aside>
@@ -213,7 +213,7 @@ $f = fn (array $patch) => e($href($sp, $patch));
         <h2>Тот самый букет ещё <span class="script">не придуман?</span></h2>
         <p>Расскажите флористу, кому и по какому поводу. Соберём и пришлём фото до отправки.</p>
       </div>
-      <a href="<?= e($shop[\'telegram\']) ?>" class="btn btn-pink btn-lg" target="_blank" rel="noopener">Написать флористу</a>
+      <a href="<?= e($shop['telegram']) ?>" class="btn btn-pink btn-lg" target="_blank" rel="noopener">Написать флористу</a>
     </div>
   </div>
 </div>
