@@ -5,7 +5,7 @@
 // recipientName, recipientPhone, callRecipient, anonymous, method (DELIVERY/PICKUP), address, addressUnknown,
 // shopName («Уручье, пр. Независимости 168/1»), deliveryDate ('YYYY-MM-DD'), deliverySlot, comment, cardText,
 // items [['name','size','qty','priceKop','photo' (полный адрес или null)]], itemsKop, discountKop, deliveryKop, totalKop, adminUrl,
-// company (реквизиты для безнала, см. Checkout::parseCompany, или null).
+// company (реквизиты для безнала: ['text' => …], или null).
 final class OrderEmail
 {
     public const STATUS_LABEL = [
@@ -54,9 +54,7 @@ final class OrderEmail
             ['Имя', $o['customerName']],
             ['Телефон', Text::phone($o['customerPhone'])],
         ];
-        if (!empty($o['company'])) {
-            $r[] = ['Реквизиты для счёта', implode("\n", array_map(fn ($c) => "{$c[0]}: {$c[1]}", Checkout::companyRows($o['company'])))];
-        }
+        if (!empty($o['company']['text'])) $r[] = ['Реквизиты для счёта', $o['company']['text']];
         if ($o['method'] === 'DELIVERY') {
             $r[] = ['Получатель', $o['recipientName'] ?: '—'];
             if ($o['recipientPhone']) $r[] = ['Телефон получателя', Text::phone($o['recipientPhone'])];

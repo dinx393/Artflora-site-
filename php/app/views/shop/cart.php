@@ -8,16 +8,6 @@ $payments = [
     ['code' => 'CARD', 'title' => 'WebPay', 'note' => 'Картой онлайн: администратор пришлёт ссылку для оплаты'],
     ['code' => 'INVOICE', 'title' => 'Безнал для организаций', 'note' => 'Выставим счёт на реквизиты компании'],
 ];
-// Реквизиты для безнала: поле => [подсказка в поле, автозаполнение, обязательно]. Проверка — Checkout::parseCompany.
-$companyInputs = [
-    'name' => ['ООО «Ромашка»', 'organization', true],
-    'unp' => ['9 цифр', 'off', true],
-    'address' => ['220000, г. Минск, ул. …, д. …', 'street-address', true],
-    'iban' => ['BY00 XXXX 0000 0000 0000 0000 0000', 'off', true],
-    'bank' => ['ОАО «…банк»', 'off', true],
-    'bic' => ['Например, AKBBBY2X', 'off', true],
-    'email' => ['Если счёт прислать на почту', 'email', false],
-];
 $byn = fn (int $kop) => e(preg_replace('/ BYN$/', '', Money::format($kop))) . '<small class="cur">BYN</small>';
 $config = [
     'shops' => $shops, 'pickupPct' => $pickupPct, 'freeFromKop' => $freeFromKop, 'districts' => $districts, 'leadHours' => $leadHours,
@@ -204,18 +194,11 @@ $config = [
             </button>
           <?php endforeach ?>
         </div>
-        <div class="stack" style="gap: 10px" data-co-company hidden>
-          <p class="small muted" style="margin: 0">Реквизиты организации-плательщика: на них выставим счёт. Без реквизитов заказ по безналу не оформить.</p>
-          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
-            <?php foreach ($companyInputs as $k => [$ph, $ac, $req]): ?>
-              <label class="field"<?= in_array($k, ['name', 'address', 'iban'], true) ? ' style="grid-column: 1 / -1"' : '' ?>>
-                <span><?= e(Checkout::COMPANY_FIELDS[$k][0]) ?><?= $req ? '' : ' (необязательно)' ?></span>
-                <input class="input" placeholder="<?= e($ph) ?>" autocomplete="<?= e($ac) ?>"<?= $k === 'unp' ? ' inputmode="numeric" maxlength="9"' : '' ?><?= $k === 'email' ? ' type="email"' : '' ?> data-co-company-field="<?= e($k) ?>">
-              </label>
-            <?php endforeach ?>
-          </div>
-          <p class="small error" style="margin: 0" data-co-company-hint hidden></p>
-        </div>
+        <label class="field" data-co-company hidden>
+          <span>Реквизиты компании</span>
+          <textarea class="input" rows="6" data-co-company-text placeholder="Вставьте реквизиты одним текстом: название организации, УНП, юридический адрес, расчётный счёт, банк и БИК"></textarea>
+          <span class="small error" data-co-company-hint hidden></span>
+        </label>
         <label class="check consent"><input type="checkbox" data-co-consent>
           <span>Согласен(на) на обработку моих данных и данных получателя для выполнения заказа по <a href="/privacy" target="_blank">Политике обработки персональных данных</a></span>
         </label>

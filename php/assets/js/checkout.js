@@ -92,25 +92,12 @@
     consent: $("[data-co-consent]"),
     date: $("[data-co-date]"),
   };
-  // Реквизиты для безнала (способ оплаты INVOICE). Сервер проверяет то же самое (Checkout::parseCompany).
-  var companyInputs = {};
-  $$("[data-co-company-field]").forEach(function (el) { companyInputs[el.getAttribute("data-co-company-field")] = el; });
-  function compact(s) { return s.replace(/\s+/g, "").toUpperCase(); }
-  function company() {
-    var c = {};
-    Object.keys(companyInputs).forEach(function (k) { c[k] = companyInputs[k].value.trim(); });
-    return c;
-  }
-  // Первое незаполненное или неверное поле реквизитов: { field, text } или null
+  // Реквизиты для безнала (способ оплаты INVOICE) — одним текстом. Сервер проверяет то же самое (Checkout::parseCompany).
+  var companyText = $("[data-co-company-text]");
   function companyProblem() {
-    var c = company();
-    if (c.name.length < 2) return { field: "name", text: "Укажите название организации." };
-    if (!/^\d{9}$/.test(compact(c.unp))) return { field: "unp", text: "УНП — 9 цифр." };
-    if (c.address.length < 5) return { field: "address", text: "Укажите юридический адрес." };
-    if (!/^BY\d{2}[A-Z0-9]{4}\d{4}[A-Z0-9]{16}$/.test(compact(c.iban))) return { field: "iban", text: "Расчётный счёт: BY и 26 знаков." };
-    if (c.bank.length < 2) return { field: "bank", text: "Укажите банк." };
-    if (!/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(compact(c.bic))) return { field: "bic", text: "Проверьте БИК банка." };
-    if (c.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email)) return { field: "email", text: "Проверьте e-mail для счёта." };
+    var t = companyText.value.trim();
+    if (t.length < 20) return "Укажите реквизиты компании: название, УНП, адрес, расчётный счёт и банк.";
+    if (!/(^|\D)\d{9}(\D|$)/.test(t)) return "В реквизитах не хватает УНП (9 цифр).";
     return null;
   }
 
@@ -325,17 +312,12 @@
     var invoice = st.payment === "INVOICE";
     $("[data-co-company]").hidden = !invoice;
     var companyErr = invoice ? companyProblem() : null;
-    Object.keys(companyInputs).forEach(function (k) {
-      var el = companyInputs[k];
-      var bad = !!(st.error && st.error.field === "company." + k) || (!!companyErr && companyErr.field === k && el.value.trim().length > 0);
-      el.setAttribute("aria-invalid", String(bad));
-    });
-    // Подсказка прямо под реквизитами (на телефоне итог с подсказками не виден): ошибка с сервера или первое неверное поле
-    var serverCompanyErr = st.error && st.error.field && st.error.field.indexOf("company.") === 0 ? st.error.text : "";
-    var typed = Object.keys(companyInputs).some(function (k) { return companyInputs[k].value.trim().length > 0; });
+    // Подсказка прямо под полем (на телефоне итог с подсказками не виден): ошибка с сервера или что не так в тексте
+    var serverCompanyErr = st.error && st.error.field === "company" ? st.error.text : "";
     var companyHint = $("[data-co-company-hint]");
-    companyHint.textContent = serverCompanyErr || (companyErr && typed ? companyErr.text : "");
+    companyHint.textContent = serverCompanyErr || (companyErr && companyText.value.trim() ? companyErr : "");
     companyHint.hidden = !invoice || !companyHint.textContent;
+    companyText.setAttribute("aria-invalid", String(!!companyHint.textContent));
 
     // Итог
     var goods = t ? t.priced.bouquetsKop + t.priced.addonsKop : 0;
@@ -373,7 +355,7 @@
       (!unknown && !st.slot ? "Выберите время. " : "") +
       (!recipientOk ? "Укажите телефон получателя. " : "") +
       (!inputs.customerName.value.trim() ? "Укажите имя и телефон. " : "") +
-      (companyErr ? "Реквизиты для безнала: " + companyErr.text + " " : "") +
+      (companyErr ? companyErr + " " : "") +
       (!inputs.consent.checked ? "Отметьте согласие на обработку данных." : "");
 
     // Нижняя панель на телефоне
@@ -414,7 +396,7 @@
         anonymous: inputs.anonymous.checked,
         comment: inputs.comment.value,
         payment: st.payment,
-        company: st.payment === "INVOICE" ? company() : null,
+        company: st.payment === "INVOICE" ? { text: companyText.value } : null,
         consent: inputs.consent.checked,
         idempotencyKey: st.key,
       }),
@@ -428,7 +410,7 @@
         }
         st.error = { text: r.error || "Не получилось оформить заказ", field: r.field };
         if (r.field === "address" || r.field === "slot") st.step = 1;
-        if (r.field && (r.field.indexOf("customer") === 0 || r.field.indexOf("company.") === 0 || r.field === "recipientPhone")) st.step = 2;
+        if (r.field && (r.field.indexOf("customer") === 0 || r.field === "company" || r.field === "recipientPhone")) st.step = 2;
         if (r.removed) refresh();
       })
       .catch(function () {
@@ -471,11 +453,9 @@
   ["address", "customerName", "customerPhone", "recipientPhone"].forEach(function (k) {
     inputs[k].addEventListener("input", render);
   });
-  Object.keys(companyInputs).forEach(function (k) {
-    companyInputs[k].addEventListener("input", function () {
-      if (st.error && st.error.field === "company." + k) st.error = null;
-      render();
-    });
+  companyText.addEventListener("input", function () {
+    if (st.error && st.error.field === "company") st.error = null;
+    render();
   });
   inputs.consent.addEventListener("change", function () {
     if (st.error && st.error.field === "consent") st.error = null;

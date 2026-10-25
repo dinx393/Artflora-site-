@@ -26,7 +26,7 @@
             <td class="small"><?= e(admin_date($o['deliveryDate'])) ?>, <?= e($o['deliverySlot'] ?: 'время ?') ?></td>
             <td class="small"><?= e(implode(', ', array_map(fn ($i) => $i['name'] . ($i['size'] ? " {$i['size']}" : '') . ($i['qty'] > 1 ? " ×{$i['qty']}" : ''), $o['items']))) ?></td>
             <td class="small"><?= e($o['deliveryMethod'] === 'PICKUP' ? "Самовывоз · {$o['shop']}" : ($o['address'] ?: ($o['addressUnknown'] ? 'Уточнить у получателя' : ''))) ?></td>
-            <td class="small"><?= e($o['customerName']) ?><br><?= e(Text::phone($o['customerPhone'])) ?><?php if (!empty($o['company'])): ?><br><b>Безнал: <?= e(Db::fromJson($o['company'], [])['name'] ?? '') ?></b><?php endif ?></td>
+            <td class="small"><?= e($o['customerName']) ?><br><?= e(Text::phone($o['customerPhone'])) ?><?php if (!empty($o['company'])): ?><br><b>Безнал: <?= e(Checkout::companyTitle(Db::fromJson($o['company'], []))) ?></b><?php endif ?></td>
             <td style="font-weight: 800"><?= e(Money::format($o['totalKop'])) ?><?php if ($o['paid']): ?><div class="pill ok">оплачен</div><?php endif ?></td>
             <td><span class="pill <?= $o['status'] === 'NEW' ? 'warn' : ($o['status'] === 'DONE' ? 'ok' : '') ?>"><?= e(ADMIN_STATUS_LABEL[$o['status']]) ?></span></td>
           </tr>

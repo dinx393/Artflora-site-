@@ -7,11 +7,6 @@ final class Checkout
     // ЕРИП, WebPay (код CARD: картой по ссылке от администратора), безнал (решение владельца 2026-10-25).
     // VIBER_LINK больше не предлагаем, он остался только в старых заказах.
     public const PAYMENTS = ['ERIP', 'CARD', 'INVOICE'];
-    // Реквизиты для безнала (INVOICE): поле => [подпись, длина]. E-mail необязателен, остальное нужно для счёта.
-    public const COMPANY_FIELDS = [
-        'name' => ['Организация', 200], 'unp' => ['УНП', 9], 'address' => ['Юридический адрес', 300],
-        'iban' => ['Расчётный счёт', 34], 'bank' => ['Банк', 200], 'bic' => ['БИК', 11], 'email' => ['E-mail для счёта', 100],
-    ];
 
     // Корзина из браузера → ['lines' => [['bouquetId','size','qty']], 'addons' => [['addonId','qty']], 'cardText'].
     // Что-то не так (не те типы, слишком много строк) — null.
@@ -199,50 +194,24 @@ final class Checkout
         return ['ok' => true, 'order' => $o];
     }
 
-    // Реквизиты организации для безнала (как в счёте по практике РБ): название, УНП (9 цифр), юр. адрес,
-    // расчётный счёт IBAN (BY…, 28 знаков, с проверкой контрольных цифр), банк, БИК; e-mail — по желанию.
-    // → ['ok' => true, 'company' => […]] | ['ok' => false, 'error', 'field' => 'company.<поле>']
+    // Реквизиты организации для безнала: одним текстом, как их обычно присылают (решение владельца 2026-10-25).
+    // Проверяем только, что текст не пустой и в нём есть УНП (9 цифр подряд). → ['ok' => true, 'company' => ['text' => …]] | ошибка
     public static function parseCompany(mixed $raw): array
     {
-        $bad = fn (string $error, string $k) => ['ok' => false, 'error' => $error, 'field' => "company.$k"];
-        if (!is_array($raw)) return $bad('Укажите реквизиты организации', 'name');
-        $c = [];
-        foreach (self::COMPANY_FIELDS as $k => [$label, $max]) {
-            $v = $raw[$k] ?? '';
-            if (!is_string($v)) return $bad('Обновите страницу и попробуйте ещё раз', $k);
-            $v = trim(preg_replace('/\s+/u', ' ', $v));
-            // В номерах пробелы и регистр не важны: «by13 nbrb 3600…» → «BY13NBRB3600…»
-            if (in_array($k, ['unp', 'iban', 'bic'], true)) $v = mb_strtoupper(str_replace(' ', '', $v));
-            if (mb_strlen($v) > max($max, 40)) return $bad('Слишком длинный текст, сократите', $k);
-            $c[$k] = $v;
-        }
-        if (mb_strlen($c['name']) < 2) return $bad('Укажите название организации', 'name');
-        if (!preg_match('/^\d{9}$/', $c['unp'])) return $bad('УНП — это 9 цифр', 'unp');
-        if (mb_strlen($c['address']) < 5) return $bad('Укажите юридический адрес организации', 'address');
-        if (!self::ibanOk($c['iban'])) return $bad('Проверьте расчётный счёт (IBAN): BY и 26 знаков, сверьте с выпиской банка', 'iban');
-        if (mb_strlen($c['bank']) < 2) return $bad('Укажите банк', 'bank');
-        if (!preg_match('/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/', $c['bic'])) return $bad('Проверьте БИК банка: 8 или 11 латинских букв и цифр, например AKBBBY2X', 'bic');
-        if ($c['email'] !== '' && !filter_var($c['email'], FILTER_VALIDATE_EMAIL)) return $bad('Проверьте e-mail для счёта', 'email');
-        return ['ok' => true, 'company' => $c];
+        $bad = fn (string $error) => ['ok' => false, 'error' => $error, 'field' => 'company'];
+        $text = is_array($raw) ? ($raw['text'] ?? '') : $raw;
+        if (!is_string($text)) return $bad('Укажите реквизиты компании');
+        $text = trim(preg_replace("/[ \t]+/u", ' ', str_replace("\r", '', $text)));
+        if (mb_strlen($text) > 2000) return $bad('Слишком длинный текст, сократите');
+        if (mb_strlen($text) < 20) return $bad('Укажите реквизиты компании: название, УНП, адрес, расчётный счёт и банк');
+        if (!preg_match('/(?<!\d)\d{9}(?!\d)/', $text)) return $bad('В реквизитах не хватает УНП (9 цифр)');
+        return ['ok' => true, 'company' => ['text' => $text]];
     }
 
-    // Белорусский IBAN: BY, 2 контрольные цифры, 4 буквы банка, 4 цифры балансового счёта, 16 знаков; остаток от деления на 97 равен 1.
-    public static function ibanOk(string $iban): bool
+    // Первая строка реквизитов (обычно название) — для списка заказов
+    public static function companyTitle(?array $c): string
     {
-        if (!preg_match('/^BY\d{2}[A-Z0-9]{4}\d{4}[A-Z0-9]{16}$/', $iban)) return false;
-        $digits = '';
-        foreach (str_split(substr($iban, 4) . substr($iban, 0, 4)) as $ch) $digits .= ctype_digit($ch) ? $ch : (string) (ord($ch) - 55);
-        $rest = 0;
-        foreach (str_split($digits, 7) as $part) $rest = (int) ($rest . $part) % 97;
-        return $rest === 1;
-    }
-
-    // Реквизиты одной строкой на поле — для админки, письма и Telegram: [['Организация', 'ООО «Ромашка»'], …]
-    public static function companyRows(?array $c): array
-    {
-        $rows = [];
-        foreach (self::COMPANY_FIELDS as $k => [$label]) if (($c[$k] ?? '') !== '') $rows[] = [$label, $c[$k]];
-        return $rows;
+        return mb_strimwidth(trim((string) strtok(($c['text'] ?? '') . "\n", "\n")), 0, 60, '…');
     }
 
     // Создать заказ. → ['ok' => true, 'number', 'token', 'id', 'new' (false — это повтор уже созданного)]

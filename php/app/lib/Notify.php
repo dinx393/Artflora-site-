@@ -81,7 +81,7 @@ final class Notify
             "Когда: {$o['deliveryDate']}, " . ($o['deliverySlot'] ?: 'время уточнить'),
             "Клиент: {$o['customerName']}, {$o['customerPhone']}",
             ...(!empty($o['company'])
-                ? ['💼 Безнал, счёт на организацию:', ...array_map(fn ($c) => "{$c[0]}: {$c[1]}", Checkout::companyRows($o['company']))]
+                ? ['💼 Безнал, реквизиты для счёта:', $o['company']['text'] ?? '']
                 : []),
             Config::siteUrl() . "/admin/orders/{$o['id']}",
         ];

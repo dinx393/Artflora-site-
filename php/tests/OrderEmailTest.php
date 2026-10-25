@@ -32,9 +32,7 @@ test('адрес неизвестен и самовывоз', function () use ($
     contains($p['subject'], '135 BYN');
 });
 test('безнал: реквизиты организации в письме', function () use ($base) {
-    $m = OrderEmail::render(['payment' => 'Безнал (счёт организации)', 'company' => ['name' => 'ООО «Ромашка»', 'unp' => '190000001', 'iban' => 'BY13NBRB3600900000002Z00AB00']] + $base);
-    contains($m['text'], 'Реквизиты для счёта: Организация: ООО «Ромашка»');
-    contains($m['text'], 'УНП: 190000001');
-    contains($m['html'], 'Расчётный счёт: BY13NBRB3600900000002Z00AB00');
-    contains($m['html'], 'ООО «Ромашка»');
+    $m = OrderEmail::render(['payment' => 'Безнал (счёт организации)', 'company' => ['text' => "ООО «Ромашка»\nУНП 190000001"]] + $base);
+    contains($m['text'], "Реквизиты для счёта: ООО «Ромашка»\nУНП 190000001");
+    contains($m['html'], 'ООО «Ромашка»<br>УНП 190000001');
 });

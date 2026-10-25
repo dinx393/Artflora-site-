@@ -68,9 +68,7 @@ $created = date('d.m.Y, H:i:s', strtotime($o['createdAt']));
     <?php if (!empty($o['company'])): ?>
       <div class="card stack" style="gap: 6px">
         <span class="label">Безнал: реквизиты для счёта</span>
-        <?php foreach (Checkout::companyRows($o['company']) as [$k, $v]): ?>
-          <div class="sum-row"><span class="muted"><?= e($k) ?></span><b style="text-align: right; overflow-wrap: anywhere"><?= e($v) ?></b></div>
-        <?php endforeach ?>
+        <div style="white-space: pre-line; overflow-wrap: anywhere"><?= e($o['company']['text'] ?? '') ?></div>
       </div>
     <?php endif ?>
   </div>
