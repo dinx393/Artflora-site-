@@ -3,6 +3,7 @@
 //   php app/cli.php migrate      — применить новые таблицы базы
 //   php app/cli.php demo         — добавить цветы и букеты-примеры (только в пустую базу)
 //   php app/cli.php clean-demo   — убрать все букеты, заказы и напоминания (справочник цветов остаётся)
+//   php app/cli.php photos       — уменьшить фото, загруженные прямо с iPhone (HDR-фото выглядят тёмными на iPhone 12+)
 //   php app/cli.php mail         — подключить почту для писем о заказах: спросит ящик и пароль, сам найдёт сервер,
 //                                  отправит пробное письмо и запишет настройки в app/config.php
 //   php app/cli.php import ~/artflora-export.json [--replace]
@@ -16,6 +17,9 @@ Db::migrate();
 
 if ($cmd === 'migrate') {
     echo "База в порядке\n";
+} elseif ($cmd === 'photos') {
+    $n = Uploads::shrinkAll();
+    echo $n ? "Уменьшено фото с iPhone: $n\n" : "Фото в порядке\n";
 } elseif ($cmd === 'demo') {
     if (Db::value('SELECT COUNT(*) FROM flowers')) exit("В базе уже есть цветы, примеры не добавляю.\n");
     $demo = json_decode(file_get_contents(__DIR__ . '/demo.json'), true);

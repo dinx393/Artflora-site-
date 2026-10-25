@@ -11,6 +11,14 @@ final class Uploads
         return Config::get('upload_dir') ?: PUBLIC_DIR . '/uploads';
     }
 
+    // Адрес фото для покупателя с ?v=<время файла>: пересохранили фото — телефоны не покажут старое из кэша
+    public static function url(string $path): string
+    {
+        $name = str_starts_with($path, '/uploads/') ? self::safeName(substr($path, 9)) : null;
+        $file = $name ? self::dir() . "/$name" : null;
+        return $file && is_file($file) ? "$path?v=" . filemtime($file) : $path;
+    }
+
     public static function safeName(string $name): ?string
     {
         return preg_match('/^[a-z0-9-]+\.(jpg|png|webp)$/', $name) ? $name : null;
@@ -36,9 +44,77 @@ final class Uploads
         $type = null;
         foreach (array_keys(self::TYPES) as $t) if (self::looksLikeImage($data, $t)) $type = $t;
         if (!$type) return ['ok' => false, 'error' => 'Нужна картинка JPG, PNG или WebP'];
+        if ($type === 'image/jpeg') $data = self::shrinkJpeg($data);
         $name = date('Ymd') . '-' . bin2hex(random_bytes(6)) . self::TYPES[$type];
         if (!is_dir(self::dir())) mkdir(self::dir(), 0755, true);
         file_put_contents(self::dir() . "/$name", $data);
         return ['ok' => true, 'path' => "/uploads/$name"];
+    }
+
+    // Фото прямо с iPhone (3024×4032, 2–3 МБ) несут вторую, HDR-картинку («карту яркости»). iPhone 12 и новее
+    // показывают такое фото в HDR, и на белой странице оно выглядит тусклым и затемнённым, а на iPhone 11 — нормально.
+    // Пересохраняем: до 1600 px по длинной стороне, без HDR-части, с тем же цветовым профилем (Display P3).
+    // Обычные небольшие JPEG не трогаем. Нет GD или фото не читается — оставляем как было.
+    public const MAX_SIDE = 1600;
+
+    public static function needsShrink(string $jpeg): bool
+    {
+        if (str_contains($jpeg, "MPF\0") || str_contains($jpeg, 'hdrgm') || str_contains($jpeg, 'GainMap')) return true;
+        $size = @getimagesizefromstring($jpeg);
+        return $size && max($size[0], $size[1]) > self::MAX_SIDE + 400;
+    }
+
+    public static function shrinkJpeg(string $jpeg): string
+    {
+        if (!function_exists('imagecreatefromstring') || !self::needsShrink($jpeg)) return $jpeg;
+        $img = @imagecreatefromstring($jpeg);
+        if (!$img) return $jpeg;
+        $angle = [3 => 180, 6 => -90, 8 => 90][self::orientation($jpeg)] ?? 0;
+        if ($angle) $img = imagerotate($img, $angle, 0);
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $k = min(1, self::MAX_SIDE / max($w, $h));
+        if ($k < 1) $img = imagescale($img, (int) round($w * $k), (int) round($h * $k), IMG_BICUBIC);
+        ob_start();
+        imagejpeg($img, null, 85);
+        $out = ob_get_clean();
+        // GD теряет цветовой профиль — возвращаем его сразу после начала файла
+        return $out ? "\xFF\xD8" . self::iccSegments($jpeg) . substr($out, 2) : $jpeg;
+    }
+
+    // Пересохранить уже загруженные фото (при обновлении сайта). Имена файлов не меняются. Возвращает число исправленных.
+    public static function shrinkAll(): int
+    {
+        $n = 0;
+        foreach (glob(self::dir() . '/*.jpg') ?: [] as $file) {
+            $data = (string) file_get_contents($file);
+            $new = self::shrinkJpeg($data);
+            if ($new !== $data && file_put_contents("$file.tmp", $new) && rename("$file.tmp", $file)) $n++;
+        }
+        return $n;
+    }
+
+    // Поворот из EXIF (1 — как есть). GD сам его не учитывает, а браузеры учитывают.
+    public static function orientation(string $jpeg): int
+    {
+        if (!function_exists('exif_read_data')) return 1;
+        $exif = @exif_read_data('data://image/jpeg;base64,' . base64_encode($jpeg));
+        return (int) ($exif['Orientation'] ?? 1);
+    }
+
+    // Сегменты APP2 «ICC_PROFILE» из исходного JPEG, как есть
+    public static function iccSegments(string $jpeg): string
+    {
+        $out = '';
+        $pos = 2;
+        $len = strlen($jpeg);
+        while ($pos + 4 <= $len && $jpeg[$pos] === "\xFF") {
+            $marker = ord($jpeg[$pos + 1]);
+            if ($marker === 0xDA || $marker === 0xD9) break;
+            $size = unpack('n', substr($jpeg, $pos + 2, 2))[1];
+            if ($marker === 0xE2 && substr($jpeg, $pos + 4, 12) === "ICC_PROFILE\0") $out .= substr($jpeg, $pos, $size + 2);
+            $pos += $size + 2;
+        }
+        return $out;
     }
 }

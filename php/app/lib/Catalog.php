@@ -73,7 +73,7 @@ final class Catalog
             'id' => $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'],
             'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $b['sections'],
-            'photos' => $b['photos'] ?: [self::PLACEHOLDER],
+            'photos' => $b['photos'] ? array_map([Uploads::class, 'url'], $b['photos']) : [self::PLACEHOLDER],
             'collectionId' => $b['collectionId'], 'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
             'flowerNames' => array_keys($names),
             'sizes' => $sizes,

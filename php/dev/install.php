@@ -124,6 +124,10 @@ try {
     fail('база не обновилась: ' . $e->getMessage());
 }
 
+say('Проверяю фото букетов');
+$fixed = Uploads::shrinkAll();
+echo $fixed ? "Уменьшено фото с iPhone: $fixed\n" : "Фото в порядке\n";
+
 say('Готово');
 echo "Сайт:    https://$domain\nАдминка: https://$domain/admin\n";
 echo "Если https ещё не включён: панель → «SSL-сертификаты» → «Выпустить Let's Encrypt» для $domain.\n";

@@ -93,3 +93,24 @@ test('файл делится на запросы, комментарии убр
     ok(!str_contains(implode("\n", $parts), '-- '), 'остались комментарии');
 });
 test('срок «от N часов»', fn () => eq([Text::fromHours(1), Text::fromHours(1.5), Text::fromHours(2), Text::fromHours(11), Text::fromHours(21)], ['от 1 часа', 'от 1,5 часа', 'от 2 часов', 'от 11 часов', 'от 21 часа']));
+
+group('фото с iPhone');
+test('HDR-фото пересохраняется: меньше, без HDR-части, профиль остаётся', function () {
+    $img = imagecreatetruecolor(2400, 3200);
+    ob_start();
+    imagejpeg($img);
+    $plain = ob_get_clean();
+    $icc = "\xFF\xE2" . pack('n', 2 + 12 + 4) . "ICC_PROFILE\0" . "\x01\x01ab";
+    $hdr = "\xFF\xD8" . $icc . substr($plain, 2) . 'MPF' . "\0" . 'hdrgm';
+    ok(Uploads::needsShrink($hdr));
+    $out = Uploads::shrinkJpeg($hdr);
+    ok(!Uploads::needsShrink($out), 'после пересохранения ещё HDR');
+    eq(array_slice(getimagesizefromstring($out), 0, 2), [1200, 1600]);
+    eq(Uploads::iccSegments($out), $icc);
+});
+test('обычное небольшое фото не трогаем', function () {
+    ob_start();
+    imagejpeg(imagecreatetruecolor(800, 600));
+    $plain = ob_get_clean();
+    eq(Uploads::shrinkJpeg($plain), $plain);
+});
