@@ -13,12 +13,14 @@ document.addEventListener("click", function (e) {
   });
 });
 
-// Порядок букетов на сайте: перетаскивание за ⠿ или стрелки ▲▼, сохраняем сразу.
+// Порядок букетов на сайте: тянуть за ⠿ (мышью или пальцем) или стрелки ▲▼, сохраняем сразу.
 (function () {
   var list = document.querySelector("[data-bouquet-list] tbody");
   if (!list) return;
   var msg = document.querySelector("[data-order-msg]");
   var dragged = null;
+  var lastY = 0;
+  var scrollTimer = null;
   function rows() { return Array.prototype.slice.call(list.querySelectorAll("tr[data-id]")); }
   function save() {
     var ids = rows().map(function (tr) { return Number(tr.getAttribute("data-id")); });
@@ -40,28 +42,47 @@ document.addEventListener("click", function (e) {
     else list.insertBefore(other, tr);
     save();
   });
-  list.addEventListener("dragstart", function (e) {
-    if (!e.target.classList || !e.target.classList.contains("drag-handle")) return;
-    dragged = e.target.closest("tr");
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", dragged.getAttribute("data-id"));
-    e.dataTransfer.setDragImage(dragged, 20, 20);
-    dragged.classList.add("dragging");
-  });
-  list.addEventListener("dragover", function (e) {
-    if (!dragged) return;
-    e.preventDefault();
-    var tr = e.target.closest("tr[data-id]");
-    if (!tr || tr === dragged) return;
-    // тянем вниз — ставим после строки, вверх — перед ней
+  // Строка под пальцем/мышью: тянем вниз — ставим после неё, вверх — перед ней
+  function moveTo(y) {
+    var tr = rows().filter(function (r) {
+      var box = r.getBoundingClientRect();
+      return r !== dragged && y >= box.top && y <= box.bottom;
+    })[0];
+    if (!tr) return;
     var all = rows();
     list.insertBefore(dragged, all.indexOf(dragged) < all.indexOf(tr) ? tr.nextElementSibling : tr);
+  }
+  // У края экрана список сам прокручивается, чтобы на телефоне можно было унести букет далеко
+  function autoScroll() {
+    var edge = 70;
+    var dy = lastY < edge ? -12 : lastY > window.innerHeight - edge ? 12 : 0;
+    if (dy) {
+      window.scrollBy(0, dy);
+      moveTo(lastY);
+    }
+  }
+  list.addEventListener("pointerdown", function (e) {
+    var h = e.target.closest(".drag-handle");
+    if (!h) return;
+    e.preventDefault();
+    dragged = h.closest("tr");
+    dragged.classList.add("dragging");
+    lastY = e.clientY;
+    h.setPointerCapture(e.pointerId);
+    scrollTimer = setInterval(autoScroll, 30);
   });
-  list.addEventListener("drop", function (e) { if (dragged) e.preventDefault(); });
-  list.addEventListener("dragend", function () {
+  list.addEventListener("pointermove", function (e) {
     if (!dragged) return;
+    lastY = e.clientY;
+    moveTo(e.clientY);
+  });
+  function end() {
+    if (!dragged) return;
+    clearInterval(scrollTimer);
     dragged.classList.remove("dragging");
     dragged = null;
     save();
-  });
+  }
+  list.addEventListener("pointerup", end);
+  list.addEventListener("pointercancel", end);
 })();

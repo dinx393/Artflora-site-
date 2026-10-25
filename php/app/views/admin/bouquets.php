@@ -22,7 +22,7 @@ $tabs = [
     <a href="/admin/bouquets?tab=<?= $k ?>" class="chip <?= $tab === $k ? 'on' : '' ?>"><?= e($label) ?></a>
   <?php endforeach ?>
 </div>
-<p class="small muted" style="margin: 0">Порядок на сайте: перетащите букет за ⠿ (или стрелками ▲▼), сохраняется сразу. Новый букет появляется первым.</p>
+<p class="small muted" style="margin: 0">Порядок на сайте: потяните букет за ⠿ (на телефоне — пальцем) или нажмите стрелки, сохраняется сразу. Новый букет появляется первым.</p>
 <p class="small" data-order-msg hidden></p>
 <div class="table-wrap">
   <table class="table" data-bouquet-list>
@@ -33,7 +33,7 @@ $tabs = [
       <?php foreach ($shown as ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $price]): ?>
         <tr class="<?= $vis['visible'] ? '' : 'off' ?>" data-id="<?= $b['id'] ?>">
           <td class="drag-cell">
-            <span class="drag-handle" draggable="true" title="Перетащите, чтобы поменять порядок на сайте">⠿</span>
+            <span class="drag-handle" title="Перетащите, чтобы поменять порядок на сайте">⠿</span>
             <span class="drag-steps"><button type="button" aria-label="Выше" data-step="-1">▲</button><button type="button" aria-label="Ниже" data-step="1">▼</button></span>
           </td>
           <td>

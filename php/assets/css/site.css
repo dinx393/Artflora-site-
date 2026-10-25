@@ -388,6 +388,7 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .drag-cell { width: 34px; padding-right: 0 !important; vertical-align: top; }
 .drag-handle { display: block; cursor: grab; font-size: 20px; line-height: 1; color: var(--muted); padding: 8px 4px 2px; user-select: none; }
 .drag-handle:active { cursor: grabbing; }
+[data-bouquet-list] .drag-handle { touch-action: none; } /* тянуть пальцем, а не прокручивать страницу */
 .drag-steps { display: flex; flex-direction: column; }
 .drag-steps button { border: 0; background: none; color: var(--muted); font-size: 10px; padding: 2px 4px; cursor: pointer; }
 .drag-steps button:hover { color: var(--cherry); }
@@ -593,8 +594,8 @@ tr.dragging { opacity: .45; }
   /* «Удалить» у цветка в составе букета — внизу карточки во всю ширину, а не крестиком в углу */
   .admin-main table.table td.del-cell { position: static !important; display: block; }
   .admin-main table.table td.del-cell .item-del { width: 100%; }
-  /* на телефоне перетаскивание пальцем не работает — крупные кнопки «▲ Выше» «▼ Ниже» */
-  .admin-main .drag-handle { display: none; }
+  /* на телефоне: ⠿ крупнее (тянуть пальцем) и кнопки «▲ Выше» «▼ Ниже» */
+  .admin-main .drag-handle { font-size: 28px; padding: 4px 10px; }
   .admin-main .drag-steps { flex-direction: row; gap: 8px; }
   .admin-main .drag-steps button { font-size: 14px; font-weight: 700; color: var(--cherry); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; min-height: 36px; }
   .admin-main .drag-steps button::after { content: " " attr(aria-label); }
