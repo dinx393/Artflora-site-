@@ -22,14 +22,20 @@ $tabs = [
     <a href="/admin/bouquets?tab=<?= $k ?>" class="chip <?= $tab === $k ? 'on' : '' ?>"><?= e($label) ?></a>
   <?php endforeach ?>
 </div>
+<p class="small muted" style="margin: 0">Порядок на сайте: перетащите букет за ⠿ (или стрелками ▲▼), сохраняется сразу. Новый букет появляется первым.</p>
+<p class="small" data-order-msg hidden></p>
 <div class="table-wrap">
-  <table class="table">
+  <table class="table" data-bouquet-list>
     <thead>
-      <tr><th>Букет</th><th>Состав (M)</th><th>Упаковка</th><th>На сайте</th><th>Статус</th><th>Показывать</th></tr>
+      <tr><th aria-label="Порядок"></th><th>Букет</th><th>Состав (M)</th><th>Упаковка</th><th>На сайте</th><th>Статус</th><th>Показывать</th></tr>
     </thead>
     <tbody>
       <?php foreach ($shown as ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $price]): ?>
-        <tr class="<?= $vis['visible'] ? '' : 'off' ?>">
+        <tr class="<?= $vis['visible'] ? '' : 'off' ?>" data-id="<?= $b['id'] ?>">
+          <td class="drag-cell">
+            <span class="drag-handle" draggable="true" title="Перетащите, чтобы поменять порядок на сайте">⠿</span>
+            <span class="drag-steps"><button type="button" aria-label="Выше" data-step="-1">▲</button><button type="button" aria-label="Ниже" data-step="1">▼</button></span>
+          </td>
           <td>
             <div class="row" style="gap: 12px; flex-wrap: nowrap">
               <img src="<?= e($b['photos'][0] ?? Catalog::PLACEHOLDER) ?>" alt="" style="width: 52px; height: 52px; border-radius: 10px; object-fit: cover">

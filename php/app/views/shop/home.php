@@ -61,7 +61,7 @@ $cards = [
     <?php endif ?>
     <a href="/catalog" class="hero-tile <?= $ofDay ? '' : 'hero-tile-full' ?>">
       <span class="hero-tile-photos n<?= count($tilePhotos) ?>">
-        <?php foreach ($tilePhotos as $i => $p): ?><img src="<?= e($p) ?>" alt="<?= $i === 0 ? 'Букеты Артфлора.by' : '' ?>"><?php endforeach ?>
+        <?php foreach ($tilePhotos as $i => $p): ?><img src="<?= e($p) ?>" alt="<?= $i === 0 ? 'Букеты Artflora.by' : '' ?>"><?php endforeach ?>
       </span>
       <span class="hero-chip">Весь каталог ↗</span>
     </a>

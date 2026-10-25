@@ -72,6 +72,7 @@ main > .section:last-child { padding-bottom: 0; }
 .btn-lg { min-height: 52px; padding: 12px 28px; font-size: 16px; }
 .btn-block { width: 100%; }
 .btn-outline { background: transparent; color: var(--cherry); }
+.item-del { min-height: 36px; padding: 4px 14px; font-size: 14px; }
 .btn-outline:hover { color: var(--cherry); background: var(--blush); border-color: var(--cherry); }
 .btn-pink { background: var(--pink); border-color: var(--pink); color: var(--cherry); }
 .btn-pink:hover { background: var(--white); border-color: var(--white); color: var(--cherry); }
@@ -589,6 +590,14 @@ tr.dragging { opacity: .45; }
   .admin-main table.table td[data-label=""]::before { content: none; }
   /* пустые ячейки (кнопка «×», ручка перетаскивания) — в правый верхний угол карточки */
   .admin-main table.table td[data-label=""]:last-child:not(:first-child) { position: absolute; top: 8px; right: 8px; }
+  /* «Удалить» у цветка в составе букета — внизу карточки во всю ширину, а не крестиком в углу */
+  .admin-main table.table td.del-cell { position: static !important; display: block; }
+  .admin-main table.table td.del-cell .item-del { width: 100%; }
+  /* на телефоне перетаскивание пальцем не работает — крупные кнопки «▲ Выше» «▼ Ниже» */
+  .admin-main .drag-handle { display: none; }
+  .admin-main .drag-steps { flex-direction: row; gap: 8px; }
+  .admin-main .drag-steps button { font-size: 14px; font-weight: 700; color: var(--cherry); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; min-height: 36px; }
+  .admin-main .drag-steps button::after { content: " " attr(aria-label); }
   .admin-main table.table td.drag-cell { display: flex; gap: 8px; align-items: center; width: auto; }
   .admin-main table.table td:first-child:not([data-label=""]) { padding-right: 36px; }
   .admin-main table.table .qty { max-width: 100%; }

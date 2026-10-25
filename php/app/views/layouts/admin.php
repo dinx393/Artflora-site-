@@ -25,7 +25,7 @@ $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 <body>
 <div class="admin">
   <aside class="admin-nav">
-    <a href="/admin/bouquets" class="logo">Артфлора.by</a>
+    <a href="/admin/bouquets" class="logo">Artflora.by</a>
     <span class="small muted" style="padding: 0 0 14px">Управление сайтом</span>
     <?php foreach ($items as $href => $label): ?>
       <a href="<?= $href ?>" class="item <?= str_starts_with($path, $href) ? 'on' : '' ?>"><?= e($label) ?></a>

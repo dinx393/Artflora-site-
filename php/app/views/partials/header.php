@@ -26,7 +26,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
   <div class="wrap">
     <div class="header-top">
       <button type="button" class="icon-btn mobile-only" aria-label="Меню" aria-expanded="false" data-mmenu-open><?= Icons::get('menu') ?></button>
-      <a href="/" class="logo">Артфлора.by</a>
+      <a href="/" class="logo">Artflora.by</a>
       <form action="/catalog" class="search" role="search">
         <?= Icons::get('search') ?>
         <label class="visually-hidden" for="q">Поиск</label>
@@ -67,7 +67,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
 <div class="mmenu" role="dialog" aria-modal="true" aria-label="Меню" data-mmenu hidden>
   <div class="mmenu-top">
     <button type="button" class="icon-btn" aria-label="Закрыть меню" data-mmenu-close><?= Icons::get('close') ?></button>
-    <a href="/" class="logo">Артфлора.by</a>
+    <a href="/" class="logo">Artflora.by</a>
     <?= View::render('partials/cart-link') ?>
   </div>
   <div class="mmenu-body">

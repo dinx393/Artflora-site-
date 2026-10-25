@@ -190,7 +190,7 @@ final class Notify
     {
         $mail = self::buildOrderEmail($orderId);
         if (!$mail) return;
-        self::mailer()->send(self::from(), 'Артфлора.by — заказы', self::orderEmailTo(), $mail['subject'], $mail['html'], $mail['text']);
+        self::mailer()->send(self::from(), 'Artflora.by — заказы', self::orderEmailTo(), $mail['subject'], $mail['html'], $mail['text']);
     }
 
     // Пробное письмо из админки → «Настройки»: проверить, что почта настроена и письма доходят.
@@ -203,7 +203,7 @@ final class Notify
         $list = array_values(array_filter(array_map('trim', explode(',', $to))));
         if (!$list) return ['ok' => false, 'error' => 'Впишите выше, на какую почту присылать письма о заказах'];
         try {
-            self::mailer()->send(self::from(), 'Артфлора.by — заказы', $list, 'Пробное письмо с сайта Артфлора.by', '',
+            self::mailer()->send(self::from(), 'Artflora.by — заказы', $list, 'Пробное письмо с сайта Artflora.by', '',
                 'Это пробное письмо. Раз оно дошло, письма о новых заказах будут приходить сюда же.');
             return ['ok' => true];
         } catch (Throwable $e) {

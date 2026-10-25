@@ -267,8 +267,9 @@
           '<button type="button"' + on("click", function () { setQty(i.flowerId, i.qty + 1); }) + ">+</button></div></td>";
         h += '<td class="small muted">' + (f ? U.formatByn(f.priceKop) + " / " + (f.unit === "STEM" ? "ветка" : "шт") : "") + "</td>";
         h += '<td style="font-weight: 700">' + (f ? U.formatByn(Math.round(f.priceKop * i.qty)) : "") + "</td>";
-        h += '<td><button type="button" class="btn-ghost" aria-label="Убрать"' +
-          on("click", function () { patchSize(function (x) { return Object.assign({}, x, { items: x.items.filter(function (y) { return y.flowerId !== i.flowerId; }) }); }); }) + ">×</button></td></tr>";
+        // словом, а не крестиком: на телефоне крестик было не найти (просьба владельца 2026-10-25)
+        h += '<td class="del-cell"><button type="button" class="btn btn-outline item-del"' +
+          on("click", function () { patchSize(function (x) { return Object.assign({}, x, { items: x.items.filter(function (y) { return y.flowerId !== i.flowerId; }) }); }); }) + ">Удалить</button></td></tr>";
       });
       h += "</tbody></table>";
     }

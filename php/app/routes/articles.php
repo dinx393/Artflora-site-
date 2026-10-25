@@ -3,7 +3,7 @@
 
 Http::get('/blog', fn () => View::page('shop/articles', [
     'title' => 'Статьи о цветах: советы флориста',
-    'description' => 'Советы флористов «Артфлора.by»: как выбрать букет, какие цветы подарить маме, на свадьбу или день рождения, как продлить жизнь цветам.',
+    'description' => 'Советы флористов «Artflora.by»: как выбрать букет, какие цветы подарить маме, на свадьбу или день рождения, как продлить жизнь цветам.',
     'jsonLd' => [Seo::breadcrumbs([['Главная', '/'], ['Статьи', null]])],
 ]));
 
@@ -26,7 +26,7 @@ Http::get('/blog/{slug}', function (string $slug) {
                 'headline' => $a['h1'], 'description' => Articles::fill($a['description']),
                 'image' => $a['image'] ? [Seo::absUrl($a['image'])] : null,
                 'datePublished' => $a['date'], 'dateModified' => '2026-10-24',
-                'author' => ['@type' => 'Organization', 'name' => 'Флористы «Артфлора.by»', 'url' => Seo::absUrl('/')],
+                'author' => ['@type' => 'Organization', 'name' => 'Флористы «Artflora.by»', 'url' => Seo::absUrl('/')],
                 'publisher' => ['@id' => Config::siteUrl() . '/#org'],
                 'mainEntityOfPage' => $url, 'inLanguage' => 'ru',
             ]),

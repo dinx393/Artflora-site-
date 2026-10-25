@@ -6,7 +6,7 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
   <div class="wrap">
     <div class="footer-grid">
       <div class="stack" style="gap: 10px">
-        <span class="footer-logo">Артфлора.by</span>
+        <span class="footer-logo">Artflora.by</span>
         <span class="soft">Цветочный магазин в Минске</span>
       </div>
       <div class="stack" style="gap: 6px">
@@ -39,7 +39,7 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
       <img src="<?= View::asset('img/pay-2.png') ?>" alt="Белкарт, Белкарт ИнтернетПароль, bePaid, webpay, МТБанк" width="852" height="60" loading="lazy">
     </div>
     <div class="footer-legal">
-      © Артфлора.by, <?= date('Y') ?> · <?= e($shop['sellerDetails']) ?>
+      © Artflora.by, <?= date('Y') ?> · <?= e($shop['sellerDetails']) ?>
       <?php if ($shop['email']): ?> · E-mail: <a href="mailto:<?= e($shop['email']) ?>"><?= e($shop['email']) ?></a><?php endif ?>
       <?php if ($shop['complaints']): ?><br>Обращения покупателей рассматривает <?= e($shop['complaints']) ?><?php endif ?>
       <?php if ($shop['authority']): ?> · <?= e($shop['authority']) ?><?php endif ?>

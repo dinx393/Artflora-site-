@@ -162,10 +162,33 @@ Http::post('/admin/bouquets/toggle', function () {
     Http::json(['ok' => true]);
 });
 
+// Порядок букетов на сайте (перетаскивание в списке). ids — букеты вкладки в новом порядке: они меняются
+// местами между собой, остальные стоят где стояли.
+Http::post('/admin/bouquets/order', function () {
+    Auth::requireAdmin();
+    Auth::checkCsrf();
+    $ids = admin_body()['ids'] ?? null;
+    if (!is_array($ids) || !array_is_list($ids) || count($ids) > 2000 || array_filter($ids, fn ($x) => !admin_is_int($x))
+        || count(array_unique($ids)) !== count($ids)) admin_fail('Ошибка, обновите страницу');
+    try {
+        Db::tx(function () use ($ids) {
+            $all = array_map('intval', array_column(Db::all('SELECT id FROM bouquets ORDER BY sortOrder, id FOR UPDATE'), 'id'));
+            if (array_diff($ids, $all)) throw new AdminError('Список букетов изменился, обновите страницу (F5)');
+            $slots = array_keys(array_intersect($all, $ids)); // места, которые занимают эти букеты
+            foreach ($slots as $n => $pos) $all[$pos] = $ids[$n];
+            foreach ($all as $i => $id) Db::exec('UPDATE bouquets SET sortOrder = ? WHERE id = ?', [$i, $id]);
+        });
+    } catch (AdminError $e) {
+        admin_fail($e->getMessage());
+    }
+    Http::json(['ok' => true]);
+});
+
 Http::post('/admin/bouquets/new', function () {
     Auth::requireAdmin();
     Auth::checkCsrf();
     $id = Db::insert('bouquets', [
+        'sortOrder' => (int) Db::value('SELECT COALESCE(MIN(sortOrder), 0) - 1 FROM bouquets'), // новый — первым
         'name' => 'Новый букет', 'slug' => admin_free_slug('bouquets', 'novyy-buket'), 'description' => '',
         'enabled' => 0, 'packagingKop' => 800, 'colors' => '[]', 'occasions' => '[]', 'sections' => '[]', 'photos' => '[]',
     ]);
