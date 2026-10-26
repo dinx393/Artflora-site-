@@ -8,6 +8,7 @@ if (PHP_SAPI === 'cli-server' && is_file(__DIR__ . parse_url($_SERVER['REQUEST_U
     return false;
 }
 
+header_remove('X-Powered-By'); // не показываем версию PHP
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header("Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'");
@@ -47,6 +48,12 @@ try {
 }
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+// Страницы с телефонами и адресами (заказ, корзина, админка) браузер не сохраняет:
+// на общем компьютере их не откроет следующий человек кнопкой «Назад».
+if (preg_match('#^/(admin|order|cart|api)(/|$)#', $path)) {
+    header('Cache-Control: no-store, private');
+    header('Pragma: no-cache');
+}
 // Новые таблицы базы (app/migrations) применяются сами при первом заходе после обновления.
 Db::migrate();
 
