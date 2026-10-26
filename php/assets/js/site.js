@@ -67,20 +67,55 @@
       pop.addEventListener("click", function (e) { if (e.target.closest("a")) set(false); });
     });
 
-    // Меню на телефоне
+    // Меню на телефоне. Открыто — фокус внутри меню (Tab не уходит на страницу за ним),
+    // остальная страница недоступна (inert), после закрытия фокус возвращается на кнопку меню.
     var menu = document.querySelector("[data-mmenu]");
     var opener = document.querySelector("[data-mmenu-open]");
     if (menu && opener) {
+      var hiddenBehind = [];
+      var setBackground = function (off) {
+        hiddenBehind.forEach(function (el) { el.inert = false; el.removeAttribute("aria-hidden"); });
+        hiddenBehind = [];
+        if (!off) return;
+        for (var node = menu; node && node !== document.body; node = node.parentElement) {
+          Array.prototype.forEach.call(node.parentElement.children, function (el) {
+            if (el === node || el.tagName === "SCRIPT" || el.inert) return;
+            el.inert = true;
+            el.setAttribute("aria-hidden", "true");
+            hiddenBehind.push(el);
+          });
+        }
+      };
+      var focusables = function () {
+        return Array.prototype.filter.call(
+          menu.querySelectorAll("a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex='-1'])"),
+          function (el) { return el.offsetParent !== null || el === document.activeElement; }
+        );
+      };
       var setMenu = function (open) {
+        if (menu.hidden === !open) return;
         menu.hidden = !open;
         opener.setAttribute("aria-expanded", String(open));
         document.body.style.overflow = open ? "hidden" : "";
+        setBackground(open);
+        if (open) menu.querySelector("[data-mmenu-close]").focus();
+        else opener.focus();
       };
+      opener.setAttribute("aria-haspopup", "dialog");
       opener.addEventListener("click", function () { setMenu(true); });
       menu.querySelector("[data-mmenu-close]").addEventListener("click", function () { setMenu(false); });
       // Любая ссылка в меню закрывает его
       menu.addEventListener("click", function (e) { if (e.target.closest("a")) setMenu(false); });
-      document.addEventListener("keydown", function (e) { if (e.key === "Escape") setMenu(false); });
+      document.addEventListener("keydown", function (e) {
+        if (menu.hidden) return;
+        if (e.key === "Escape") { setMenu(false); return; }
+        if (e.key !== "Tab") return;
+        var list = focusables();
+        if (!list.length) return;
+        var first = list[0], last = list[list.length - 1];
+        if (e.shiftKey && (document.activeElement === first || !menu.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (document.activeElement === last || !menu.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+      });
     }
   });
 })();
