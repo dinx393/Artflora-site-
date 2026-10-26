@@ -755,6 +755,7 @@ Http::get('/admin/settings', function () {
             'smtpReady' => admin_smtp_ready(),
             'stamp' => admin_stamp('settings'),
         ],
+        'backup' => Backup::status(),
         'scripts' => admin_scripts('admin-settings.js'),
     ]);
 });

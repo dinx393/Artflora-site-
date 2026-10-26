@@ -153,4 +153,4 @@ docker compose cp site:/tmp/artflora-export.json artflora-export.json
 Без Shell: `sh dev/build-zip.sh` собирает архив для «Менеджера файлов» (без паролей и фото), `app/config.php`
 тогда создаётся из `app/config.sample.php` вручную.
 
-Если сайт пишет «Сайт настраивается», ниже указано, что поправить в `app/config.php`. Ошибки пишутся в `app/storage/errors.log`.
+Если сайт пишет «Сайт настраивается», ниже указано, что поправить в `app/config.php`. Ошибки пишутся в журнал за день `app/storage/errors-ГГГГ-ММ-ДД.log` (старше 60 дней удаляются). Резервные копии базы и фото — в `~/backups/<сайт>/` каждую ночь (нужен cron), вручную: `php app/cli.php backup`, вернуть: `php app/cli.php restore <файл>`.

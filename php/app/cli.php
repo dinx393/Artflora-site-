@@ -6,6 +6,9 @@
 //   php app/cli.php photos       — уменьшить фото, загруженные прямо с iPhone (HDR-фото выглядят тёмными на iPhone 12+)
 //   php app/cli.php mail         — подключить почту для писем о заказах: спросит ящик и пароль, сам найдёт сервер,
 //                                  отправит пробное письмо и запишет настройки в app/config.php
+//   php app/cli.php backup       — резервная копия базы и фото сейчас (обычно её сам делает cron каждую ночь)
+//   php app/cli.php restore ~/backups/artflora.by/db-2026-10-26.sql.gz
+//                                — вернуть базу из копии (спросит подтверждение)
 //   php app/cli.php import ~/artflora-export.json [--replace]
 //                                — перенести каталог с сайта на Node.js (файл даёт prisma/export-for-php.js);
 //                                  --replace сначала убирает букеты, коллекции и цветы, которые уже есть на сайте
@@ -156,6 +159,22 @@ if ($cmd === 'migrate') {
     chmod($file, 0600);
     Settings::save('shop', array_merge($shop, ['orderEmail' => $to]));
     echo "\nГотово: пробное письмо отправлено на $to. Проверьте почту (и папку «Спам»). Письма о заказах будут приходить туда же.\n";
+} elseif ($cmd === 'backup') {
+    $b = Backup::run();
+    echo "Копия базы: {$b['file']} (" . round($b['bytes'] / 1024) . " КБ, строк {$b['rows']})\n"
+        . "Фото: " . Backup::dir() . "/uploads (новых: {$b['photosCopied']})\n"
+        . "Проверка восстановления пройдена: таблиц {$b['checked']}\n";
+} elseif ($cmd === 'restore') {
+    $file = $argv[2] ?? exit("Укажите файл копии, например:\nphp app/cli.php restore " . Backup::dir() . '/db-' . date('Y-m-d') . ".sql.gz\n");
+    if (!is_file($file)) exit("Файла $file нет. Копии лежат в " . Backup::dir() . "\n");
+    $rows = Backup::expected($file);
+    echo "Все данные сайта (заказы, букеты, цветы, настройки) будут заменены копией $file.\nНапишите «да», чтобы продолжить: ";
+    if (mb_strtolower(trim((string) fgets(STDIN))) !== 'да') exit("Отменено, ничего не изменилось.\n");
+    // Сначала свежая копия того, что есть сейчас, — если вернули не ту
+    $now = Backup::dir() . '/db-before-restore-' . date('Y-m-d-His') . '.sql.gz';
+    Backup::dump($now);
+    Backup::restore($file);
+    echo "Готово: база восстановлена (" . array_sum($rows) . " строк). То, что было до этого, сохранено в $now\n";
 } else {
-    echo "Команды: migrate, demo, clean-demo, import, mail, photos\n";
+    echo "Команды: migrate, demo, clean-demo, import, mail, photos, backup, restore\n";
 }
