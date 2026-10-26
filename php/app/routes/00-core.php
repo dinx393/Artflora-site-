@@ -11,13 +11,15 @@ Http::get('/admin/login', function () {
 // Вход без проверки CSRF: подделывать вход в чужую админку бессмысленно, а пароль защищён лимитом попыток.
 Http::post('/admin/login', function () {
     $ip = RateLimit::clientIp();
+    // С устройства, где уже входили, — свой счётчик: бот, перебирающий пароли, не закроет вход владельцу
+    $device = Auth::deviceKey();
     $error = null;
-    if (!RateLimit::allow('login', $ip)) {
+    if (!RateLimit::allow('login', $ip, null, $device)) {
         $error = 'Слишком много попыток. Подождите 15 минут';
     } elseif (!Auth::checkPassword((string) ($_POST['password'] ?? ''))) {
         $error = 'Неверный пароль';
     } else {
-        RateLimit::forget('login', $ip);
+        RateLimit::forget('login', $ip, $device);
         Auth::startSession();
         Http::redirect('/admin/bouquets');
     }
@@ -27,6 +29,6 @@ Http::post('/admin/login', function () {
 
 Http::post('/admin/logout', function () {
     Auth::checkCsrf();
-    Auth::endSession();
+    isset($_POST['all']) ? Auth::endAllSessions() : Auth::endSession();
     Http::redirect('/admin/login');
 });

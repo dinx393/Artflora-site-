@@ -35,6 +35,7 @@ $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
     <form method="post" action="/admin/logout">
       <?= Auth::csrfField() ?>
       <button class="btn-ghost small muted">Выйти</button>
+      <button class="btn-ghost small muted" name="all" value="1" title="Например, если телефон потерялся">Выйти на всех устройствах</button>
     </form>
   </aside>
   <main class="admin-main"><?= $content ?></main>

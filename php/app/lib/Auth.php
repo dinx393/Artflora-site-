@@ -1,10 +1,14 @@
 <?php
 // Простой вход в админку по паролю из config.php (admin_password).
-// В cookie лежит срок действия, подписанный session_secret. PHP-сессии не нужны.
+// В cookie лежит случайный ключ входа, в базе (admin_sessions) — его отпечаток и срок. PHP-сессии не нужны.
+// Выход удаляет вход в базе, смена admin_password отменяет все входы сразу.
 final class Auth
 {
     private const COOKIE = 'artflora_admin';
-    private const DAYS = 30;
+    private const HOURS = 24;
+    // Устройство, с которого уже входили: общий лимит попыток (от ботов) его не блокирует
+    private const DEVICE_COOKIE = 'artflora_device';
+    private static ?bool $admin = null;
 
     private static function secret(): string
     {
@@ -25,20 +29,45 @@ final class Auth
         return hash_equals(self::sign($expected), self::sign($password));
     }
 
+    private static function passwordMark(): string
+    {
+        return substr(self::sign('password:' . Config::get('admin_password')), 0, 22);
+    }
+
     public static function startSession(): void
     {
-        $exp = (string) ((time() + self::DAYS * 86400) * 1000);
-        self::setCookie("$exp." . self::sign($exp), time() + self::DAYS * 86400);
+        $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+        $expires = time() + self::HOURS * 3600;
+        Db::exec('DELETE FROM admin_sessions WHERE expiresAt < ?', [time() * 1000]);
+        Db::insert('admin_sessions', [
+            'id' => hash('sha256', $token), 'passwordMark' => self::passwordMark(), 'expiresAt' => $expires * 1000,
+            'userAgent' => mb_substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 200),
+        ]);
+        self::setCookie(self::COOKIE, $token, $expires);
+        self::setCookie(self::DEVICE_COOKIE, self::deviceId() ?? self::newDevice(), time() + 365 * 86400);
+        self::$admin = true;
     }
 
+    // Выйти: этот вход больше не действует, даже если cookie кто-то скопировал
     public static function endSession(): void
     {
-        self::setCookie('', time() - 3600);
+        $v = $_COOKIE[self::COOKIE] ?? '';
+        if (is_string($v) && $v !== '') Db::exec('DELETE FROM admin_sessions WHERE id = ?', [hash('sha256', $v)]);
+        self::setCookie(self::COOKIE, '', time() - 3600);
+        self::$admin = false;
     }
 
-    private static function setCookie(string $value, int $expires): void
+    // Выйти на всех устройствах (если телефон потерялся)
+    public static function endAllSessions(): void
     {
-        setcookie(self::COOKIE, $value, [
+        Db::exec('DELETE FROM admin_sessions');
+        self::setCookie(self::COOKIE, '', time() - 3600);
+        self::$admin = false;
+    }
+
+    private static function setCookie(string $name, string $value, int $expires): void
+    {
+        if (!headers_sent()) setcookie($name, $value, [
             'expires' => $expires,
             'path' => '/',
             'httponly' => true,
@@ -46,16 +75,44 @@ final class Auth
             // Только по https: на http://localhost иначе не войти.
             'secure' => str_starts_with((string) Config::get('site_url'), 'https://'),
         ]);
-        $_COOKIE[self::COOKIE] = $value;
+        $_COOKIE[$name] = $value;
     }
 
     public static function isAdmin(): bool
     {
+        if (self::$admin !== null) return self::$admin;
         $v = $_COOKIE[self::COOKIE] ?? '';
-        if (!str_contains($v, '.')) return false;
-        [$exp, $sig] = explode('.', $v, 2);
-        if (!hash_equals(self::sign($exp), $sig)) return false;
-        return (int) $exp > time() * 1000;
+        if (!is_string($v) || strlen($v) < 40) return self::$admin = false;
+        $s = Db::one('SELECT passwordMark, expiresAt FROM admin_sessions WHERE id = ?', [hash('sha256', $v)]);
+        return self::$admin = $s !== null && (int) $s['expiresAt'] > time() * 1000 && hash_equals(self::passwordMark(), $s['passwordMark']);
+    }
+
+    // Номер устройства из cookie, если подпись верна (сами придумать номер нельзя)
+    public static function deviceId(): ?string
+    {
+        $v = $_COOKIE[self::DEVICE_COOKIE] ?? '';
+        if (!is_string($v) || !str_contains($v, '.')) return null;
+        [$id, $sig] = explode('.', $v, 2);
+        return hash_equals(self::sign("device:$id"), $sig) ? $v : null;
+    }
+
+    private static function newDevice(): string
+    {
+        $id = bin2hex(random_bytes(12));
+        return "$id." . self::sign("device:$id");
+    }
+
+    // Для лимита попыток входа: устройство, с которого уже входили, считается отдельно
+    public static function deviceKey(): ?string
+    {
+        $d = self::deviceId();
+        return $d === null ? null : explode('.', $d, 2)[0];
+    }
+
+    // Только для тестов
+    public static function forgetCache(): void
+    {
+        self::$admin = null;
     }
 
     // Не вошли — на страницу входа
