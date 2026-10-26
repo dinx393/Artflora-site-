@@ -59,7 +59,7 @@ final class Notify
     {
         $or = [];
         if (self::telegramConfigured()) $or[] = '(notifiedAt IS NULL AND notifyAttempts < ' . self::MAX_ATTEMPTS . ')';
-        if (self::smtpConfigured()) $or[] = '(emailedAt IS NULL AND emailAttempts < ' . self::MAX_ATTEMPTS . ')';
+        if (self::emailConfigured()) $or[] = '(emailedAt IS NULL AND emailAttempts < ' . self::MAX_ATTEMPTS . ')';
         if (!$or) return 0;
         $ids = Db::all('SELECT id FROM orders
             WHERE createdAt > NOW() - INTERVAL 2 DAY AND createdAt < NOW() - INTERVAL 30 SECOND AND (' . implode(' OR ', $or) . ')
