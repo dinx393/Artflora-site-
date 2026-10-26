@@ -15,10 +15,11 @@ spl_autoload_register(function (string $class): void {
 });
 require_once APP_DIR . '/lib/View.php'; // функция e() для шаблонов
 
-// Ошибки не показываем посетителям, а пишем в app/storage/errors.log (папка закрыта от браузера).
+// Ошибки не показываем посетителям, а пишем в журнал за день: app/storage/errors-2026-10-26.log
+// (папка закрыта от браузера). Журналы старше 60 дней удаляет ежедневная уборка (Maintenance).
 function app_log(string $message): void
 {
     $dir = APP_DIR . '/storage';
     if (!is_dir($dir)) @mkdir($dir, 0750, true);
-    @file_put_contents("$dir/errors.log", '[' . date('Y-m-d H:i:s') . "] $message\n", FILE_APPEND | LOCK_EX);
+    @file_put_contents("$dir/errors-" . date('Y-m-d') . '.log', '[' . date('Y-m-d H:i:s') . "] $message\n", FILE_APPEND | LOCK_EX);
 }

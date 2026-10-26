@@ -1,7 +1,8 @@
 <?php
 // Задания по расписанию. В панели хостинга → «Планировщик (CRON)» добавить, раз в 5 минут:
 //   php /путь/к/сайту/app/cron.php
-// Сейчас: повтор уведомлений о заказах (Telegram и письмо), которые не дошли с первого раза.
+// Каждый раз: повтор уведомлений о заказах (Telegram и письмо), которые не дошли с первого раза.
+// Раз в сутки после 3:00: удаление заказов старше 3 лет, старых журналов, резервная копия (Maintenance).
 require __DIR__ . '/bootstrap.php';
 // На хостинге php в Shell-клиенте бывает не «cli», а «cgi» — пускаем любой запуск не из браузера
 if (PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_METHOD'])) exit;
@@ -16,6 +17,7 @@ try {
     Db::migrate();
     $n = Notify::retryPending();
     if (in_array('-v', $argv, true)) echo "Проверено заказов с недошедшими уведомлениями: $n\n";
+    if (Maintenance::due()) Maintenance::daily(in_array('-v', $argv, true));
 } catch (Throwable $e) {
     app_log('cron: ' . get_class($e) . ': ' . $e->getMessage());
     exit(1);
