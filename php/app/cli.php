@@ -82,7 +82,7 @@ if ($cmd === 'migrate') {
         Db::exec('DELETE FROM flowers');
         foreach ($data['flowers'] as $f) {
             Db::insert('flowers', ['id' => $f['id'], 'name' => $f['name'], 'kind' => $f['kind'], 'unit' => $f['unit'], 'priceKop' => $f['priceKop'],
-                'prevPriceKop' => $f['prevPriceKop'], 'inStock' => $b($f['inStock']), 'sortOrder' => $f['sortOrder']]);
+                'prevPriceKop' => $f['prevPriceKop'], 'inStock' => $b($f['inStock']), 'inFilter' => $b($f['inFilter'] ?? true), 'sortOrder' => $f['sortOrder']]);
         }
         foreach ($data['flowers'] as $f) {
             foreach ($f['substitutes'] as $sub) Db::insert('flower_substitutes', ['flowerId' => $f['id'], 'substituteId' => $sub]);
@@ -92,7 +92,8 @@ if ($cmd === 'migrate') {
             Db::insert('bouquets', [
                 'id' => $x['id'], 'slug' => $x['slug'], 'name' => $x['name'], 'description' => $x['description'], 'format' => $x['format'],
                 'packagingKop' => $x['packagingKop'], 'enabled' => $b($x['enabled']), 'isHit' => $b($x['isHit']), 'isExclusive' => $b($x['isExclusive']),
-                'photoSize' => $x['photoSize'], 'colors' => Db::json($x['colors']), 'occasions' => Db::json($x['occasions']), 'photos' => Db::json($x['photos']),
+                'photoSize' => $x['photoSize'], 'colors' => Db::json($x['colors']), 'occasions' => Db::json($x['occasions']),
+                'sections' => Db::json(array_values(array_intersect((array) ($x['sections'] ?? []), ['roses', 'HATBOX', 'BAG', 'BASKET']))), 'photos' => Db::json($x['photos']),
                 'sortOrder' => $x['sortOrder'], 'collectionId' => $x['collectionId'],
             ]);
             foreach ($x['sizes'] as $s) {
