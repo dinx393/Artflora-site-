@@ -11,6 +11,7 @@ final class Config
         'smtp_host' => '', 'smtp_port' => 465, 'smtp_user' => '', 'smtp_pass' => '', 'smtp_from' => '',
         'telegram_bot_token' => '', 'telegram_chat_id' => '',
         'upload_dir' => '', // по умолчанию папка uploads рядом с index.php
+        'trusted_proxies' => [], // адреса nginx хостинга, если он не на этом же сервере (обычно не нужно)
     ];
 
     // Пароли и ключи-заглушки: с ними сайт в интернете не запустится.

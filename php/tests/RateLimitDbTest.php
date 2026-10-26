@@ -28,3 +28,12 @@ test('удачный вход обнуляет счётчик адреса', fun
     for ($i = 0; $i < 5; $i++) eq(RateLimit::allow('login', '1.1.1.1', $now), true);
     RateLimit::reset();
 });
+test('общий лимит не закрывает вход с устройства, где уже входили', function () {
+    RateLimit::reset();
+    $now = 1_000_000;
+    for ($i = 0; $i < 30; $i++) RateLimit::allow('login', "10.0.0.$i", $now);
+    eq(RateLimit::allow('login', '10.0.1.1', $now), false);
+    for ($i = 0; $i < 5; $i++) eq(RateLimit::allow('login', '10.0.1.1', $now, 'dev1'), true);
+    eq(RateLimit::allow('login', '10.0.1.1', $now, 'dev1'), false);
+    RateLimit::reset();
+});
