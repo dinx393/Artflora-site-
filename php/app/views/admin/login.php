@@ -4,8 +4,13 @@
     <div class="muted">Управление сайтом</div>
     <form method="post" action="/admin/login" class="stack" style="gap: 12px">
       <label class="field">
+        <span>Логин</span>
+        <input class="input" name="login" value="<?= e(mb_substr($login ?? '', 0, 40)) ?>" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <span class="small muted">Старшему администратору с основным паролем логин не нужен</span>
+      </label>
+      <label class="field">
         <span>Пароль</span>
-        <input class="input" type="password" name="password" autofocus required>
+        <input class="input" type="password" name="password" autocomplete="current-password" required>
       </label>
       <?php if ($error): ?><p class="error"><?= e($error) ?></p><?php endif ?>
       <button class="btn btn-lg">Войти</button>

@@ -1,13 +1,16 @@
 <?php
 // Оформление админки: меню слева. Переменные: $content, $title?
 $items = [
-    '/admin/bouquets' => 'Букеты',
-    '/admin/flowers' => 'Цветы',
-    '/admin/collections' => 'Коллекции',
-    '/admin/orders' => 'Заказы',
-    '/admin/delivery' => 'Доставка',
-    '/admin/settings' => 'Настройки',
+    '/admin/bouquets' => ['Букеты', 'catalog'],
+    '/admin/flowers' => ['Цветы', 'catalog'],
+    '/admin/collections' => ['Коллекции', 'catalog'],
+    '/admin/orders' => ['Заказы', 'orders'],
+    '/admin/delivery' => ['Доставка', 'delivery'],
+    '/admin/settings' => ['Настройки', 'settings'],
+    '/admin/users' => ['Сотрудники', 'users'],
 ];
+$items = array_map(fn ($x) => $x[0], array_filter($items, fn ($x) => Auth::can($x[1])));
+$me = Auth::user();
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 ?>
 <!doctype html>
@@ -32,10 +35,11 @@ $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
       <a href="<?= $href ?>" class="item <?= str_starts_with($path, $href) ? 'on' : '' ?>"><?= e($label) ?></a>
     <?php endforeach ?>
     <a href="/" class="item small" style="margin-top: 16px; padding: 10px 12px; font-weight: 700" target="_blank">Открыть сайт →</a>
-    <form method="post" action="/admin/logout">
+    <?php if ($me): ?><span class="small muted" style="margin-top: 12px; padding: 0 12px"><?= e($me['name']) ?> · <?= e(Auth::ROLES[$me['role']] ?? '') ?></span><?php endif ?>
+    <form method="post" action="/admin/logout" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px">
       <?= Auth::csrfField() ?>
       <button class="btn-ghost small muted">Выйти</button>
-      <button class="btn-ghost small muted" name="all" value="1" title="Например, если телефон потерялся">Выйти на всех устройствах</button>
+      <button class="btn-ghost small muted" style="text-align: left" name="all" value="1" title="Например, если телефон потерялся">Выйти на всех устройствах</button>
     </form>
   </aside>
   <main class="admin-main"><?= $content ?></main>

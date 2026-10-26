@@ -1,6 +1,7 @@
 <?php
 // Админка: букеты, цветы, коллекции, заказы, доставка, настройки. Повторяет src/app/admin (версия на Node.js).
-// Каждый обработчик начинается с Auth::requireAdmin(); POST — ещё и с Auth::checkCsrf().
+// Каждый обработчик начинается с Auth::requireAdmin('раздел'); POST — ещё и с Auth::checkCsrf().
+// Разделы: catalog, orders — и старшему, и обычному администратору; delivery, settings, users — только старшему.
 // Редакторы (цветы, букет, доставка, настройки) работают в браузере (assets/js/admin-*.js)
 // и сохраняют JSON-запросом; простые действия — обычными формами с переходом обратно.
 
@@ -155,7 +156,7 @@ function admin_telegram_ready(): bool
 // ---------- Букеты ----------
 
 Http::get('/admin/bouquets', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     $tab = in_array($_GET['tab'] ?? '', ['all', 'on', 'off', 'missing'], true) ? $_GET['tab'] : 'all';
     $list = array_map(function ($b) {
         $vis = Pricing::visibility($b);
@@ -184,7 +185,7 @@ Http::get('/admin/bouquets', function () {
 
 // Переключатель «Показывать» в списке
 Http::post('/admin/bouquets/toggle', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $b = admin_body();
     if (!admin_is_int($b['id'] ?? null) || !is_bool($b['enabled'] ?? null)) admin_fail('Ошибка');
@@ -195,7 +196,7 @@ Http::post('/admin/bouquets/toggle', function () {
 // Порядок букетов на сайте (перетаскивание в списке). ids — букеты вкладки в новом порядке: они меняются
 // местами между собой, остальные стоят где стояли.
 Http::post('/admin/bouquets/order', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $ids = admin_body()['ids'] ?? null;
     if (!is_array($ids) || !array_is_list($ids) || count($ids) > 2000 || array_filter($ids, fn ($x) => !admin_is_int($x))
@@ -215,7 +216,7 @@ Http::post('/admin/bouquets/order', function () {
 });
 
 Http::post('/admin/bouquets/new', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $id = Db::insert('bouquets', [
         'sortOrder' => (int) Db::value('SELECT COALESCE(MIN(sortOrder), 0) - 1 FROM bouquets'), // новый — первым
@@ -226,7 +227,7 @@ Http::post('/admin/bouquets/new', function () {
 });
 
 Http::get('/admin/bouquets/{id}', function (string $id) {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     if (!ctype_digit($id)) Http::abort(404);
     $b = Db::one('SELECT * FROM bouquets WHERE id = ?', [(int) $id]) ?? Http::abort(404);
     $sizes = Db::all('SELECT * FROM bouquet_sizes WHERE bouquetId = ?', [$b['id']]);
@@ -271,7 +272,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
 });
 
 Http::post('/admin/bouquets/save', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $in = admin_body();
     $bad = 'Проверьте поля букета';
@@ -348,7 +349,7 @@ Http::post('/admin/bouquets/save', function () {
 
 // «+ Создать с этим составом»: копия букета в другом формате, в той же коллекции.
 Http::post('/admin/bouquets/{id}/clone', function (string $id) {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $format = (string) ($_POST['format'] ?? '');
     $src = Db::one('SELECT * FROM bouquets WHERE id = ?', [(int) $id]);
@@ -378,14 +379,14 @@ Http::post('/admin/bouquets/{id}/clone', function (string $id) {
 });
 
 Http::post('/admin/bouquets/{id}/delete', function (string $id) {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     Db::exec('DELETE FROM bouquets WHERE id = ?', [(int) $id]); // заказы хранят копию названия и цены
     Http::redirect('/admin/bouquets');
 });
 
 Http::post('/admin/upload', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     if (!isset($_FILES['file'])) admin_fail('Файл не выбран');
     Http::json(Uploads::save($_FILES['file']));
@@ -406,7 +407,7 @@ function admin_flowers(): array
 }
 
 Http::get('/admin/flowers', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     $sizes = Db::all('SELECT s.id, s.bouquetId, s.code, s.packagingKop FROM bouquet_sizes s ORDER BY s.id');
     $items = Db::all('SELECT sizeId, flowerId, qty FROM bouquet_items ORDER BY id');
     $bouquets = array_map(fn ($b) => [
@@ -427,7 +428,7 @@ Http::get('/admin/flowers', function () {
 });
 
 Http::post('/admin/flowers/save', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $in = admin_body();
     $rows = $in['rows'] ?? null;
@@ -498,7 +499,7 @@ Http::post('/admin/flowers/save', function () {
 });
 
 Http::post('/admin/flowers/delete', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $b = admin_body();
     $id = $b['id'] ?? null;
@@ -521,7 +522,7 @@ Http::post('/admin/flowers/delete', function () {
 // ---------- Коллекции ----------
 
 Http::get('/admin/collections', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     $list = Db::all('SELECT * FROM collections ORDER BY name');
     $bouquets = Db::all('SELECT id, name, format, enabled, collectionId FROM bouquets WHERE collectionId IS NOT NULL ORDER BY id');
     foreach ($list as &$c) $c['bouquets'] = array_values(array_filter($bouquets, fn ($b) => $b['collectionId'] === $c['id']));
@@ -529,7 +530,7 @@ Http::get('/admin/collections', function () {
 });
 
 Http::post('/admin/collections/create', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $name = Http::str('name', 120);
     if ($name !== '') Db::insert('collections', ['name' => $name, 'slug' => admin_free_slug('collections', admin_slugify($name))]);
@@ -537,7 +538,7 @@ Http::post('/admin/collections/create', function () {
 });
 
 Http::post('/admin/collections/rename', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $name = Http::str('name', 120);
     if ($name !== '') Db::exec('UPDATE collections SET name = ? WHERE id = ?', [$name, (int) Http::str('id')]);
@@ -545,7 +546,7 @@ Http::post('/admin/collections/rename', function () {
 });
 
 Http::post('/admin/collections/delete', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     Db::exec('DELETE FROM collections WHERE id = ?', [(int) Http::str('id')]); // букеты останутся, просто без коллекции
     Http::redirect('/admin/collections');
@@ -554,7 +555,7 @@ Http::post('/admin/collections/delete', function () {
 // ---------- Заказы ----------
 
 Http::get('/admin/orders', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('orders');
     $status = isset($_GET['status']) && is_string($_GET['status']) ? $_GET['status'] : null;
     $active = !$status || $status === 'active';
     if ($active) {
@@ -584,7 +585,7 @@ Http::get('/admin/orders', function () {
 });
 
 Http::get('/admin/orders/{id}', function (string $id) {
-    Auth::requireAdmin();
+    Auth::requireAdmin('orders');
     if (!ctype_digit($id)) Http::abort(404);
     $o = Db::one('SELECT * FROM orders WHERE id = ?', [(int) $id]) ?? Http::abort(404);
     $o['items'] = Db::all('SELECT * FROM order_items WHERE orderId = ? ORDER BY id', [$o['id']]);
@@ -595,7 +596,7 @@ Http::get('/admin/orders/{id}', function (string $id) {
 });
 
 Http::post('/admin/orders/update', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('orders');
     Auth::checkCsrf();
     $id = (int) Http::str('id');
     $status = Http::str('status');
@@ -606,7 +607,7 @@ Http::post('/admin/orders/update', function () {
 
 // Заказ «уточнить адрес у получателя»: флорист вписывает адрес, время и доплату за доставку.
 Http::post('/admin/orders/address', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('orders');
     Auth::checkCsrf();
     $id = (int) Http::str('id');
     $address = trim((string) ($_POST['address'] ?? ''));
@@ -626,7 +627,7 @@ Http::post('/admin/orders/address', function () {
 // ---------- Доставка ----------
 
 Http::get('/admin/delivery', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('delivery');
     return admin_page('delivery', [
         'title' => 'Доставка',
         'editor' => ['delivery' => Settings::get('delivery'), 'districts' => Settings::get('districts'), 'stamp' => admin_stamp('delivery')],
@@ -649,7 +650,7 @@ function admin_hex(mixed $c): bool
 
 // Раздел «Доставка»: зоны, магазины и районы с карты.
 Http::post('/admin/delivery/save', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('delivery');
     Auth::checkCsrf();
     $in = admin_body();
     $d = $in['delivery'] ?? null;
@@ -743,7 +744,7 @@ function admin_emails_ok(string $list): bool
 }
 
 Http::get('/admin/settings', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('settings');
     return admin_page('settings', [
         'title' => 'Настройки',
         'editor' => [
@@ -759,7 +760,7 @@ Http::get('/admin/settings', function () {
 });
 
 Http::post('/admin/settings/save', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('settings');
     Auth::checkCsrf();
     $in = admin_body();
     $s = $in['shop'] ?? null;
@@ -826,7 +827,7 @@ Http::post('/admin/settings/save', function () {
 
 // Кнопка «Отправить пробное письмо»: шлём на адреса из поля (даже если ещё не сохранены).
 Http::post('/admin/settings/test-email', function () {
-    Auth::requireAdmin();
+    Auth::requireAdmin('settings');
     Auth::checkCsrf();
     $to = admin_body()['to'] ?? '';
     $list = array_values(array_filter(array_map('trim', explode(',', is_string($to) ? $to : ''))));
