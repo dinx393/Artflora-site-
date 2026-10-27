@@ -64,9 +64,10 @@ $last = count($d['zones']) - 1;
       <div class="sum-row zone-row"><span>До <?= e($so['farFromKm']) ?> км от филиала</span><b class="price" style="font-size: 22px">как на сайте</b></div>
       <div class="sum-row zone-row"><span>Дальше по Минску<?php if ($so['farKop'] > $lastZone['priceKop']): ?> <span class="muted small">(при заказе от <?= e(Money::format($d['freeFromKop'])) ?> — <?= e(Money::format($so['farKop'] - $lastZone['priceKop'])) ?>)</span><?php endif ?></span><b class="price" style="font-size: 22px"><?= ShopView::byn((int) $so['farKop']) ?></b></div>
       <div class="sum-row zone-row"><span>За МКАД со стороны другого филиала</span><b class="price" style="font-size: 22px"><?= ShopView::byn((int) ($d['outsideMkadKop'] + $so['outsideExtraKop'])) ?></b></div>
-      <?php foreach ($d['areas'] ?? [] as $a): if (!empty($a['noDelivery']) || count($a['points']) < 3) continue ?>
-        <div class="sum-row zone-row"><span><?= e($a['name']) ?> со стороны другого филиала</span><b class="price" style="font-size: 22px"><?= ShopView::byn((int) ($a['priceKop'] + $so['areaExtraKop'])) ?></b></div>
-      <?php endforeach ?>
+      <?php $far = array_column(array_filter($d['areas'] ?? [], fn ($a) => empty($a['noDelivery']) && count($a['points']) >= 3), 'name');
+      if ($far): ?>
+        <div class="sum-row zone-row"><span><?= e(implode(', ', $far)) ?> — со стороны другого филиала</span><b class="price" style="font-size: 22px"><?= ShopView::byn((int) $so['areaFarKop']) ?></b></div>
+      <?php endif ?>
     </div>
     <p class="small muted">Хотите по цене сайта? Оформите заказ на сайте, и букет соберут в ближайшем к получателю магазине.</p>
     <?php foreach ($d['shops'] as $s): ?>

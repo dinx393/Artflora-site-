@@ -122,7 +122,7 @@ test('за МКАД со стороны другого филиала — на 1
     eq(Delivery::quote($at('Ратомка'), 13000, $m)['priceKop'], $cfg['outsideMkadKop']);
     eq(Delivery::quote($at('Колодищи'), 13000, $cfg)['priceKop'], $cfg['outsideMkadKop']);
 });
-test('участки делятся по сторонам: Смолевичи и Фаниполь дороже со стороны другого филиала', function () use ($cfg) {
+test('участки делятся по сторонам: со стороны другого филиала Смолевичи и Фаниполь — 85', function () use ($cfg) {
     $box = fn ($lat, $lng, $d = 0.05) => [['lat' => $lat - $d, 'lng' => $lng - $d], ['lat' => $lat - $d, 'lng' => $lng + $d], ['lat' => $lat + $d, 'lng' => $lng + $d], ['lat' => $lat + $d, 'lng' => $lng - $d]];
     $cfg['areas'] = [
         ['name' => 'Смолевичи', 'color' => '#00aa00', 'priceKop' => 5000, 'noDelivery' => false, 'points' => $box(54.0285, 28.0886)],
@@ -133,7 +133,7 @@ test('участки делятся по сторонам: Смолевичи и
     $smol = ['lat' => 54.0285, 'lng' => 28.0886];
     $fan = ['lat' => 53.75, 'lng' => 27.333];
     eq(Delivery::quote($smol, 13000, $u)['priceKop'], 5000);
-    eq(Delivery::quote($smol, 13000, $m)['priceKop'], 7500);
+    eq(Delivery::quote($smol, 13000, $m)['priceKop'], 8500);
     eq(Delivery::quote($fan, 13000, $m)['priceKop'], 6000);
     eq(Delivery::quote($fan, 13000, $u)['priceKop'], 8500);
     eq(Delivery::quote($fan, 13000, $cfg)['priceKop'], 6000, 'корзина — как раньше');

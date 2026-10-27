@@ -120,7 +120,7 @@ final class Delivery
     // Доставка, оформленная прямо в филиале $code (решение владельца 2026-10-27). Только для пояснения на странице
     // «Доставка и оплата»: корзина по-прежнему считает от ближайшего магазина. Букет едет из этого филиала, поэтому
     // до shopOrder.farFromKm — зоны сайта, дальше по Минску — farKop (при бесплатной доставке — только разница с последней
-    // зоной сайта); со стороны другого филиала за МКАД дороже на outsideExtraKop, на своих участках — на areaExtraKop.
+    // зоной сайта); со стороны другого филиала за МКАД дороже на outsideExtraKop, на своих участках — цена areaFarKop.
     // Ответ — настройки доставки, как для quote(): с одним магазином и otherShops. У участков — farExtraKop и
     // sides: [near, far] — есть ли у участка часть со стороны этого / другого филиала (для подписей под картой).
     public static function fromShop(array $cfg, string $code): array
@@ -141,7 +141,7 @@ final class Delivery
         $areas = [];
         foreach ($cfg['areas'] ?? [] as $a) {
             if (empty($a['noDelivery']) && count($a['points']) >= 3) {
-                $a['farExtraKop'] = (int) $o['areaExtraKop'];
+                $a['farExtraKop'] = max(0, (int) $o['areaFarKop'] - (int) $a['priceKop']);
                 $sides = [false => false, true => false];
                 foreach ($a['points'] as $p) $sides[self::farSide($p, self::distanceKm($p, $shop['location']), ['otherShops' => $others])] = true;
                 $a['sides'] = [$sides[false], $sides[true]];
