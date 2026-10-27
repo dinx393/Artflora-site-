@@ -699,6 +699,12 @@ tr.dragging { opacity: .45; }
 .zmap-chip i, .zmap-dot { display: inline-block; width: 10px; height: 10px; flex: none; border-radius: 50%; }
 .zmap-dot { margin-right: 6px; }
 .zmap-chip b { font-weight: 700; }
+.zmap-heading { display: flex; align-items: center; gap: 10px; margin: 0; padding: 16px 18px; font-family: var(--serif); font-size: 24px; line-height: 1.25; color: var(--cherry); }
+.zmap-heading svg { flex: none; }
+.zmap-legend-big { gap: 8px; }
+.zmap-legend-big .zmap-chip { font-size: 16px; padding: 8px 14px; }
+.zmap-legend-big .zmap-chip i { width: 14px; height: 14px; }
+@media (max-width: 560px) { .zmap-heading { font-size: 20px; } }
 .zmap-far .map-district span { display: none; }
 .zmap .map-district { cursor: pointer; }
 .zmap-popup .leaflet-popup-content-wrapper { border-radius: 16px; }

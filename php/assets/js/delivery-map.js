@@ -42,7 +42,11 @@
         list.push({ key: "outside", place: { type: "outside" }, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД", price: byn(cfg.outsideMkadKop) });
       }
       cfg.areas.forEach(function (a) {
-        if (!a.noDelivery && a.points.length >= 3) list.push({ key: "area:" + a.name, place: { type: "area", name: a.name }, color: a.color, title: a.name, price: byn(a.priceKop) });
+        if (a.noDelivery || a.points.length < 3) return;
+        if (!a.sides) return list.push({ key: "area:" + a.name, place: { type: "area", name: a.name }, color: a.color, title: a.name, price: byn(a.priceKop) });
+        // Карта «из филиала»: участок может лежать по обе стороны города
+        if (a.sides[0]) list.push({ key: "area:" + a.name, place: { type: "area", name: a.name }, color: a.color, title: a.name + " рядом с этим филиалом", price: byn(a.priceKop) });
+        if (a.sides[1]) list.push({ key: "area-far:" + a.name, place: { type: "area", name: a.name }, color: cfg.shopOrder.farAreaColor, title: a.name + " со стороны другого филиала", price: byn(a.priceKop + a.farExtraKop) });
       });
       return list;
     }

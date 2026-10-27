@@ -41,8 +41,10 @@ final class Defaults
         'freeFromKop' => 20000,
         'pickupDiscountPct' => 10,
         // Доставка, оформленная прямо в филиале (решение владельца 2026-10-27, только пояснение на «Доставка и оплата»):
-        // дальше farFromKm от филиала по Минску — farKop, за МКАД и участки со стороны другого филиала — дороже на outsideExtraKop
-        'shopOrder' => ['farFromKm' => 13, 'farKop' => 2500, 'outsideExtraKop' => 1000, 'farColor' => '#ef5d6c', 'farOutsideColor' => '#d45fb4'],
+        // дальше farFromKm от филиала по Минску — farKop; со стороны другого филиала за МКАД дороже на outsideExtraKop,
+        // на своих участках (Смолевичи, удалённая доставка) — на areaExtraKop (60 → 85, решение 2026-10-27)
+        'shopOrder' => ['farFromKm' => 13, 'farKop' => 2500, 'outsideExtraKop' => 1000, 'areaExtraKop' => 2500,
+            'farColor' => '#ef5d6c', 'farOutsideColor' => '#d45fb4', 'farAreaColor' => '#9c2a4f'],
         'areas' => [], // свои участки: ['name','color','priceKop','noDelivery','points' => [точки]]; верхний в списке важнее
     ];
 

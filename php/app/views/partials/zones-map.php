@@ -2,7 +2,8 @@
 // Карта зон доставки для покупателя (решение владельца 2026-10-23): цвет — цена, как в админке «Доставка».
 // Нажатие на карту показывает, возим ли туда и сколько стоит; точка района выбирает его в списке корзины.
 // Переменные: $delivery (настройки доставки), $districts (районы: подписи на карте), $open (сразу открыта),
-// $title (подпись кнопки, по умолчанию «Куда возим: карта»),
+// $title (подпись кнопки, по умолчанию «Куда возим: карта»), $heading (вместо кнопки — крупный заголовок, карта всегда открыта,
+// подписи цен крупно: карты «из филиала», владелец 2026-10-27 — их легко было пропустить),
 // $pick (в корзине: карта всегда открыта, под ней крупные кнопки зон — ими и нажатием на карту выбирают, куда везти).
 // Оживляет assets/js/delivery-map.js; Leaflet грузится только когда карту открыли.
 $zmap = [
@@ -13,17 +14,21 @@ $zmap = [
         'freeFromKop' => $delivery['freeFromKop'], 'outsideColor' => $delivery['outsideColor'] ?? null,
         // Карта «доставка из филиала» (Delivery::fromShop): другие филиалы и правила для них
         'otherShops' => $delivery['otherShops'] ?? null, 'shopOrder' => $delivery['shopOrder'] ?? null,
-        'areas' => array_values(array_map(fn ($a) => ['name' => $a['name'], 'color' => $a['color'], 'priceKop' => $a['priceKop'], 'noDelivery' => !empty($a['noDelivery']), 'points' => $a['points']], $delivery['areas'] ?? [])),
+        'areas' => array_values(array_map(fn ($a) => ['name' => $a['name'], 'color' => $a['color'], 'priceKop' => $a['priceKop'], 'noDelivery' => !empty($a['noDelivery']), 'points' => $a['points']]
+            + (isset($a['farExtraKop']) ? ['farExtraKop' => $a['farExtraKop'], 'sides' => $a['sides']] : []), $delivery['areas'] ?? [])),
     ],
     'districts' => array_map(fn ($d) => ['name' => $d['name'], 'lat' => $d['lat'], 'lng' => $d['lng'], 'isArea' => !empty($d['isArea'])], $districts),
     'leaflet' => ['css' => View::asset('vendor/leaflet/leaflet.css'), 'js' => View::asset('vendor/leaflet/leaflet.js')],
 ];
 $pick = !empty($pick);
-$open = $pick || !empty($open);
+$heading ??= null;
+$open = $pick || $heading || !empty($open);
 ?>
 <div class="zmap<?= $pick ? ' zmap-pick-mode' : '' ?>" data-zmap<?= $pick ? ' data-zmap-pick-mode' : '' ?>>
   <script type="application/json" data-zmap-config><?= json_encode($zmap, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
-  <?php if (!$pick): ?>
+  <?php if ($heading): ?>
+  <h3 class="zmap-heading"><?= Icons::get('map') ?><?= e($heading) ?></h3>
+  <?php elseif (!$pick): ?>
   <button type="button" class="zmap-toggle" aria-expanded="<?= $open ? 'true' : 'false' ?>" data-zmap-toggle>
     <span class="row" style="gap: 10px"><?= Icons::get('map') ?><?= e($title ?? 'Куда возим: карта') ?></span>
     <span class="zmap-chev" aria-hidden="true"><?= Icons::get('chevron', 18) ?></span>
@@ -37,7 +42,7 @@ $open = $pick || !empty($open);
         <p class="small muted" data-zmap-tip hidden></p>
       <?php else: ?>
         <span class="small muted">Нажмите на карту, и покажем, возим ли туда и сколько стоит.</span>
-        <div class="zmap-legend" data-zmap-legend></div>
+        <div class="zmap-legend<?= $heading ? ' zmap-legend-big' : '' ?>" data-zmap-legend></div>
       <?php endif ?>
     </div>
   </div>

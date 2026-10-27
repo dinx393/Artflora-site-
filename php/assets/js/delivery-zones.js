@@ -44,7 +44,10 @@
     if (area) {
       var tag = { name: area.name, color: area.color };
       if (area.noDelivery) return { ok: false, km: 0, area: tag };
-      return { ok: true, km: Math.round(km * 10) / 10, zone: 0, outsideMkadKm: 0, priceKop: area.priceKop, area: tag };
+      // Карта «из филиала»: со стороны другого филиала участок дороже и закрашен своим цветом (Delivery::fromShop)
+      var areaFar = !!area.farExtraKop && (cfg.otherShops || []).some(function (o) { return distanceKm(point, o) < km; });
+      if (areaFar) tag = { name: area.name, color: cfg.shopOrder.farAreaColor, farSide: true };
+      return { ok: true, km: Math.round(km * 10) / 10, zone: 0, outsideMkadKm: 0, priceKop: area.priceKop + (areaFar ? area.farExtraKop : 0), area: tag };
     }
     var outside = Math.max(0, Math.ceil(distanceKm(point, cfg.mkadCenter) - cfg.mkadRadiusKm));
     var last = cfg.zones.length - 1;
