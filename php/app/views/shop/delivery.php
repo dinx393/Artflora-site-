@@ -47,10 +47,30 @@ $last = count($d['zones']) - 1;
         </div>
       <?php endforeach ?>
     </div>
-    <p class="small muted">Выберите район в корзине, и цена появится сразу. Нет вашего района в списке? Напишите нам, договоримся.</p>
+    <p class="small muted">Цены — для заказа на сайте: везём из ближайшего к получателю магазина. Выберите район в корзине, и цена появится сразу. Нет вашего района в списке? Напишите нам, договоримся.</p>
   </div>
 
   <?= View::render('partials/zones-map', ['delivery' => $d, 'districts' => [], 'open' => true]) ?>
+
+  <?php // Пояснение для заказов, оформленных прямо в филиале (решение владельца 2026-10-27): на корзину не влияет
+  $so = $d['shopOrder'];
+  $lastZone = $d['zones'][count($d['zones']) - 1];
+  $inShop = ['uruchye' => 'в Уручье', 'malinovka' => 'в Малиновке'];
+  ?>
+  <div class="panel stack" style="gap: 14px" id="v-magazine">
+    <h2 style="font-size: 30px">Если оформляете доставку прямо в магазине</h2>
+    <p>Цены выше считаются от ближайшего к получателю магазина. Если вы пришли в один из наших филиалов и просите отвезти букет в другой конец Минска, букет поедет из этого филиала. Путь у курьера получается длиннее, поэтому цена другая:</p>
+    <div class="stack" style="gap: 0">
+      <div class="sum-row zone-row"><span>До <?= e($so['farFromKm']) ?> км от филиала</span><b class="price" style="font-size: 22px">как на сайте</b></div>
+      <div class="sum-row zone-row"><span>Дальше по Минску<?php if ($so['farKop'] > $lastZone['priceKop']): ?> <span class="muted small">(при заказе от <?= e(Money::format($d['freeFromKop'])) ?> — <?= e(Money::format($so['farKop'] - $lastZone['priceKop'])) ?>)</span><?php endif ?></span><b class="price" style="font-size: 22px"><?= ShopView::byn((int) $so['farKop']) ?></b></div>
+      <div class="sum-row zone-row"><span>За МКАД со стороны другого филиала</span><b class="price" style="font-size: 22px"><?= ShopView::byn((int) ($d['outsideMkadKop'] + $so['outsideExtraKop'])) ?></b></div>
+    </div>
+    <p class="small muted">Хотите по цене сайта? Оформите заказ на сайте, и букет соберут в ближайшем к получателю магазине.</p>
+    <?php foreach ($d['shops'] as $s): ?>
+      <?= View::render('partials/zones-map', ['delivery' => Delivery::fromShop($d, $s['code']), 'districts' => [], 'open' => false,
+        'title' => 'Оформление доставки напрямую из филиала ' . ($inShop[$s['code']] ?? '«' . $s['name'] . '»')]) ?>
+    <?php endforeach ?>
+  </div>
 
   <div class="stack" style="gap: 14px">
     <h2 style="font-size: 30px">Оплата</h2>

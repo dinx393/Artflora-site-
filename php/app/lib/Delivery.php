@@ -85,24 +85,65 @@ final class Delivery
         }
         if ($zoneIdx === -1 || $outside > 0) $zoneIdx = $last;
 
-        if ($outside > 0) return self::outsideQuote($shop, round($km, 1), $outside, $cfg);
+        if ($outside > 0) return self::outsideQuote($shop, round($km, 1), $outside, $cfg, self::farSide($point, $km, $cfg));
         $baseKop = (int) $cfg['zones'][$zoneIdx]['priceKop'];
         $free = $subtotalKop >= $cfg['freeFromKop'];
         return [
             'ok' => true, 'shop' => $shop, 'km' => round($km, 1), 'zone' => $zoneIdx + 1, 'outsideMkadKm' => 0,
-            'baseKop' => $baseKop, 'priceKop' => $free ? 0 : $baseKop, 'free' => $free,
+            'baseKop' => $baseKop, 'priceKop' => $free ? (int) ($cfg['zones'][$zoneIdx]['freeKop'] ?? 0) : $baseKop, 'free' => $free,
             'leftToFreeKop' => max(0, $cfg['freeFromKop'] - $subtotalKop),
         ];
     }
 
     // За МКАД — одна цена, без бесплатной доставки. outsideMkadKm — сколько км за МКАД (для флориста), на цену не влияет.
-    private static function outsideQuote(?array $shop, ?float $km, int $outsideKm, array $cfg): array
+    // farSide — заказ оформлен в филиале (fromShop), а точка ближе к другому филиалу: дороже на outsideExtraKop.
+    private static function outsideQuote(?array $shop, ?float $km, int $outsideKm, array $cfg, bool $farSide = false): array
     {
-        $kop = (int) $cfg['outsideMkadKop'];
+        $kop = (int) $cfg['outsideMkadKop'] + ($farSide ? (int) $cfg['shopOrder']['outsideExtraKop'] : 0);
         return [
             'ok' => true, 'shop' => $shop, 'km' => $km, 'zone' => count($cfg['zones']), 'outsideMkadKm' => $outsideKm, 'outside' => true,
-            'baseKop' => $kop, 'priceKop' => $kop, 'free' => false, 'leftToFreeKop' => 0,
+            'baseKop' => $kop, 'priceKop' => $kop, 'free' => false, 'leftToFreeKop' => 0, 'farSide' => $farSide,
         ];
+    }
+
+    private static function farSide(array $point, float $km, array $cfg): bool
+    {
+        foreach ($cfg['otherShops'] ?? [] as $loc) {
+            if (self::distanceKm($point, $loc) < $km) return true;
+        }
+        return false;
+    }
+
+    // Доставка, оформленная прямо в филиале $code (решение владельца 2026-10-27). Только для пояснения на странице
+    // «Доставка и оплата»: корзина по-прежнему считает от ближайшего магазина. Букет едет из этого филиала, поэтому
+    // до shopOrder.farFromKm — зоны сайта, дальше по Минску — farKop (при бесплатной доставке — только разница с последней
+    // зоной сайта), за МКАД и свои участки со стороны другого филиала — дороже на outsideExtraKop.
+    // Ответ — настройки доставки, как для quote(): с одним магазином и otherShops.
+    public static function fromShop(array $cfg, string $code): array
+    {
+        $o = $cfg['shopOrder'];
+        $shop = null;
+        $others = [];
+        foreach ($cfg['shops'] as $s) {
+            if ($s['code'] === $code) $shop = $s;
+            else $others[] = $s['location'];
+        }
+        if (!$shop) throw new InvalidArgumentException("Нет магазина $code");
+        $zones = $cfg['zones'];
+        $last = array_pop($zones);
+        $zones = array_values(array_filter($zones, fn ($z) => $z['maxKm'] < $o['farFromKm']));
+        $zones[] = ['maxKm' => $o['farFromKm']] + $last;
+        $zones[] = ['maxKm' => 999, 'priceKop' => $o['farKop'], 'color' => $o['farColor'], 'freeKop' => max(0, $o['farKop'] - (int) $last['priceKop'])];
+        $areas = [];
+        foreach ($cfg['areas'] ?? [] as $a) {
+            if (empty($a['noDelivery']) && count($a['points']) >= 3) {
+                $n = count($a['points']);
+                $mid = ['lat' => array_sum(array_column($a['points'], 'lat')) / $n, 'lng' => array_sum(array_column($a['points'], 'lng')) / $n];
+                if (self::farSide($mid, self::distanceKm($mid, $shop['location']), ['otherShops' => $others])) $a['priceKop'] += $o['outsideExtraKop'];
+            }
+            $areas[] = $a;
+        }
+        return ['shops' => [$shop], 'otherShops' => $others, 'zones' => $zones, 'areas' => $areas] + $cfg;
     }
 
     // Цена по выбору покупателя в корзине (решение владельца 2026-10-23: без длинного списка районов).

@@ -104,3 +104,27 @@ test('выбор в корзине: кнопка зоны, участок, то�
     eq(Delivery::placeLabel($logoisk, $q, $cfg), 'Удалённая доставка, точка на карте 54.20600, 27.85300');
     eq(Delivery::placeLabel(['type' => 'zone', 'zone' => 1], $z2, $cfg), 'Зона 1 (до 3 км от магазина)');
 });
+
+group('доставка из филиала');
+test('из Уручья: рядом как на сайте, Малиновка — 25 BYN, при бесплатной — доплата 7', function () use ($at, $cfg) {
+    $cfg['zones'] = [['maxKm' => 3, 'priceKop' => 700], ['maxKm' => 6, 'priceKop' => 1300], ['maxKm' => 10, 'priceKop' => 1600], ['maxKm' => 999, 'priceKop' => 1800]];
+    $u = Delivery::fromShop($cfg, 'uruchye');
+    eq(Delivery::quote($at('Восток'), 13000, $u)['priceKop'], 1300);
+    eq(Delivery::quote($at('Шабаны'), 13000, $u)['priceKop'], 1800, '10–13 км — последняя зона сайта');
+    eq(Delivery::quote($at('Малиновка'), 13000, $u)['priceKop'], 2500);
+    eq(Delivery::quote($at('Малиновка'), 20000, $u)['priceKop'], 700);
+    eq(Delivery::quote($at('Восток'), 20000, $u)['priceKop'], 0);
+    eq(Delivery::quote($at('Малиновка'), 13000, $cfg)['priceKop'], 700, 'корзина считает как раньше');
+});
+test('за МКАД со стороны другого филиала — на 10 BYN дороже', function () use ($at, $cfg) {
+    $m = Delivery::fromShop($cfg, 'malinovka');
+    eq(Delivery::quote($at('Колодищи'), 13000, $m)['priceKop'], $cfg['outsideMkadKop'] + 1000);
+    eq(Delivery::quote($at('Ратомка'), 13000, $m)['priceKop'], $cfg['outsideMkadKop']);
+    eq(Delivery::quote($at('Колодищи'), 13000, $cfg)['priceKop'], $cfg['outsideMkadKop']);
+});
+test('участок со стороны другого филиала — дороже', function () use ($cfg) {
+    $cfg['areas'] = [['name' => 'Смолевичи', 'color' => '#00aa00', 'priceKop' => 5000, 'noDelivery' => false,
+        'points' => [['lat' => 54.0, 'lng' => 28.05], ['lat' => 54.0, 'lng' => 28.12], ['lat' => 54.06, 'lng' => 28.12], ['lat' => 54.06, 'lng' => 28.05]]]];
+    eq(Delivery::fromShop($cfg, 'uruchye')['areas'][0]['priceKop'], 5000);
+    eq(Delivery::fromShop($cfg, 'malinovka')['areas'][0]['priceKop'], 6000);
+});

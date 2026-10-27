@@ -40,6 +40,9 @@ final class Defaults
         'outsideMkadKop' => 2500, // за МКАД — одна цена (решение владельца 2026-10-23: без «+1 BYN за км»)
         'freeFromKop' => 20000,
         'pickupDiscountPct' => 10,
+        // Доставка, оформленная прямо в филиале (решение владельца 2026-10-27, только пояснение на «Доставка и оплата»):
+        // дальше farFromKm от филиала по Минску — farKop, за МКАД и участки со стороны другого филиала — дороже на outsideExtraKop
+        'shopOrder' => ['farFromKm' => 13, 'farKop' => 2500, 'outsideExtraKop' => 1000, 'farColor' => '#ef5d6c', 'farOutsideColor' => '#d45fb4'],
         'areas' => [], // свои участки: ['name','color','priceKop','noDelivery','points' => [точки]]; верхний в списке важнее
     ];
 

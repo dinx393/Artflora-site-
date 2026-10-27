@@ -12,9 +12,11 @@
     for (var i = 0; i < all.length; i++) if (taken.indexOf(all[i]) < 0) return all[i];
     return "#" + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0");
   }
-  function quoteColor(q, zones, outsideColor) {
+  // farOutsideColor — за МКАД со стороны другого филиала (карта «доставка из филиала», Delivery::fromShop)
+  function quoteColor(q, zones, outsideColor, farOutsideColor) {
     if (q.area) return q.area.color;
     if (!q.ok) return "#999999";
+    if (q.outside && q.farSide) return farOutsideColor || OUTSIDE_COLOR;
     if (q.outside) return outsideColor || OUTSIDE_COLOR;
     return zoneColor(q.zone, (zones[q.zone - 1] || {}).color);
   }
@@ -48,10 +50,13 @@
     var last = cfg.zones.length - 1;
     var zi = cfg.zones.findIndex(function (z) { return km <= z.maxKm; });
     if (zi === -1 || outside > 0) zi = last;
-    // За МКАД — одна цена, без бесплатной доставки (как Delivery::outsideQuote)
-    if (outside > 0) return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: outside, outside: true, priceKop: cfg.outsideMkadKop };
+    // За МКАД — одна цена, без бесплатной доставки (как Delivery::outsideQuote); со стороны другого филиала — дороже
+    if (outside > 0) {
+      var farSide = (cfg.otherShops || []).some(function (o) { return distanceKm(point, o) < km; });
+      return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: outside, outside: true, farSide: farSide, priceKop: cfg.outsideMkadKop + (farSide ? cfg.shopOrder.outsideExtraKop : 0) };
+    }
     var free = subtotalKop >= cfg.freeFromKop;
-    return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: 0, priceKop: free ? 0 : cfg.zones[zi].priceKop };
+    return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: 0, priceKop: free ? cfg.zones[zi].freeKop || 0 : cfg.zones[zi].priceKop };
   }
 
   function rgba(hex, a) {
@@ -73,7 +78,7 @@
           var ll = map.unproject([coords.x * size.x + x + step / 2, coords.y * size.y + y + step / 2], coords.z);
           var q = quote({ lat: ll.lat, lng: ll.lng }, 0, cfg);
           if (!q.ok && !q.area) continue;
-          ctx.fillStyle = rgba(quoteColor(q, cfg.zones, cfg.outsideColor), q.ok && q.outside ? 0.28 : 0.38);
+          ctx.fillStyle = rgba(quoteColor(q, cfg.zones, cfg.outsideColor, cfg.shopOrder && cfg.shopOrder.farOutsideColor), q.ok && q.outside ? 0.28 : 0.38);
           ctx.fillRect(x, y, step, step);
         }
       }

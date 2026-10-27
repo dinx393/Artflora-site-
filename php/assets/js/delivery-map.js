@@ -33,7 +33,14 @@
       var list = cfg.zones.map(function (z, i) {
         return { key: "zone:" + (i + 1), place: { type: "zone", zone: i + 1 }, color: Z.zoneColor(i + 1, z.color), title: i === last ? "Дальше, до МКАД" : "До " + z.maxKm + " км от магазина", price: free ? "Бесплатно" : byn(z.priceKop), free: free };
       });
-      list.push({ key: "outside", place: { type: "outside" }, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД", price: byn(cfg.outsideMkadKop) });
+      if (cfg.otherShops) {
+        // Карта «доставка из филиала»: за МКАД цена зависит от того, к какому филиалу ближе
+        if (cfg.zones.length) list[list.length - 1].title = "Дальше по Минску";
+        list.push({ key: "outside", place: { type: "outside" }, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД рядом с этим филиалом", price: byn(cfg.outsideMkadKop) });
+        list.push({ key: "outside-far", place: { type: "outside" }, color: cfg.shopOrder.farOutsideColor, title: "За МКАД со стороны другого филиала", price: byn(cfg.outsideMkadKop + cfg.shopOrder.outsideExtraKop) });
+      } else {
+        list.push({ key: "outside", place: { type: "outside" }, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД", price: byn(cfg.outsideMkadKop) });
+      }
       cfg.areas.forEach(function (a) {
         if (!a.noDelivery && a.points.length >= 3) list.push({ key: "area:" + a.name, place: { type: "area", name: a.name }, color: a.color, title: a.name, price: byn(a.priceKop) });
       });
@@ -88,7 +95,7 @@
       pin = L.marker(latlng, { icon: L.divIcon({ className: "zmap-pin", iconSize: [22, 22], iconAnchor: [11, 11] }), interactive: false, zIndexOffset: 2000 }).addTo(map);
       var where = q.area ? q.area.name : q.outside ? "за МКАД" : "по Минску";
       L.popup({ closeButton: false, className: "zmap-popup", offset: [0, -8] }).setLatLng(latlng)
-        .setContent('<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor)) + '"></span><b>Везём сюда · ' + esc(q.priceKop === 0 ? "бесплатно" : byn(q.priceKop)) + "</b><br>" + esc(where))
+        .setContent('<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor, cfg.shopOrder && cfg.shopOrder.farOutsideColor)) + '"></span><b>Везём сюда · ' + esc(q.priceKop === 0 ? "бесплатно" : byn(q.priceKop)) + "</b><br>" + esc(where))
         .openOn(map);
       say("");
       choose({ type: "point", lat: point.lat, lng: point.lng }, keyOf(q));
@@ -172,10 +179,11 @@
       map.on("click", function (e) {
         if (pickMode) return pickPoint(e.latlng);
         var q = Z.quote({ lat: e.latlng.lat, lng: e.latlng.lng }, 0, cfg);
+        var freeKop = !q.area && !q.outside ? cfg.zones[q.zone - 1].freeKop || 0 : 0;
         var html = !q.ok ? "<b>Сюда не возим</b><br>Напишите нам, может быть, договоримся." :
-          '<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor)) + '"></span><b>Возим сюда · ' + esc(byn(q.priceKop)) + "</b><br>" +
-          esc(q.area ? q.area.name : q.outside ? "за МКАД" : "по Минску") +
-          (!q.area && !q.outside ? "<br>Бесплатно при заказе от " + esc(byn(cfg.freeFromKop)) : "");
+          '<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor, cfg.shopOrder && cfg.shopOrder.farOutsideColor)) + '"></span><b>Возим сюда · ' + esc(byn(q.priceKop)) + "</b><br>" +
+          esc(q.area ? q.area.name : q.outside ? (q.farSide ? "за МКАД, со стороны другого филиала" : "за МКАД") : "по Минску") +
+          (!q.area && !q.outside ? "<br>При заказе от " + esc(byn(cfg.freeFromKop)) + (freeKop ? " — " + esc(byn(freeKop)) : " — бесплатно") : "");
         L.popup({ closeButton: false, className: "zmap-popup" }).setLatLng(e.latlng).setContent(html).openOn(map);
       });
     }
