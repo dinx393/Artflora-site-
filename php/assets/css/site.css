@@ -394,6 +394,8 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .drag-handle { display: block; cursor: grab; font-size: 20px; line-height: 1; color: var(--muted); padding: 8px 4px 2px; user-select: none; }
 .drag-handle:active { cursor: grabbing; }
 [data-bouquet-list] .drag-handle { touch-action: none; } /* тянуть пальцем, а не прокручивать страницу */
+[data-bouquet-list] tr[hidden] { display: none !important; }
+[data-bouquet-list].searching .drag-cell > * { visibility: hidden; } /* пока ищем, порядок не меняем */
 .drag-steps { display: flex; flex-direction: column; }
 .drag-steps button { border: 0; background: none; color: var(--muted); font-size: 10px; padding: 2px 4px; cursor: pointer; }
 .drag-steps button:hover { color: var(--cherry); }
