@@ -13,41 +13,99 @@ document.addEventListener("click", function (e) {
   });
 });
 
-// Поиск по списку: прячем строки, где нет всех введённых слов (название, коллекция, вид, цветы).
-// Слова ищутся в любом порядке, «ё» = «е». Запрос остаётся в адресе — после правки букета «Назад» вернёт к найденному.
+// Поиск и фильтры по списку: коллекция, цветок (в любом размере), вид, цена (как на сайте, размер «на фото»).
+// Поиск — все введённые слова в любом порядке, «ё» = «е». Всё выбранное (и вкладка) остаётся в адресе
+// и в памяти браузера: открыли букет, поправили, вернулись в «Букеты» любым путём — фильтры на месте.
 (function () {
   var input = document.querySelector("[data-bouquet-search]");
   var table = document.querySelector("[data-bouquet-list]");
   if (!input || !table) return;
+  var KEY = "artflora-admin-bouquet-filters";
+  var FIELDS = ["collection", "flower", "format", "from", "to"];
   var count = document.querySelector("[data-search-count]");
   var empty = document.querySelector("[data-search-empty]");
   var hint = document.querySelector("[data-order-hint]");
+  var reset = document.querySelector("[data-filters-reset]");
+  var controls = {};
+  FIELDS.forEach(function (k) { controls[k] = document.querySelector('[data-filter="' + k + '"]'); });
   function norm(s) { return s.toLowerCase().replace(/ё/g, "е"); }
+
+  // Что сейчас выбрано: { q, collection, flower, format, from, to } — только непустое
+  function current() {
+    var f = {};
+    if (input.value.trim()) f.q = input.value.trim();
+    FIELDS.forEach(function (k) { if (controls[k].value !== "") f[k] = controls[k].value; });
+    return f;
+  }
+  function query(f, tab) {
+    var p = new URLSearchParams();
+    if (tab) p.set("tab", tab);
+    Object.keys(f).forEach(function (k) { p.set(k, f[k]); });
+    return p.toString();
+  }
+
+  // Откуда взять фильтры: из адреса, а если в нём пусто — из памяти браузера (там же и вкладка)
+  var url = new URL(location.href);
+  var tab = url.searchParams.get("tab") || "all";
+  var fromUrl = ["q"].concat(FIELDS).some(function (k) { return url.searchParams.has(k); });
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+  if (!fromUrl && !url.searchParams.has("tab") && saved && saved.tab && saved.tab !== "all") {
+    location.replace("/admin/bouquets?" + query(saved.filters || {}, saved.tab));
+    return;
+  }
+  var start = fromUrl ? {} : (saved && saved.filters) || {};
+  if (fromUrl) ["q"].concat(FIELDS).forEach(function (k) { if (url.searchParams.get(k)) start[k] = url.searchParams.get(k); });
+  if (start.q) input.value = start.q;
+  FIELDS.forEach(function (k) {
+    var c = controls[k];
+    if (start[k] === undefined) return;
+    c.value = start[k];
+    if (c.value !== start[k]) c.value = ""; // такой коллекции или цветка в списке уже нет
+  });
+
   function apply() {
-    var q = input.value.trim();
-    var words = norm(q).split(/\s+/).filter(Boolean);
+    var f = current();
+    var words = norm(f.q || "").split(/\s+/).filter(Boolean);
+    var from = f.from ? Number(f.from) * 100 : null;
+    var to = f.to ? Number(f.to) * 100 : null;
     var rows = table.querySelectorAll("tbody tr[data-id]");
     var found = 0;
     Array.prototype.forEach.call(rows, function (tr) {
       var text = tr.getAttribute("data-search") || "";
-      var ok = words.every(function (w) { return text.indexOf(w) !== -1; });
+      var price = Number(tr.getAttribute("data-price"));
+      var ok = words.every(function (w) { return text.indexOf(w) !== -1; })
+        && (!f.collection || tr.getAttribute("data-collection") === f.collection)
+        && (!f.flower || tr.getAttribute("data-flowers").indexOf("|" + f.flower + "|") !== -1)
+        && (!f.format || tr.getAttribute("data-format") === f.format)
+        && (from === null || price >= from)
+        && (to === null || price <= to);
       tr.hidden = !ok;
       if (ok) found++;
     });
-    // Пока ищем, порядок не меняем: соседние букеты скрыты, и стрелки двигали бы их вслепую
-    table.classList.toggle("searching", words.length > 0);
-    if (hint) hint.hidden = words.length > 0;
-    count.hidden = !words.length;
+    var active = Object.keys(f).length > 0;
+    // Пока что-то отфильтровано, порядок не меняем: соседние букеты скрыты, и стрелки двигали бы их вслепую
+    table.classList.toggle("searching", active);
+    if (hint) hint.hidden = active;
+    reset.hidden = !active;
+    count.hidden = !active;
     count.textContent = "Найдено: " + found + " из " + rows.length;
-    empty.hidden = !words.length || found > 0;
-    var url = new URL(location.href);
-    if (q) url.searchParams.set("q", q); else url.searchParams.delete("q");
-    history.replaceState(null, "", url);
+    empty.hidden = !active || found > 0;
+    history.replaceState(null, "", "/admin/bouquets?" + query(f, tab === "all" ? "" : tab));
+    try { localStorage.setItem(KEY, JSON.stringify({ tab: tab, filters: f })); } catch (e) {}
     Array.prototype.forEach.call(document.querySelectorAll("[data-tab]"), function (a) {
-      a.href = "/admin/bouquets?tab=" + a.getAttribute("data-tab") + (q ? "&q=" + encodeURIComponent(q) : "");
+      a.href = "/admin/bouquets?" + query(f, a.getAttribute("data-tab"));
     });
   }
   input.addEventListener("input", apply);
+  FIELDS.forEach(function (k) {
+    controls[k].addEventListener(controls[k].tagName === "SELECT" ? "change" : "input", apply);
+  });
+  reset.addEventListener("click", function () {
+    input.value = "";
+    FIELDS.forEach(function (k) { controls[k].value = ""; });
+    apply();
+  });
   input.addEventListener("keydown", function (e) {
     if (e.key === "Escape") { input.value = ""; apply(); }
     // Enter при одном найденном букете — сразу открыть его
@@ -60,8 +118,8 @@ document.addEventListener("click", function (e) {
   document.addEventListener("keydown", function (e) {
     if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); input.focus(); }
   });
-  if (input.value) apply();
-  else if (window.matchMedia("(min-width: 900px)").matches) input.focus();
+  apply();
+  if (!input.value && window.matchMedia("(min-width: 900px)").matches) input.focus();
 })();
 
 // Порядок букетов на сайте: тянуть за ⠿ (мышью или пальцем) или стрелки ▲▼, сохраняем сразу.

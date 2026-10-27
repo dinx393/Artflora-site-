@@ -180,6 +180,7 @@ Http::get('/admin/bouquets', function () {
         'tab' => $tab,
         'counts' => $counts,
         'shown' => array_values(array_filter($list, $is[$tab])),
+        'all' => $list,
         'scripts' => '<script src="' . View::asset('js/admin-bouquets.js') . '"></script>',
     ]);
 });

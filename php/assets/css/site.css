@@ -433,6 +433,8 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 [data-bouquet-list] .drag-handle { touch-action: none; } /* тянуть пальцем, а не прокручивать страницу */
 [data-bouquet-list] tr[hidden] { display: none !important; }
 [data-bouquet-list].searching .drag-cell > * { visibility: hidden; } /* пока ищем, порядок не меняем */
+.admin-filters .field { flex: 0 1 auto; min-width: 0; }
+.admin-filters select.input { width: auto; min-width: 150px; max-width: 220px; }
 .drag-steps { display: flex; flex-direction: column; }
 .drag-steps button { border: 0; background: none; color: var(--muted); font-size: 10px; padding: 2px 4px; cursor: pointer; }
 .drag-steps button:hover { color: var(--cherry); }
