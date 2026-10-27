@@ -4,7 +4,7 @@
 // Данные письма: number, createdAt (метка времени), status («Новый»), paid, payment («ЕРИП»), customerName, customerPhone,
 // recipientName, recipientPhone, callRecipient, anonymous, method (DELIVERY/PICKUP), address, addressUnknown,
 // shopName («Уручье, пр. Независимости 168/1»), deliveryDate ('YYYY-MM-DD'), deliverySlot, comment, cardText,
-// items [['name','size','qty','priceKop','photo' (полный адрес или null)]], itemsKop, discountKop, deliveryKop, totalKop, adminUrl,
+// items [['name','size','qty','priceKop','photo' (полный адрес или null),'url' (страница букета на сайте или null)]], itemsKop, discountKop, deliveryKop, totalKop, adminUrl,
 // company (реквизиты для безнала: ['text' => …], или null).
 final class OrderEmail
 {
@@ -92,10 +92,15 @@ final class OrderEmail
             $img = $i['photo']
                 ? '<img src="' . self::esc($i['photo']) . "\" width=\"64\" height=\"64\" alt=\"\" style=\"display:block;width:64px;height:64px;object-fit:cover;border-radius:12px;background:{$C['blush']}\">"
                 : "<div style=\"width:64px;height:64px;border-radius:12px;background:{$C['blush']}\"></div>";
+            // фото и название — ссылки на страницу букета: флорист открывает крупные фото прямо из письма
+            $url = !empty($i['url']) ? self::esc($i['url']) : '';
+            if ($url !== '') $img = "<a href=\"$url\" style=\"display:block\">$img</a>";
+            $name = self::esc($i['name']);
+            if ($url !== '') $name = "<a href=\"$url\" style=\"color:{$C['cherry']};text-decoration:underline\">$name</a>";
             $size = $i['size'] ? "<div style=\"color:{$C['muted']};font-size:14px\">Размер " . self::esc($i['size']) . '</div>' : '';
             $items .= "<tr>
         <td style=\"$td;width:64px;padding-right:0\">$img</td>
-        <td style=\"$td\"><div style=\"font-weight:700;color:{$C['ink']}\">" . self::esc($i['name']) . "</div>$size</td>
+        <td style=\"$td\"><div style=\"font-weight:700;color:{$C['ink']}\">$name</div>$size</td>
         <td style=\"$td;text-align:right;white-space:nowrap;color:{$C['ink']}\">{$i['qty']} шт × " . Money::format($i['priceKop']) . '</td>
       </tr>';
         }
@@ -150,7 +155,7 @@ final class OrderEmail
             ...array_map(fn ($r) => "{$r[0]}: {$r[1]}", self::rows($o)),
             '',
             'Покупатель заказал:',
-            ...array_map(fn ($i) => "• {$i['name']}" . ($i['size'] ? ", размер {$i['size']}" : '') . " — {$i['qty']} шт × " . Money::format($i['priceKop']), $o['items']),
+            ...array_map(fn ($i) => "• {$i['name']}" . ($i['size'] ? ", размер {$i['size']}" : '') . " — {$i['qty']} шт × " . Money::format($i['priceKop']) . (!empty($i['url']) ? "\n  {$i['url']}" : ''), $o['items']),
             $o['discountKop'] ? 'Скидка: −' . Money::format($o['discountKop']) : '',
             'Доставка: ' . strip_tags($deliveryText),
             "Итого: $total",

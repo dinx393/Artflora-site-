@@ -72,7 +72,7 @@ final class Notify
     {
         $lines = [
             "🌸 Новый заказ №{$o['number']} — " . Money::format($o['totalKop']),
-            ...array_map(fn ($i) => "• {$i['name']}" . ($i['size'] ? ", {$i['size']}" : '') . " × {$i['qty']}", $o['items']),
+            ...array_map(fn ($i) => "• {$i['name']}" . ($i['size'] ? ", {$i['size']}" : '') . " × {$i['qty']}" . (!empty($i['url']) ? "\n  {$i['url']}" : ''), $o['items']),
             '🎁 В подарок: ' . mb_strtolower(OrderEmail::GIFT),
             $o['deliveryMethod'] === 'PICKUP'
                 ? "Самовывоз: {$o['shop']}"
@@ -93,6 +93,9 @@ final class Notify
     {
         $o = Checkout::order('id = ?', [$orderId]);
         if (!$o) return;
+        $link = self::bouquetLinks($o['items']);
+        foreach ($o['items'] as &$i) $i['url'] = $i['bouquetId'] !== null ? ($link[$i['bouquetId']] ?? null) : null;
+        unset($i);
         $url = 'https://api.telegram.org/bot' . Config::get('telegram_bot_token') . '/sendMessage';
         $body = Db::json(['chat_id' => Config::get('telegram_chat_id'), 'text' => self::telegramText($o)]);
         [$status, $answer] = self::postJson($url, $body, 5);
@@ -141,13 +144,26 @@ final class Notify
         return $site !== '' ? $site . (str_starts_with($url, '/') ? $url : "/$url") : null;
     }
 
+    // Ссылки на страницы заказанных букетов на сайте: [id букета => полный адрес]. Флористы открывают
+    // по ним крупные фото прямо из письма или Telegram (просьба сотрудников 2026-10-27).
+    private static function bouquetLinks(array $items): array
+    {
+        $ids = array_values(array_unique(array_filter(array_column($items, 'bouquetId'))));
+        $site = Config::siteUrl();
+        if (!$ids || $site === '') return [];
+        $link = [];
+        foreach (Db::all('SELECT id, slug FROM bouquets WHERE id ' . Db::in($ids), $ids) as $b) $link[(int) $b['id']] = $site . '/bouquet/' . rawurlencode($b['slug']);
+        return $link;
+    }
+
     // Письмо о заказе: ['subject','html','text'] или null, если заказа нет.
     public static function buildOrderEmail(int $orderId): ?array
     {
         $o = Checkout::order('id = ?', [$orderId]);
         if (!$o) return null;
-        $ids = array_values(array_filter(array_column($o['items'], 'bouquetId')));
         $photo = [];
+        $link = self::bouquetLinks($o['items']);
+        $ids = array_keys($link);
         if ($ids) {
             foreach (Db::all('SELECT id, photos FROM bouquets WHERE id ' . Db::in($ids), $ids) as $b) $photo[(int) $b['id']] = Db::fromJson($b['photos'])[0] ?? null;
         }
@@ -176,6 +192,7 @@ final class Notify
             'items' => array_map(fn ($i) => [
                 'name' => $i['name'], 'size' => $i['size'], 'qty' => $i['qty'], 'priceKop' => $i['priceKop'],
                 'photo' => self::absolute($i['bouquetId'] !== null ? ($photo[$i['bouquetId']] ?? null) : null),
+                'url' => $i['bouquetId'] !== null ? ($link[$i['bouquetId']] ?? null) : null,
             ], $o['items']),
             'itemsKop' => $o['itemsKop'],
             'discountKop' => $o['discountKop'],

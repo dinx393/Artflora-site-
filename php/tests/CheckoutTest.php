@@ -67,6 +67,9 @@ test('текст уведомления', function () {
     contains($t, 'Доставка: Уручье: пр. Независимости, 180 (зона 1)');
     contains($t, 'Когда: 2026-10-24, 14–16');
     contains($t, '/admin/orders/7');
+    $t = Notify::telegramText(['items' => [['name' => 'Розы', 'size' => 'M', 'qty' => 2, 'url' => 'https://artflora.by/bouquet/rozy']]] + ['id' => 7, 'number' => 10007, 'totalKop' => 12000,
+        'deliveryMethod' => 'PICKUP', 'shop' => 'uruchye', 'deliveryDate' => '2026-10-24', 'deliverySlot' => '', 'customerName' => 'Анна', 'customerPhone' => '+375291112233']);
+    contains($t, "• Розы, M × 2\n  https://artflora.by/bouquet/rozy");
     $t = Notify::telegramText(['company' => ['text' => "ООО «Ромашка»\nУНП 190000001"]] + ['id' => 7, 'number' => 10007, 'totalKop' => 12000, 'items' => [],
         'deliveryMethod' => 'PICKUP', 'addressUnknown' => false, 'address' => '', 'deliveryZone' => null, 'recipientPhone' => '',
         'deliveryDate' => '2026-10-24', 'deliverySlot' => '14–16', 'customerName' => 'Анна', 'customerPhone' => '+375291112233', 'shop' => 'uruchye']);

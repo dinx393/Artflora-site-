@@ -5,7 +5,7 @@ $base = [
     'customerName' => 'Анастасия <b>', 'customerPhone' => '+375291112233', 'recipientName' => 'Галина Федоровна', 'recipientPhone' => '+375293874937',
     'callRecipient' => false, 'anonymous' => true, 'method' => 'DELIVERY', 'address' => 'Притыцкого 39, кв 64', 'addressUnknown' => false,
     'shopName' => 'Уручье', 'deliveryDate' => '2026-10-17', 'deliverySlot' => '14–16', 'comment' => 'Как можно быстрее', 'cardText' => '',
-    'items' => [['name' => 'Композиция «Розовое облако»', 'size' => 'S', 'qty' => 1, 'priceKop' => 15000, 'photo' => 'https://artflora.by/a.jpg']],
+    'items' => [['name' => 'Композиция «Розовое облако»', 'size' => 'S', 'qty' => 1, 'priceKop' => 15000, 'photo' => 'https://artflora.by/a.jpg', 'url' => 'https://artflora.by/bouquet/rozovoe-oblako']],
     'itemsKop' => 15000, 'discountKop' => 0, 'deliveryKop' => 0, 'totalKop' => 15000, 'adminUrl' => 'https://artflora.by/admin/orders/1',
 ];
 test('тема и главное в тексте', function () use ($base) {
@@ -20,6 +20,14 @@ test('тема и главное в тексте', function () use ($base) {
     contains($m['html'], 'бесплатно');
     contains($m['text'], 'В подарок положить: Открытка и 2 пакетика подкормки (кризал)');
     contains($m['html'], 'В подарок: открытка и 2 пакетика подкормки (кризал)');
+});
+test('фото и название букета — ссылки на его страницу', function () use ($base) {
+    $m = OrderEmail::render($base);
+    contains($m['html'], '<a href="https://artflora.by/bouquet/rozovoe-oblako" style="display:block"><img');
+    contains($m['html'], '>Композиция «Розовое облако»</a>');
+    contains($m['text'], "\n  https://artflora.by/bouquet/rozovoe-oblako");
+    $items = [['url' => null] + $base['items'][0]];
+    ok(!str_contains(OrderEmail::render(['items' => $items] + $base)['html'], '/bouquet/'));
 });
 test('данные клиента экранируются', function () use ($base) {
     $m = OrderEmail::render($base);
