@@ -34,6 +34,8 @@
       var timer;
       btn.addEventListener("click", function () {
         ArtfloraCart.add({ bouquetId: Number(btn.dataset.bouquet), size: btn.dataset.size, qty: 1 });
+        var img = btn.closest(".pcard") && btn.closest(".pcard").querySelector("img");
+        ArtfloraFly(btn, img && (img.currentSrc || img.src));
         btn.classList.add("done");
         icon.innerHTML = '<span aria-hidden="true">✓</span>';
         word.textContent = "В корзине";
@@ -45,6 +47,33 @@
         }, 1600);
       });
     });
+  }
+
+  // Каталог, блок «Добавить к букету»: нажали на доп — он сразу в корзине, нажали ещё раз — убрали
+  function catalogAddons() {
+    var list = document.querySelectorAll(".addon-pick[data-addon]");
+    if (!list.length) return;
+    function show(c) {
+      list.forEach(function (btn) {
+        var id = Number(btn.dataset.addon);
+        var on = c.addons.some(function (a) { return a.addonId === id; });
+        btn.classList.toggle("on", on);
+        btn.setAttribute("aria-pressed", String(on));
+        btn.querySelector("[data-addon-state]").textContent = on ? "✓ В корзине" : "+ Добавить";
+      });
+    }
+    list.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var on = ArtfloraCart.toggleAddon(Number(btn.dataset.addon));
+        if (on) ArtfloraFly(btn);
+        var text = on
+          ? btn.dataset.addonName + " — в корзине" + (ArtfloraCart.get().lines.length ? "" : ". Осталось выбрать букет")
+          : btn.dataset.addonName + " — убрали из корзины";
+        ArtfloraToast(text, on);
+      });
+    });
+    ArtfloraCart.onChange(show);
+    show(ArtfloraCart.get());
   }
 
   // Страница букета: размер, допы (лежат в корзине сразу), текст открытки, «Добавить в корзину»
@@ -71,18 +100,16 @@
         var on = c.addons.some(function (a) { return a.addonId === id; });
         var note = btn.querySelector("span:last-child");
         btn.classList.toggle("on", on);
-        note.className = on ? "ok" : "note";
-        note.textContent = on ? "Добавлено · " + btn.dataset.priceText : btn.dataset.priceText;
+        btn.setAttribute("aria-pressed", String(on));
+        note.className = on ? "in-cart" : "note";
+        note.textContent = on ? "✓ В корзине · " + btn.dataset.priceText : "+ Добавить · " + btn.dataset.priceText;
       });
     }
     addons.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var id = Number(btn.dataset.addon);
-        ArtfloraCart.update(function (c) {
-          var on = c.addons.some(function (a) { return a.addonId === id; });
-          c.addons = on ? c.addons.filter(function (a) { return a.addonId !== id; }) : c.addons.concat([{ addonId: id, qty: 1 }]);
-          return c;
-        });
+        var on = ArtfloraCart.toggleAddon(Number(btn.dataset.addon));
+        if (on) ArtfloraFly(btn);
+        ArtfloraToast(btn.dataset.addonName + (on ? " — в корзине" : " — убрали из корзины"), on);
       });
     });
     ArtfloraCart.onChange(showAddons);
@@ -93,6 +120,14 @@
     var text = box.querySelector("[data-card-text]");
     add.addEventListener("click", function () {
       ArtfloraCart.add({ bouquetId: Number(box.dataset.bouquet), size: size, qty: 1 }, text.value);
+      var main = document.querySelector("[data-gallery-main]");
+      ArtfloraFly(add, main && (main.currentSrc || main.src));
+      // Покупатель сразу видит, что вместе с букетом едут и выбранные допы
+      var extra = [];
+      addons.forEach(function (btn) { if (btn.classList.contains("on")) extra.push(btn.dataset.addonName); });
+      added.querySelector("[data-added-text]").textContent = extra.length
+        ? "В корзине букет и " + extra.join(", ") + ". Оформим доставку?"
+        : "Букет в корзине. Оформим доставку?";
       add.hidden = true;
       added.hidden = false;
     });
@@ -202,6 +237,7 @@
       go(a.getAttribute("href"));
     });
     cardButtons();
+    catalogAddons();
     buyBox();
     gallery();
     deliveryEstimate();

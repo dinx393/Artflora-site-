@@ -189,17 +189,39 @@
         "</div></div>" +
         '<span class="price line-price">' + byn(l.priceKop * l.qty) + "</span></div>";
     });
-    (t ? t.priced.addons : []).forEach(function (a) {
-      html +=
-        '<div class="row between" style="padding: 12px 0; border-bottom: 1px solid var(--line)">' +
-        '<span style="font-weight: 700">' + esc(a.name) + "</span>" +
-        '<span class="row" style="gap: 12px">' + esc(formatByn(a.priceKop * a.qty)) +
-        '<button type="button" class="btn-ghost small muted" data-remove-addon="' + a.addonId + '">Удалить</button></span></div>';
-    });
+    // Допы — отдельным заметным блоком: что уже едет с букетом и что можно добавить одним нажатием
+    var added = t ? t.priced.addons : [];
+    var more = (cfg.addons || []).filter(function (a) { return !added.some(function (x) { return x.addonId === a.id; }); });
+    if (added.length || more.length) {
+      html += '<div class="cart-addons">';
+      if (added.length) {
+        html += '<div class="cart-addons-title">Едет вместе с букетом</div>';
+        added.forEach(function (a) {
+          html +=
+            '<div class="cart-addon"><span class="cart-addon-ok" aria-hidden="true">✓</span>' +
+            '<span class="cart-addon-name">' + esc(a.name) + (a.qty > 1 ? " × " + a.qty : "") + "</span>" +
+            '<span class="price" style="font-size: 18px">' + byn(a.priceKop * a.qty) + "</span>" +
+            '<button type="button" class="btn-ghost small muted" data-remove-addon="' + a.addonId + '">Убрать</button></div>';
+        });
+      }
+      if (more.length) {
+        html += '<div class="cart-addon-more"><span class="small muted">' + (added.length ? "Ещё к букету:" : "Добавить к букету:") + "</span>";
+        more.forEach(function (a) {
+          html += '<button type="button" class="chip" data-add-addon="' + a.id + '">+ ' + esc(a.name) + " · " + esc(formatByn(a.priceKop)) + "</button>";
+        });
+        html += "</div>";
+      }
+      html += "</div>";
+    }
     $("[data-co-lines]").innerHTML = html;
   }
 
   $("[data-co-lines]").addEventListener("click", function (e) {
+    var plus = e.target.closest("[data-add-addon]");
+    if (plus) {
+      Cart.toggleAddon(Number(plus.getAttribute("data-add-addon")));
+      return;
+    }
     var addon = e.target.closest("[data-remove-addon]");
     if (addon) {
       var id = Number(addon.getAttribute("data-remove-addon"));
@@ -236,6 +258,11 @@
     var cart = Cart.get();
     var empty = cart.lines.length === 0;
     document.querySelector("[data-co-empty]").hidden = !empty;
+    // Допы положили, а букета ещё нет: напоминаем, что они ждут в корзине
+    var waiting = (cfg.addons || []).filter(function (a) { return cart.addons.some(function (x) { return x.addonId === a.id; }); });
+    var waitingNote = document.querySelector("[data-co-empty-addons]");
+    waitingNote.hidden = !(empty && waiting.length);
+    waitingNote.textContent = "Уже в корзине: " + waiting.map(function (a) { return a.name; }).join(", ") + ". Выберите к ним букет.";
     root.hidden = empty;
     if (empty) return;
 
@@ -327,12 +354,14 @@
     var count = lines.reduce(function (s, l) { return s + l.qty; }, 0);
     setText("[data-co-count]", "Букеты × " + count);
     setText("[data-co-bouquets]", formatByn(t ? t.priced.bouquetsKop : 0));
-    var addonsRow = $("[data-co-addons-row]");
-    addonsRow.hidden = !(t && t.priced.addonsKop > 0);
-    if (t) setText("[data-co-addons]", formatByn(t.priced.addonsKop));
+    // В итоге каждый доп своей строкой с названием, а не безликие «Дополнения»
+    setHtml("[data-co-addons-sum]", (t ? t.priced.addons : []).map(function (a) {
+      return '<div class="sum-row"><span>' + esc(a.name) + (a.qty > 1 ? " × " + a.qty : "") + "</span><span>" + esc(formatByn(a.priceKop * a.qty)) + "</span></div>";
+    }).join(""));
     setText("[data-co-discount]", formatByn(-(t ? t.discountKop : 0)));
     setText("[data-co-m-discount]", formatByn(-(t ? t.discountKop : 0)));
     setText("[data-co-m-goods]", formatByn(goods));
+    setText("[data-co-m-goods-label]", t && t.priced.addons.length ? "Букеты и " + t.priced.addons.map(function (a) { return a.name; }).join(", ") : "Букеты");
     setText("[data-co-delivery]", unknown ? "доплата после уточнения" : d ? (deliveryKop ? formatByn(deliveryKop) : "бесплатно") : "выберите, куда");
     setHtml("[data-co-m-delivery]", unknown ? "после уточнения" : d ? (deliveryKop ? esc(formatByn(deliveryKop)) : '<span class="gift">бесплатно</span>') : "выберите, куда");
     setHtml("[data-co-total]", byn(t ? t.totalKop : 0));

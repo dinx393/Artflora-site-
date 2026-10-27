@@ -2,7 +2,7 @@
 // Корзина и оформление (повторяет src/components/Checkout.tsx). Разметка здесь, оживляет её assets/js/checkout.js:
 // строки корзины и суммы приходят с сервера (/api/cart), заказ уходит на /api/orders.
 // На телефоне два шага: «Корзина и доставка» → «Получатель и оплата» (нижняя панель «Далее»).
-// Переменные: $shops, $pickupPct, $freeFromKop, $districts, $leadHours, $delivery
+// Переменные: $shops, $pickupPct, $freeFromKop, $districts, $leadHours, $delivery, $addons
 $payments = [
     ['code' => 'ERIP', 'title' => 'ЕРИП', 'note' => 'Покажем, как оплатить, сразу после оформления'],
     ['code' => 'CARD', 'title' => 'Картой Visa, MasterCard, МИР', 'note' => 'Онлайн через WebPay: администратор пришлёт ссылку для оплаты'],
@@ -13,6 +13,7 @@ $byn = fn (int $kop) => e(preg_replace('/ BYN$/', '', Money::format($kop))) . '<
 $config = [
     'shops' => $shops, 'pickupPct' => $pickupPct, 'freeFromKop' => $freeFromKop, 'districts' => $districts, 'leadHours' => $leadHours,
     'today' => Slots::minskNow()['date'], 'slots' => Slots::ALL, 'sundayFrom' => Slots::SUNDAY_FROM, 'zones' => $delivery['zones'],
+    'addons' => array_map(fn ($a) => ['id' => $a['id'], 'name' => $a['name'], 'priceKop' => $a['priceKop']], $addons ?? []),
 ];
 ?>
 <script type="application/json" id="checkout-config"><?= json_encode($config, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
@@ -21,6 +22,7 @@ $config = [
   <div class="empty panel">
     <h1 class="h2">В корзине пока пусто</h1>
     <p class="muted">Выберите букет в каталоге или начните с повода.</p>
+    <p class="zone" style="font-weight: 700" data-co-empty-addons hidden></p>
     <div class="row" style="justify-content: center; gap: 8px">
       <a href="/catalog/den-materi" class="chip">Маме</a>
       <a href="/catalog/lyubimoj" class="chip">Любимой</a>
@@ -147,7 +149,7 @@ $config = [
 
         <?php /* На телефоне первый шаг сразу показывает, сколько выйдет с доставкой */ ?>
         <div class="mobile-only zone stack" style="gap: 8px">
-          <div class="sum-row"><span>Букеты</span><span data-co-m-goods>0 BYN</span></div>
+          <div class="sum-row"><span data-co-m-goods-label>Букеты</span><span data-co-m-goods>0 BYN</span></div>
           <div class="sum-row" data-co-show="pickup" hidden><span>Скидка за самовывоз</span><span data-co-m-discount></span></div>
           <div class="sum-row" data-co-show="delivery"><span>Доставка</span><span data-co-m-delivery>выберите, куда</span></div>
           <div class="sum-row" style="align-items: baseline">
@@ -210,7 +212,7 @@ $config = [
     <aside class="summary card desktop-only" data-co-summary>
       <h3 style="font-size: 28px">Ваш заказ</h3>
       <div class="sum-row"><span data-co-count>Букеты × 0</span><span data-co-bouquets>0 BYN</span></div>
-      <div class="sum-row" data-co-addons-row hidden><span>Дополнения</span><span data-co-addons></span></div>
+      <div data-co-addons-sum></div>
       <div class="sum-row"><span>Открытка и подкормка</span><span class="gift">в подарок</span></div>
       <div class="sum-row" data-co-show="pickup" hidden><span>Скидка за самовывоз</span><span data-co-discount></span></div>
       <div class="sum-row" data-co-show="delivery"><span>Доставка</span><span data-co-delivery>выберите, куда</span></div>

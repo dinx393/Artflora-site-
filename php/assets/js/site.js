@@ -22,9 +22,72 @@
     updateBadges(c);
   }
 
+  // В счётчике у кнопки «Корзина» и букеты, и допы (конфеты, шары): добавили конфеты — цифра выросла
   function count(c) {
-    return c.lines.reduce(function (s, l) { return s + l.qty; }, 0);
+    return c.lines.reduce(function (s, l) { return s + l.qty; }, 0) + c.addons.reduce(function (s, a) { return s + a.qty; }, 0);
   }
+
+  function hasAddon(c, id) {
+    return c.addons.some(function (a) { return a.addonId === id; });
+  }
+
+  // Всплывающая плашка внизу экрана: «Конфеты в корзине · Перейти в корзину»
+  var toastTimer;
+  function toast(text, link) {
+    var el = document.querySelector("[data-toast]");
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "toast";
+      el.setAttribute("data-toast", "");
+      el.setAttribute("role", "status");
+      el.innerHTML = '<span class="toast-ok" aria-hidden="true">✓</span><span data-toast-text></span><a href="/cart" data-toast-link>В корзину →</a>';
+      document.body.appendChild(el);
+    }
+    el.querySelector("[data-toast-text]").textContent = text;
+    el.querySelector("[data-toast-link]").hidden = !link;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("show"); }, 3500);
+  }
+  window.ArtfloraToast = toast;
+
+  // «Чик — и улетает в корзину»: кружок с фото букета (или значком) летит от кнопки к «Корзине» в шапке,
+  // счётчик подпрыгивает. Кто выключил анимации в системе (prefers-reduced-motion), видит только подпрыгивание.
+  function bump(cart) {
+    cart.classList.remove("cart-bump");
+    void cart.offsetWidth; // перезапуск анимации, если нажали несколько раз подряд
+    cart.classList.add("cart-bump");
+  }
+  function fly(from, photo) {
+    var cart = Array.prototype.find.call(document.querySelectorAll("[data-cart-link]"), function (el) {
+      var r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    });
+    if (!cart) return;
+    var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (calm || !from || !from.getBoundingClientRect || !document.body.animate) { bump(cart); return; }
+    var a = from.getBoundingClientRect();
+    var b = cart.getBoundingClientRect();
+    var size = 56;
+    var dot = document.createElement("div");
+    dot.className = "fly-dot";
+    dot.setAttribute("aria-hidden", "true");
+    if (photo) dot.style.backgroundImage = "url(" + JSON.stringify(photo) + ")";
+    else dot.textContent = "✓";
+    dot.style.left = a.left + a.width / 2 - size / 2 + "px";
+    dot.style.top = a.top + a.height / 2 - size / 2 + "px";
+    document.body.appendChild(dot);
+    var dx = b.left + b.width / 2 - (a.left + a.width / 2);
+    var dy = b.top + b.height / 2 - (a.top + a.height / 2);
+    // Летит по дуге: сначала чуть вверх, потом в корзину, уменьшаясь
+    var anim = dot.animate([
+      { transform: "translate(0, 0) scale(.6)", opacity: 0 },
+      { transform: "translate(" + dx * 0.3 + "px, " + (Math.min(dy, 0) * 0.3 - 60) + "px) scale(1.1)", opacity: 1, offset: 0.3 },
+      { transform: "translate(" + dx + "px, " + dy + "px) scale(.3)", opacity: 0.7 },
+    ], { duration: 700, easing: "cubic-bezier(.5, 0, .3, 1)" });
+    anim.onfinish = function () { dot.remove(); bump(cart); };
+  }
+  window.ArtfloraFly = fly;
 
   function updateBadges(c) {
     var n = count(c || read());
@@ -46,6 +109,15 @@
       else c.lines.push({ bouquetId: line.bouquetId, size: line.size, qty: line.qty });
       if (cardText && cardText.trim()) c.cardText = cardText;
       write(c);
+    },
+    hasAddon: function (id) { return hasAddon(read(), id); },
+    // Положить доп в корзину или убрать его оттуда. Возвращает true, если теперь он в корзине.
+    toggleAddon: function (id) {
+      var c = read();
+      var on = !hasAddon(c, id);
+      c.addons = on ? c.addons.concat([{ addonId: id, qty: 1 }]) : c.addons.filter(function (a) { return a.addonId !== id; });
+      write(c);
+      return on;
     },
     onChange: function (fn) { listeners.push(fn); },
   };

@@ -14,6 +14,8 @@ Http::get('/cart', function () {
         'districts' => Delivery::districtOptions(Settings::get('districts'), $delivery),
         'leadHours' => $shop['leadHours'],
         'delivery' => $delivery,
+        // Платные допы: в корзине их можно добавить одним нажатием
+        'addons' => array_values(array_filter(ShopView::addons(false), fn ($a) => !$a['included'] && $a['priceKop'] > 0)),
         'scripts' => '<script src="' . View::asset('js/checkout.js') . '"></script>' . ShopView::zonesMapScripts(),
     ]);
 });

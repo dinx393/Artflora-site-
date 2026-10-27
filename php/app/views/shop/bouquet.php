@@ -131,9 +131,9 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
             <span class="ok">Добавлена · бесплатно</span>
           </div>
           <?php foreach ($addons as $a): if ($a['included']) continue ?>
-            <button type="button" class="opt" style="flex: 1 1 150px" data-addon="<?= e($a['id']) ?>" data-price-text="<?= e(Money::format($a['priceKop'])) ?>">
+            <button type="button" class="opt addon-opt" style="flex: 1 1 150px" data-addon="<?= e($a['id']) ?>" data-addon-name="<?= e($a['name']) ?>" data-price-text="<?= e(Money::format($a['priceKop'])) ?>" aria-pressed="false">
               <span style="font-weight: 700"><?= e($a['name']) ?></span>
-              <span class="note"><?= e(Money::format($a['priceKop'])) ?></span>
+              <span class="note">+ Добавить · <?= e(Money::format($a['priceKop'])) ?></span>
             </button>
           <?php endforeach ?>
           <?php foreach ($addons as $a): if (!$a['included']) continue ?>
@@ -151,7 +151,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
 
       <button type="button" class="btn btn-lg btn-block" data-add-big>Добавить в корзину</button>
       <div class="row between card" data-added hidden>
-        <span class="small">Букет в корзине. Оформим доставку?</span>
+        <span class="small" data-added-text>Букет в корзине. Оформим доставку?</span>
         <a href="/cart" style="font-weight: 800; text-decoration: none">Оформить заказ →</a>
       </div>
 

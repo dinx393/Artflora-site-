@@ -129,6 +129,7 @@ select.input {
 .opt b { font-weight: 800; font-size: 17px; }
 .opt .note { font-size: 14px; color: var(--muted); }
 .opt .ok { font-size: 14px; color: var(--olive); font-weight: 700; }
+.opt .in-cart { font-size: 14px; color: var(--cherry); font-weight: 800; }
 
 .card { border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
 .panel { background: var(--blush); border-radius: var(--radius); padding: 36px 44px; }
@@ -348,6 +349,42 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .addons h2 { font-size: 26px; }
 .addons-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 12px; }
 .addon { display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 16px; background: var(--blush); }
+/* Платный доп в каталоге — кнопка: «+ Добавить» → «✓ В корзине» */
+.addon-pick { font: inherit; color: inherit; text-align: left; cursor: pointer; border: 2px solid transparent; transition: border-color .15s, background .15s; }
+.addon-pick:hover { border-color: var(--pink); }
+.addon-pick.on { background: var(--white); border-color: var(--cherry); }
+.addon-state { font-size: 14px; font-weight: 800; color: var(--cherry); white-space: nowrap; }
+
+/* Допы в корзине: отдельный заметный блок, чтобы было видно, что конфеты и т. п. едут с букетом */
+.cart-addons { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; padding: 16px 18px; border-radius: 18px; background: var(--blush); border: 1.5px solid var(--pink); }
+.cart-addons-title { font-family: var(--serif); font-size: 20px; }
+.cart-addon { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--white); }
+.cart-addon-ok { flex: 0 0 28px; height: 28px; border-radius: 50%; background: var(--cherry); color: var(--white); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; }
+.cart-addon-name { flex: 1; font-weight: 800; }
+.cart-addon-more { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Летит в корзину (site.js, ArtfloraFly) */
+.fly-dot {
+  position: fixed; z-index: 70; width: 56px; height: 56px; border-radius: 50%; pointer-events: none;
+  background: var(--cherry) center / cover no-repeat; border: 3px solid var(--white); box-shadow: 0 6px 18px rgba(92, 16, 41, .3);
+  color: var(--white); font-weight: 800; font-size: 24px; display: flex; align-items: center; justify-content: center;
+}
+@keyframes cart-bump { 0% { transform: scale(1); } 30% { transform: scale(1.15); } 55% { transform: scale(.95); } 100% { transform: scale(1); } }
+.cart-bump { animation: cart-bump .45s ease-out; }
+.cart-bump [data-cart-count] { display: inline-block; animation: cart-bump .45s ease-out; }
+@media (prefers-reduced-motion: reduce) { .cart-bump, .cart-bump [data-cart-count] { animation: none; } .toast { transition: none; } }
+
+/* Всплывающая плашка «… в корзине» */
+.toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: 60; display: flex; align-items: center; gap: 12px;
+  max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 999px; background: var(--cherry); color: var(--white);
+  font-weight: 700; box-shadow: 0 10px 30px rgba(92, 16, 41, .25);
+  transform: translate(-50%, 20px); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast a { color: var(--pink); white-space: nowrap; }
+.toast a:hover { color: var(--white); }
+.toast-ok { flex: 0 0 24px; height: 24px; border-radius: 50%; background: var(--white); color: var(--cherry); display: inline-flex; align-items: center; justify-content: center; }
 .zone-row { padding: 12px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
 
 /* Карточка букета */

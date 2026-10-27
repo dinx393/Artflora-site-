@@ -197,12 +197,23 @@ $f = fn (array $patch) => e($href($sp, $patch));
     <?php if ($addons): ?>
       <div class="addons">
         <h2>Добавить к букету</h2>
+        <p class="small muted" style="margin-top: -8px">Нажмите — и подарок сразу окажется в корзине вместе с букетом.</p>
         <div class="addons-grid">
           <?php foreach ($addons as $a): ?>
-            <div class="addon">
-              <b><?= e($a['name']) ?></b>
-              <?php if ($a['priceKop'] === 0): ?><span class="gift">В подарок</span><?php else: ?><span class="price" style="font-size: 18px"><?= ShopView::byn($a['priceKop']) ?></span><?php endif ?>
-            </div>
+            <?php if ($a['priceKop'] === 0 || $a['included']): ?>
+              <div class="addon">
+                <b><?= e($a['name']) ?></b>
+                <span class="gift">В подарок</span>
+              </div>
+            <?php else: /* Платный доп: одно нажатие кладёт его в корзину, второе убирает */ ?>
+              <button type="button" class="addon addon-pick" data-addon="<?= e($a['id']) ?>" data-addon-name="<?= e($a['name']) ?>" aria-pressed="false">
+                <b><?= e($a['name']) ?></b>
+                <span class="row between" style="align-items: baseline; gap: 8px">
+                  <span class="price" style="font-size: 18px"><?= ShopView::byn($a['priceKop']) ?></span>
+                  <span class="addon-state" data-addon-state>+ Добавить</span>
+                </span>
+              </button>
+            <?php endif ?>
           <?php endforeach ?>
         </div>
       </div>
