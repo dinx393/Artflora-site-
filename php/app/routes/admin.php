@@ -1,7 +1,7 @@
 <?php
 // Админка: букеты, цветы, коллекции, заказы, доставка, настройки. Повторяет src/app/admin (версия на Node.js).
 // Каждый обработчик начинается с Auth::requireAdmin('раздел'); POST — ещё и с Auth::checkCsrf().
-// Разделы: catalog, orders — и старшему, и обычному администратору; delivery, settings, users — только старшему.
+// Разделы: catalog (букеты, цветы, коллекции, дополнительные товары), orders — и старшему, и обычному администратору; delivery, settings, users — только старшему.
 // Редакторы (цветы, букет, доставка, настройки) работают в браузере (assets/js/admin-*.js)
 // и сохраняют JSON-запросом; простые действия — обычными формами с переходом обратно.
 
@@ -26,7 +26,8 @@ function admin_stamp(string $what, int $id = 0): string
             Db::all('SELECT id, name, kind, unit, priceKop, inStock, inFilter, sortOrder FROM flowers ORDER BY id'),
             Db::all('SELECT flowerId, substituteId FROM flower_substitutes ORDER BY flowerId, substituteId'),
         ],
-        'settings' => [$setting('shop'), $setting('colors'), Db::all('SELECT id, code, name, priceKop, included, active, sortOrder FROM addons ORDER BY id')],
+        'settings' => [$setting('shop'), $setting('colors')],
+        'addons' => Db::all('SELECT id, code, name, priceKop, included, active, sortOrder FROM addons ORDER BY id'),
         'delivery' => [$setting('delivery'), $setting('districts')],
     };
     return substr(hash('sha256', json_encode($data, JSON_UNESCAPED_UNICODE)), 0, 20);
@@ -725,7 +726,9 @@ Http::post('/admin/delivery/save', function () {
     Http::json(['ok' => true, 'stamp' => admin_stamp('delivery')]);
 });
 
-// ---------- Настройки ----------
+// ---------- Дополнительные товары (конфеты, ваза…) ----------
+// Отдельный раздел, доступен и обычному администратору: закончились конфеты — выключил, они пропали с сайта.
+// Выключенный товар не показывается и не считается в заказе, даже если уже лежал у покупателя в корзине (Checkout::price).
 
 function admin_addons(): array
 {
@@ -734,6 +737,56 @@ function admin_addons(): array
         'included' => (bool) $a['included'], 'active' => (bool) $a['active'],
     ], Db::all('SELECT * FROM addons ORDER BY sortOrder'));
 }
+
+Http::get('/admin/addons', function () {
+    Auth::requireAdmin('catalog');
+    return admin_page('addons', [
+        'title' => 'Дополнительные товары',
+        'editor' => ['addons' => admin_addons(), 'stamp' => admin_stamp('addons')],
+        'scripts' => admin_scripts('admin-addons.js'),
+    ]);
+});
+
+Http::post('/admin/addons/save', function () {
+    Auth::requireAdmin('catalog');
+    Auth::checkCsrf();
+    $in = admin_body();
+    $addons = $in['addons'] ?? null;
+    if (!is_array($addons) || count($addons) > 50) admin_fail('Проверьте дополнительные товары');
+    foreach ($addons as $a) {
+        $name = is_string($a['name'] ?? null) ? trim($a['name']) : '';
+        if ($name === '') admin_fail('У каждого товара должно быть название');
+        if (mb_strlen($name) > 80 || !is_string($a['code'] ?? null) || !preg_match('/^[a-z0-9-]{1,40}$/', $a['code'])
+            || !admin_is_int($a['priceKop'] ?? null, 0) || $a['priceKop'] > 10000000 || !is_bool($a['included'] ?? null) || !is_bool($a['active'] ?? null)
+            || !(($a['id'] ?? null) === null || admin_is_int($a['id']))) admin_fail('Проверьте дополнительные товары');
+        if ($a['active'] && !$a['included'] && $a['priceKop'] === 0) admin_fail("Укажите цену у «{$name}» или отметьте «В подарок»");
+    }
+
+    try {
+        // по code (он уникальный): новый товар, сохранённый второй раз без обновления страницы, не создаётся дважды
+        Db::tx(function () use ($in, $addons) {
+            Db::all('SELECT id FROM addons FOR UPDATE');
+            admin_check_stamp($in['stamp'] ?? null, 'addons');
+            foreach (array_values($addons) as $i => $a) {
+                $row = ['code' => $a['code'], 'name' => trim($a['name']), 'priceKop' => $a['priceKop'], 'included' => (int) $a['included'], 'active' => (int) $a['active'], 'sortOrder' => $i];
+                if (isset($a['id'])) {
+                    Db::update('addons', $a['id'], $row);
+                } else {
+                    Db::exec('INSERT INTO addons (code, name, priceKop, included, active, sortOrder) VALUES (?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE name = VALUES(name), priceKop = VALUES(priceKop), included = VALUES(included), active = VALUES(active), sortOrder = VALUES(sortOrder)', array_values($row));
+                }
+            }
+        });
+    } catch (AdminError $e) {
+        admin_fail($e->getMessage());
+    } catch (Throwable $e) {
+        app_log('saveAddons: ' . $e->getMessage());
+        admin_fail('Не удалось сохранить, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз.');
+    }
+    Http::json(['ok' => true, 'addons' => admin_addons(), 'stamp' => admin_stamp('addons')]);
+});
+
+// ---------- Настройки ----------
 
 function admin_emails_ok(string $list): bool
 {
@@ -750,7 +803,6 @@ Http::get('/admin/settings', function () {
         'editor' => [
             'shop' => Settings::get('shop'),
             'colors' => Settings::get('colors'),
-            'addons' => admin_addons(),
             'bouquets' => Db::all('SELECT slug, name FROM bouquets WHERE enabled = 1 ORDER BY name'),
             'smtpReady' => admin_smtp_ready(),
             'stamp' => admin_stamp('settings'),
@@ -790,32 +842,12 @@ Http::post('/admin/settings/save', function () {
     }
     if (count(array_unique(array_column($colors, 'slug'))) !== count($colors)) admin_fail('Проверьте поля: colors');
 
-    $addons = $in['addons'] ?? null;
-    if (!is_array($addons) || count($addons) > 50) admin_fail('Проверьте дополнения');
-    foreach ($addons as $a) {
-        $name = is_string($a['name'] ?? null) ? trim($a['name']) : '';
-        if ($name === '' || mb_strlen($name) > 80 || !is_string($a['code'] ?? null) || !preg_match('/^[a-z0-9-]{1,40}$/', $a['code'])
-            || !admin_is_int($a['priceKop'] ?? null, 0) || !is_bool($a['included'] ?? null) || !is_bool($a['active'] ?? null)
-            || !(($a['id'] ?? null) === null || admin_is_int($a['id']))) admin_fail('Проверьте дополнения');
-    }
-
     try {
-        // по code (он уникальный): новое дополнение, сохранённое второй раз без обновления страницы, не создаётся дважды
-        Db::tx(function () use ($in, $shop, $colors, $addons) {
+        Db::tx(function () use ($in, $shop, $colors) {
             Db::all("SELECT `key` FROM settings WHERE `key` IN ('shop', 'colors') FOR UPDATE");
-            Db::all('SELECT id FROM addons FOR UPDATE');
             admin_check_stamp($in['stamp'] ?? null, 'settings');
             Settings::save('shop', $shop);
             Settings::save('colors', $colors);
-            foreach (array_values($addons) as $i => $a) {
-                $row = ['code' => $a['code'], 'name' => trim($a['name']), 'priceKop' => $a['priceKop'], 'included' => (int) $a['included'], 'active' => (int) $a['active'], 'sortOrder' => $i];
-                if (isset($a['id'])) {
-                    Db::update('addons', $a['id'], $row);
-                } else {
-                    Db::exec('INSERT INTO addons (code, name, priceKop, included, active, sortOrder) VALUES (?, ?, ?, ?, ?, ?)
-                        ON DUPLICATE KEY UPDATE name = VALUES(name), priceKop = VALUES(priceKop), included = VALUES(included), active = VALUES(active), sortOrder = VALUES(sortOrder)', array_values($row));
-                }
-            }
         });
     } catch (AdminError $e) {
         admin_fail($e->getMessage());
@@ -823,7 +855,7 @@ Http::post('/admin/settings/save', function () {
         app_log('saveSettings: ' . $e->getMessage());
         admin_fail('Не удалось сохранить настройки, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз.');
     }
-    Http::json(['ok' => true, 'addons' => admin_addons(), 'stamp' => admin_stamp('settings')]);
+    Http::json(['ok' => true, 'stamp' => admin_stamp('settings')]);
 });
 
 // Кнопка «Отправить пробное письмо»: шлём на адреса из поля (даже если ещё не сохранены).

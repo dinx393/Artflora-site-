@@ -1,5 +1,6 @@
 // Настройки = src/app/admin/(panel)/settings/SettingsEditor.tsx
-// Контакты, почта для заказов (с пробным письмом), «Букет дня», реквизиты, цвета букетов, дополнения.
+// Контакты, почта для заказов (с пробным письмом), «Букет дня», реквизиты, цвета букетов.
+// Дополнительные товары (конфеты, ваза…) — отдельный раздел, admin-addons.js.
 (function () {
   var U = window.AdminUI;
   var esc = U.esc;
@@ -8,8 +9,6 @@
   var state = {
     shop: data.shop,
     colors: data.colors,
-    addons: data.addons,
-    addonPrice: {}, // текст поля цены, пока набирают
     msg: null,
     pending: false,
     testing: false,
@@ -37,14 +36,10 @@
   function save() {
     state.pending = true;
     ui.render();
-    U.post("/admin/settings/save", { shop: state.shop, colors: state.colors, addons: state.addons, stamp: stamp }).then(function (r) {
+    U.post("/admin/settings/save", { shop: state.shop, colors: state.colors, stamp: stamp }).then(function (r) {
       state.pending = false;
       state.msg = r.ok ? { ok: true, text: "Настройки сохранены" } : { ok: false, text: r.error || "Ошибка" };
       if (r.ok) stamp = r.stamp;
-      if (r.ok && r.addons) {
-        state.addons = r.addons; // новые дополнения получили номера в базе
-        state.addonPrice = {};
-      }
       ui.render();
     });
   }
@@ -115,29 +110,6 @@
       ui.render();
     }) + ">+ Добавить цвет</button></div>";
 
-    h += '<div class="card stack" style="gap: 12px"><span class="label" style="font-size: 18px">Дополнения к букету</span>';
-    h += '<table class="table"><thead><tr><th>Название</th><th>Цена, BYN</th><th>Входит в комплект</th><th>Показывать</th></tr></thead><tbody>';
-    state.addons.forEach(function (a, i) {
-      function set(p) {
-        state.addons = state.addons.map(function (x, j) { return j === i ? Object.assign({}, x, p) : x; });
-        ui.render();
-      }
-      var key = a.id || a.code;
-      var priceText = state.addonPrice[key] !== undefined ? state.addonPrice[key] : U.kopToInput(a.priceKop);
-      h += "<tr><td><input class=\"input\" style=\"padding: 8px 10px\" data-k=\"addon-name-" + esc(key) + '" value="' + esc(a.name) + '"' + on("input", function (e) { set({ name: e.target.value }); }) + "></td>";
-      h += '<td><input class="num" inputmode="decimal" data-k="addon-price-' + esc(key) + '" value="' + esc(priceText) + '"' + on("input", function (e) {
-        state.addonPrice[key] = e.target.value;
-        var k = U.parseByn(e.target.value);
-        if (k !== null) set({ priceKop: k });
-      }) + "></td>";
-      h += '<td><input type="checkbox"' + U.attr("checked", a.included) + on("change", function (e) { set({ included: e.target.checked }); }) + "></td>";
-      h += '<td><button type="button" class="switch ' + (a.active ? "on" : "") + '" aria-label="Показывать"' + on("click", function () { set({ active: !a.active }); }) + "></button></td></tr>";
-    });
-    h += "</tbody></table>";
-    h += '<button type="button" class="btn-ghost small" style="align-self: flex-start"' + on("click", function () {
-      state.addons = state.addons.concat([{ code: "addon-" + Date.now().toString(36), name: "Новое дополнение", priceKop: 0, included: false, active: false }]);
-      ui.render();
-    }) + ">+ Добавить</button></div>";
     return h;
   }
 

@@ -4,6 +4,7 @@ $items = [
     '/admin/bouquets' => ['Букеты', 'catalog'],
     '/admin/flowers' => ['Цветы', 'catalog'],
     '/admin/collections' => ['Коллекции', 'catalog'],
+    '/admin/addons' => ['Доп. товары', 'catalog'],
     '/admin/orders' => ['Заказы', 'orders'],
     '/admin/delivery' => ['Доставка', 'delivery'],
     '/admin/settings' => ['Настройки', 'settings'],
