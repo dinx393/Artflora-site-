@@ -243,6 +243,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
     $initial = [
         'id' => (int) $b['id'], 'name' => $b['name'], 'slug' => $b['slug'], 'description' => $b['description'], 'format' => $b['format'],
         'enabled' => (bool) $b['enabled'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'], 'photoSize' => $b['photoSize'],
+        'weddingOnly' => (bool) $b['weddingOnly'],
         'isDayBouquet' => Settings::get('shop')['dayBouquet'] === $b['slug'],
         'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']), 'photos' => Db::fromJson($b['photos']),
         'sections' => Db::fromJson($b['sections']),
@@ -297,7 +298,7 @@ Http::post('/admin/bouquets/save', function () {
     $lists = ['colors' => [10, 20], 'occasions' => [10, 30], 'photos' => [12, 300]];
     if (!admin_is_int($id) || admin_str($in['description'] ?? null, 2000) === null
         || !array_key_exists($in['format'] ?? '', Occasions::FORMATS) || !in_array($photoSize, Pricing::SIZE_ORDER, true)
-        || !is_bool($in['enabled'] ?? null) || !is_bool($in['isHit'] ?? null) || !is_bool($in['isExclusive'] ?? null)
+        || !is_bool($in['enabled'] ?? null) || !is_bool($in['isHit'] ?? null) || !is_bool($in['isExclusive'] ?? null) || !is_bool($in['weddingOnly'] ?? true)
         || !(($in['collectionId'] ?? null) === null || admin_is_int($in['collectionId']))
         || !is_array($in['sizes'] ?? null) || count($in['sizes']) > count(Pricing::SIZE_ORDER)) admin_fail($bad);
     // таймер «собран сегодня»: keep — не трогать, off — снять, число — скрыть через столько часов от сохранения
@@ -336,7 +337,7 @@ Http::post('/admin/bouquets/save', function () {
             Db::update('bouquets', $id, [
                 'name' => $name, 'slug' => $slug, 'description' => $in['description'], 'format' => $in['format'],
                 'packagingKop' => $photo['packagingKop'], 'enabled' => (int) $in['enabled'], 'isHit' => (int) $in['isHit'],
-                'isExclusive' => (int) $in['isExclusive'], 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
+                'isExclusive' => (int) $in['isExclusive'], 'weddingOnly' => (int) ($in['weddingOnly'] ?? true), 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
                 'occasions' => Db::json($in['occasions']), 'sections' => Db::json(array_values(array_unique($sections))),
                 'photos' => Db::json($in['photos']), 'collectionId' => $in['collectionId'],
             ]);

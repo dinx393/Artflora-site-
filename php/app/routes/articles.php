@@ -13,7 +13,9 @@ Http::get('/blog/{slug}', function (string $slug) {
     $url = Seo::absUrl("/blog/$slug");
     // Под статьёй — букеты: к свадебным статьям свадебные, к остальным хиты
     $all = Catalog::visible();
-    $pick = $a['rubric'] === 'svadba' ? Catalog::filter($all, ['occasion' => 'wedding']) : array_filter($all, fn ($b) => $b['isHit']);
+    $pick = $a['rubric'] === 'svadba' ? Catalog::filter($all, ['occasion' => 'wedding']) : null;
+    $all = $pick ? $all : Catalog::general($all); // свадебные «только в разделе» — только к свадебным статьям
+    $pick = $pick ?: array_filter($all, fn ($b) => $b['isHit']);
     $bouquets = array_slice(array_values($pick ?: $all), 0, 4);
     return View::page('shop/article', [
         'title' => $a['title'],

@@ -19,6 +19,7 @@
   }
   var initial = clone(data.initial);
   if (!initial.sections) initial.sections = [];
+  if (initial.weddingOnly === undefined) initial.weddingOnly = true;
   // упаковка у каждого размера своя; текст поля храним отдельно, чтобы можно было стереть и набрать
   function packagingTexts(x) {
     var t = {};
@@ -225,7 +226,14 @@
       h += '<button type="button" class="chip ' + (b.occasions.indexOf(o.slug) >= 0 ? "on" : "") + '"' +
         on("click", function () { set({ occasions: toggleIn(b.occasions, o.slug) }); }) + ">" + esc(o.label) + "</button>";
     });
-    h += "</div></div>";
+    h += "</div>";
+    // Свадебные — только в своём разделе (по умолчанию так): в общем каталоге, поиске и на главной их нет
+    if (b.occasions.indexOf("wedding") >= 0) {
+      h += '<label class="check"><input type="checkbox"' + on_("checked", b.weddingOnly) + on("change", function (e) { set({ weddingOnly: e.target.checked }); }) +
+        "> Только в разделе «Свадебные букеты»</label>" +
+        '<span class="small muted">В общем каталоге, поиске, других разделах и на главной его не будет. Ссылка на букет работает.</span>';
+    }
+    h += "</div>";
 
     // Разделы над каталогом: можно несколько. Некоторые включаются сами (формат, розы в составе) — их не выключить.
     var hasRoses = b.sizes.some(function (s) {

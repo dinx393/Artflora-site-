@@ -83,6 +83,7 @@ final class Catalog
         return array_map(fn ($b) => [
             'id' => (int) $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'enabled' => (bool) $b['enabled'], 'hideAt' => $b['hideAt'], 'hiddenByTimerAt' => $b['hiddenByTimerAt'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'],
+            'weddingOnly' => (bool) $b['weddingOnly'],
             'photoSize' => $b['photoSize'], 'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']),
             'sections' => Db::fromJson($b['sections']), 'photos' => Db::fromJson($b['photos']), 'sortOrder' => (int) $b['sortOrder'],
             'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
@@ -109,6 +110,7 @@ final class Catalog
         return [
             'id' => $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'], 'hideAt' => $b['hideAt'],
+            'weddingOnly' => $b['weddingOnly'] && in_array('wedding', $b['occasions'], true),
             'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $b['sections'],
             'photos' => $b['photos'] ? array_map([Uploads::class, 'url'], $b['photos']) : [self::PLACEHOLDER],
             'collectionId' => $b['collectionId'], 'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
@@ -131,10 +133,18 @@ final class Catalog
         return $b ? self::toView($b) : null;
     }
 
+    // Свадебный букет с галочкой «Только в свадебном разделе» виден лишь в разделе «Свадебные букеты» (повод wedding):
+    // главная, общий каталог, поиск, другие разделы и «Похожие» его не показывают. Прямая ссылка и корзина работают.
+    public static function general(array $list): array
+    {
+        return array_values(array_filter($list, fn ($b) => empty($b['weddingOnly'])));
+    }
+
     // Фильтр каталога: occasion, price ['min','max'], flower, colors [...] (хотя бы один), format, collection, q (поиск)
     public static function filter(array $list, array $f): array
     {
         $q = mb_strtolower(trim($f['q'] ?? ''));
+        if (($f['occasion'] ?? null) !== 'wedding') $list = self::general($list);
         return array_values(array_filter($list, function ($b) use ($f, $q) {
             if (!empty($f['occasion']) && !in_array($f['occasion'], $b['occasions'], true)) return false;
             if (!empty($f['colors']) && !array_intersect($f['colors'], $b['colors'])) return false;

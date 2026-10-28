@@ -3,7 +3,7 @@
 // Повторяет src/app/(shop)/page.tsx, catalog, bouquet/[slug], single, delivery.
 
 Http::get('/', function () {
-    $all = Catalog::visible();
+    $all = Catalog::general(Catalog::visible());
     $shop = Settings::get('shop');
     $price = Http::str('price', 20);
     $range = array_values(array_filter(Occasions::PRICE_RANGES, fn ($r) => $r['slug'] === $price))[0] ?? null;
@@ -49,6 +49,8 @@ function catalog_page(?string $landingSlug = null): string
     $sp = $landing['filter'] ?? [];
     foreach ($keys as $k) if (($v = Http::str($k, 100)) !== '') $sp[$k] = $v;
     $all = Catalog::visible();
+    // Свадебные «только в разделе» — лишь в «Свадебных букетах» (Catalog::filter убирает их и сам; здесь — для фильтра цветов)
+    if (($sp['occasion'] ?? '') !== 'wedding') $all = Catalog::general($all);
     $colorList = Settings::get('colors');
     $range = array_values(array_filter(Occasions::PRICE_RANGES, fn ($r) => $r['slug'] === ($sp['price'] ?? '')))[0] ?? null;
     $colors = Occasions::parseColors($sp['color'] ?? null, $colorList);
@@ -100,6 +102,8 @@ Http::get('/bouquet/{slug}', function (string $slug) {
     // Букет есть, но сейчас скрыт (нет цветов): временно ведём в каталог, чтобы поиск не терял страницу
     if (!$b) Catalog::load('b.slug = ?', [$slug]) ? Http::redirect('/catalog', 302) : Http::abort(404);
     $all = Catalog::visible();
+    // «Похожие» к обычному букету — без свадебных, которые только в своём разделе
+    if (!$b['weddingOnly']) $all = Catalog::general($all);
     $siblings = $b['collectionId'] ? array_values(array_filter($all, fn ($x) => $x['collectionId'] === $b['collectionId'])) : [];
     $similar = [];
     foreach ($all as $x) {
