@@ -3,6 +3,39 @@
 final class Catalog
 {
     public const PLACEHOLDER = '/demo/placeholder.svg';
+    public const TIMER_HOURS = 36; // таймер «собран сегодня» по умолчанию: полтора суток (владелец, 2026-10-28)
+    private static bool $timersChecked = false;
+
+    // Таймер «собран сегодня»: букеты, у которых вышел срок, выключаются (не удаляются) и помечаются «скрыт по таймеру».
+    // Вызывает cron раз в 5 минут, а на случай, если cron не настроен, — и любая загрузка букетов (раз за запрос).
+    // Если скрытый букет был «Букетом дня», галочка снимается: включённый вручную, он уже не «собран сегодня».
+    public static function hideExpired(): int
+    {
+        self::$timersChecked = true;
+        $due = Db::all('SELECT id, slug FROM bouquets WHERE hideAt IS NOT NULL AND hideAt <= NOW()');
+        if (!$due) return 0;
+        $ids = array_map('intval', array_column($due, 'id'));
+        Db::exec('UPDATE bouquets SET hiddenByTimerAt = IF(enabled = 1, hideAt, hiddenByTimerAt), enabled = 0, hideAt = NULL WHERE id ' . Db::in($ids), $ids);
+        $shop = Settings::get('shop');
+        if (in_array($shop['dayBouquet'], array_column($due, 'slug'), true)) Settings::save('shop', ['dayBouquet' => ''] + $shop);
+        return count($due);
+    }
+
+    // Сколько осталось до срабатывания таймера: «1 д 4 ч», «5 ч 20 мин», «12 мин» (для админки)
+    public static function timerLeft(string $hideAt, ?int $now = null): string
+    {
+        $min = max(0, intdiv(strtotime($hideAt) - ($now ?? time()) + 59, 60));
+        [$d, $h, $m] = [intdiv($min, 1440), intdiv($min % 1440, 60), $min % 60];
+        if ($d) return "$d д" . ($h ? " $h ч" : '');
+        if ($h) return "$h ч" . ($m ? " $m мин" : '');
+        return max(1, $m) . ' мин';
+    }
+
+    // «29.10 в 15:30»
+    public static function timerDate(string $at): string
+    {
+        return date('d.m в H:i', strtotime($at));
+    }
 
     // Букеты целиком: с размерами, составом, цветами и их заменами — в форме, которую понимает Pricing.
     // $where — условие на таблицу bouquets (алиас b), например 'b.id IN (?, ?)'.
@@ -12,6 +45,10 @@ final class Catalog
             FROM bouquets b LEFT JOIN collections c ON c.id = b.collectionId
             WHERE $where ORDER BY b.sortOrder, b.id", $params);
         if (!$rows) return [];
+        if (!self::$timersChecked && array_filter($rows, fn ($b) => $b['hideAt'] !== null && strtotime($b['hideAt']) <= time())) {
+            self::hideExpired();
+            return self::load($where, $params);
+        }
         $ids = array_column($rows, 'id');
         $sizes = Db::all('SELECT * FROM bouquet_sizes WHERE bouquetId ' . Db::in($ids) . ' ORDER BY id', $ids);
         $sizeIds = array_column($sizes, 'id');
@@ -45,7 +82,7 @@ final class Catalog
         }
         return array_map(fn ($b) => [
             'id' => (int) $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
-            'format' => $b['format'], 'enabled' => (bool) $b['enabled'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'],
+            'format' => $b['format'], 'enabled' => (bool) $b['enabled'], 'hideAt' => $b['hideAt'], 'hiddenByTimerAt' => $b['hiddenByTimerAt'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'],
             'photoSize' => $b['photoSize'], 'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']),
             'sections' => Db::fromJson($b['sections']), 'photos' => Db::fromJson($b['photos']), 'sortOrder' => (int) $b['sortOrder'],
             'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
@@ -71,7 +108,7 @@ final class Catalog
         foreach (Pricing::sortSizes($b['sizes']) as $s) foreach ($s['items'] as $i) $names[$i['flower']['name']] = true;
         return [
             'id' => $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
-            'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'],
+            'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'], 'hideAt' => $b['hideAt'],
             'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $b['sections'],
             'photos' => $b['photos'] ? array_map([Uploads::class, 'url'], $b['photos']) : [self::PLACEHOLDER],
             'collectionId' => $b['collectionId'], 'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
