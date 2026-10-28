@@ -5,6 +5,7 @@ $tabs = [
     'on' => "На сайте · {$counts['on']}",
     'off' => "Выключены · {$counts['off']}",
     'missing' => "Нет цветов · {$counts['missing']}",
+    'timer' => "⏱ Собран сегодня · {$counts['timer']}",
 ];
 // Что ищет поиск по списку: название, адрес, коллекция, вид и цветы всех размеров
 $searchText = function (array $b): string {
@@ -30,10 +31,17 @@ $filterFlowers = $sortNames($filterFlowers);
     <h1>Букеты</h1>
     <span class="muted"><?= $counts['on'] ?> на сайте, <?= $counts['off'] ?> выключено вручную, <?= $counts['missing'] ?> скрыто: нет цветов</span>
   </div>
-  <form method="post" action="/admin/bouquets/new">
-    <?= Auth::csrfField() ?>
-    <button class="btn">+ Добавить букет</button>
-  </form>
+  <div class="row" style="gap: 8px">
+    <form method="post" action="/admin/bouquets/new">
+      <?= Auth::csrfField() ?>
+      <input type="hidden" name="today" value="1">
+      <button class="btn btn-outline" title="Готовый букет: сразу «Букет дня» на главной, сам скроется с сайта через <?= Catalog::TIMER_HOURS ?> ч">+ Собран сегодня</button>
+    </form>
+    <form method="post" action="/admin/bouquets/new">
+      <?= Auth::csrfField() ?>
+      <button class="btn">+ Добавить букет</button>
+    </form>
+  </div>
 </div>
 <div class="tabs">
   <?php foreach ($tabs as $k => $label): ?>
@@ -99,10 +107,15 @@ $filterFlowers = $sortNames($filterFlowers);
           <td>
             <?php if ($vis['visible']): ?>
               <span class="pill ok">На сайте</span>
+            <?php elseif ($vis['reason'] === 'disabled' && $b['hiddenByTimerAt'] !== null): ?>
+              <span class="pill" title="Таймер «собран сегодня» сработал <?= e(Catalog::timerDate($b['hiddenByTimerAt'])) ?>. Вернуть на сайт — переключателем справа">⏱ Скрыт по таймеру <?= e(Catalog::timerDate($b['hiddenByTimerAt'])) ?></span>
             <?php elseif ($vis['reason'] === 'disabled'): ?>
               <span class="pill">Выключен</span>
             <?php else: ?>
               <span class="pill warn">Скрыт: нет в наличии <?= e(mb_strtolower(implode(', ', $vis['missing']))) ?></span>
+            <?php endif ?>
+            <?php if ($b['hideAt'] !== null): ?>
+              <span class="pill timer" title="Таймер «собран сегодня»: <?= e(Catalog::timerDate($b['hideAt'])) ?> букет сам выключится. Поменять или снять — в карточке букета">⏱ Скроется через <?= e(Catalog::timerLeft($b['hideAt'])) ?></span>
             <?php endif ?>
           </td>
           <td>
@@ -116,4 +129,5 @@ $filterFlowers = $sortNames($filterFlowers);
 </div>
 <p class="small muted">
   Цена букета = цветы по ценам из раздела «Цветы» + упаковка. Букет без нужного цветка скрыт автоматически и вернётся сам, когда цветок снова появится.
+  ⏱ — таймер «собран сегодня»: в срок букет сам выключается (не удаляется), обратно его включают вручную.
 </p>

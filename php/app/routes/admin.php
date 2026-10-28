@@ -19,7 +19,7 @@ function admin_stamp(string $what, int $id = 0): string
     $setting = fn (string $k) => Db::value('SELECT value FROM settings WHERE `key` = ?', [$k]);
     $data = match ($what) {
         'bouquet' => [
-            Db::one('SELECT name, slug, description, format, enabled, isHit, isExclusive, photoSize, packagingKop, colors, occasions, sections, photos, collectionId FROM bouquets WHERE id = ?', [$id]),
+            Db::one('SELECT name, slug, description, format, enabled, hideAt, isHit, isExclusive, photoSize, packagingKop, colors, occasions, sections, photos, collectionId FROM bouquets WHERE id = ?', [$id]),
             Db::all('SELECT s.code, s.note, s.packagingKop, i.flowerId, i.qty FROM bouquet_sizes s LEFT JOIN bouquet_items i ON i.sizeId = s.id WHERE s.bouquetId = ? ORDER BY s.code, i.id', [$id]),
         ],
         'flowers' => [
@@ -158,7 +158,7 @@ function admin_telegram_ready(): bool
 
 Http::get('/admin/bouquets', function () {
     Auth::requireAdmin('catalog');
-    $tab = in_array($_GET['tab'] ?? '', ['all', 'on', 'off', 'missing'], true) ? $_GET['tab'] : 'all';
+    $tab = in_array($_GET['tab'] ?? '', ['all', 'on', 'off', 'missing', 'timer'], true) ? $_GET['tab'] : 'all';
     $list = array_map(function ($b) {
         $vis = Pricing::visibility($b);
         $main = Pricing::defaultSize($b);
@@ -173,6 +173,8 @@ Http::get('/admin/bouquets', function () {
         'on' => fn ($x) => $x['vis']['visible'],
         'off' => fn ($x) => !$x['vis']['visible'] && $x['vis']['reason'] === 'disabled',
         'missing' => fn ($x) => !$x['vis']['visible'] && $x['vis']['reason'] === 'no-flowers',
+        // таймер «собран сегодня»: идёт или уже сработал и букет так и не включили обратно
+        'timer' => fn ($x) => $x['b']['hideAt'] !== null || ($x['b']['hiddenByTimerAt'] !== null && !$x['b']['enabled']),
     ];
     $counts = array_map(fn ($f) => count(array_filter($list, $f)), $is);
     return admin_page('bouquets', [
@@ -191,7 +193,8 @@ Http::post('/admin/bouquets/toggle', function () {
     Auth::checkCsrf();
     $b = admin_body();
     if (!admin_is_int($b['id'] ?? null) || !is_bool($b['enabled'] ?? null)) admin_fail('Ошибка');
-    Db::exec('UPDATE bouquets SET enabled = ? WHERE id = ?', [(int) $b['enabled'], $b['id']]);
+    // включили вручную — пометка «скрыт по таймеру» больше не нужна; таймер заново не запускается
+    Db::exec('UPDATE bouquets SET enabled = ?, hiddenByTimerAt = IF(? = 1, NULL, hiddenByTimerAt) WHERE id = ?', [(int) $b['enabled'], (int) $b['enabled'], $b['id']]);
     Http::json(['ok' => true]);
 });
 
@@ -217,20 +220,23 @@ Http::post('/admin/bouquets/order', function () {
     Http::json(['ok' => true]);
 });
 
+// «+ Собран сегодня»: тот же новый букет, но в карточке сразу отмечены «Букет дня», «На сайте» и таймер (сохраняются кнопкой «Сохранить»)
 Http::post('/admin/bouquets/new', function () {
     Auth::requireAdmin('catalog');
     Auth::checkCsrf();
+    $today = ($_POST['today'] ?? '') === '1';
     $id = Db::insert('bouquets', [
         'sortOrder' => (int) Db::value('SELECT COALESCE(MIN(sortOrder), 0) - 1 FROM bouquets'), // новый — первым
         'name' => 'Новый букет', 'slug' => admin_free_slug('bouquets', 'novyy-buket'), 'description' => '',
         'enabled' => 0, 'packagingKop' => 800, 'colors' => '[]', 'occasions' => '[]', 'sections' => '[]', 'photos' => '[]',
     ]);
-    Http::redirect("/admin/bouquets/$id");
+    Http::redirect("/admin/bouquets/$id" . ($today ? '?today=1' : ''));
 });
 
 Http::get('/admin/bouquets/{id}', function (string $id) {
     Auth::requireAdmin('catalog');
     if (!ctype_digit($id)) Http::abort(404);
+    Catalog::hideExpired(); // вдруг таймер уже вышел, а cron не успел
     $b = Db::one('SELECT * FROM bouquets WHERE id = ?', [(int) $id]) ?? Http::abort(404);
     $sizes = Db::all('SELECT * FROM bouquet_sizes WHERE bouquetId = ?', [$b['id']]);
     $items = $sizes ? Db::all('SELECT sizeId, flowerId, qty FROM bouquet_items WHERE sizeId ' . Db::in(array_column($sizes, 'id')) . ' ORDER BY id', array_column($sizes, 'id')) : [];
@@ -240,6 +246,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
         'isDayBouquet' => Settings::get('shop')['dayBouquet'] === $b['slug'],
         'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']), 'photos' => Db::fromJson($b['photos']),
         'sections' => Db::fromJson($b['sections']),
+        'hideAt' => $b['hideAt'], 'hiddenByTimerAt' => $b['hiddenByTimerAt'], 'timer' => 'keep',
         'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
         'sizes' => array_map(function ($code) use ($sizes, $items, $b) {
             $s = null;
@@ -268,6 +275,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
             'stamp' => admin_stamp('bouquet', (int) $b['id']),
             'initial' => $initial, 'flowers' => $flowers, 'collections' => $collections, 'siblings' => $siblings,
             'colors' => Settings::get('colors'), 'occasions' => Occasions::LIST, 'formats' => Occasions::FORMATS, 'sections' => Occasions::SECTIONS,
+            'timerHours' => Catalog::TIMER_HOURS, 'now' => date('Y-m-d H:i:s'), 'today' => ($_GET['today'] ?? '') === '1',
         ],
         'scripts' => admin_scripts('admin-bouquet.js'),
     ]);
@@ -292,6 +300,9 @@ Http::post('/admin/bouquets/save', function () {
         || !is_bool($in['enabled'] ?? null) || !is_bool($in['isHit'] ?? null) || !is_bool($in['isExclusive'] ?? null)
         || !(($in['collectionId'] ?? null) === null || admin_is_int($in['collectionId']))
         || !is_array($in['sizes'] ?? null) || count($in['sizes']) > count(Pricing::SIZE_ORDER)) admin_fail($bad);
+    // таймер «собран сегодня»: keep — не трогать, off — снять, число — скрыть через столько часов от сохранения
+    $timer = $in['timer'] ?? 'keep';
+    if (!in_array($timer, ['keep', 'off'], true) && !admin_is_int($timer, 1, 24 * 30)) admin_fail('Таймер: от 1 часа до 30 дней');
     $sections = $in['sections'] ?? [];
     if (!is_array($sections) || !array_is_list($sections) || array_diff($sections, ['roses', 'HATBOX', 'BAG', 'BASKET'])) admin_fail($bad);
     foreach ($lists as $k => [$max, $len]) {
@@ -319,7 +330,7 @@ Http::post('/admin/bouquets/save', function () {
     foreach ($sizes as $s) if ($s['code'] === $photoSize) $photo = $s;
     $oldSlug = Db::value('SELECT slug FROM bouquets WHERE id = ?', [$id]);
     try {
-        Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes, $sections) {
+        Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes, $sections, $timer) {
             Db::all('SELECT id FROM bouquets WHERE id = ? FOR UPDATE', [$id]);
             admin_check_stamp($in['stamp'] ?? null, 'bouquet', $id);
             Db::update('bouquets', $id, [
@@ -329,6 +340,9 @@ Http::post('/admin/bouquets/save', function () {
                 'occasions' => Db::json($in['occasions']), 'sections' => Db::json(array_values(array_unique($sections))),
                 'photos' => Db::json($in['photos']), 'collectionId' => $in['collectionId'],
             ]);
+            if ($in['enabled']) Db::exec('UPDATE bouquets SET hiddenByTimerAt = NULL WHERE id = ?', [$id]); // включили вручную
+            if ($timer === 'off') Db::exec('UPDATE bouquets SET hideAt = NULL WHERE id = ?', [$id]);
+            elseif ($timer !== 'keep') Db::exec('UPDATE bouquets SET hideAt = DATE_ADD(NOW(), INTERVAL ? HOUR), hiddenByTimerAt = NULL WHERE id = ?', [$timer, $id]);
             Db::exec('DELETE FROM bouquet_sizes WHERE bouquetId = ?', [$id]);
             foreach ($sizes as $s) {
                 $sizeId = Db::insert('bouquet_sizes', ['bouquetId' => $id, 'code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop']]);
@@ -346,7 +360,8 @@ Http::post('/admin/bouquets/save', function () {
         app_log('saveBouquet: ' . $e->getMessage());
         admin_fail('Не удалось сохранить букет, ничего не изменилось. Обновите страницу (F5) и попробуйте ещё раз.');
     }
-    Http::json(['ok' => true, 'stamp' => admin_stamp('bouquet', $id)]);
+    $t = Db::one('SELECT hideAt, hiddenByTimerAt FROM bouquets WHERE id = ?', [$id]);
+    Http::json(['ok' => true, 'stamp' => admin_stamp('bouquet', $id), 'hideAt' => $t['hideAt'], 'hiddenByTimerAt' => $t['hiddenByTimerAt'], 'now' => date('Y-m-d H:i:s')]);
 });
 
 // «+ Создать с этим составом»: копия букета в другом формате, в той же коллекции.

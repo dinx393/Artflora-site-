@@ -34,7 +34,30 @@
     pending: false,
     uploading: false,
     flowerQuery: "",
+    timerText: String(data.timerHours), // часы таймера «собран сегодня» в поле
   };
+  // «+ Собран сегодня» в списке: сразу «Букет дня», на сайте и таймер — применятся кнопкой «Сохранить»
+  if (data.today) Object.assign(state.b, { isDayBouquet: true, enabled: true, timer: data.timerHours });
+
+  // Время сервера (Минск) — чтобы «скроется через …» не зависело от часов и пояса компьютера
+  var serverNow = data.now, loadedAt = Date.now();
+  function parseTime(t) {
+    var m = String(t).match(/^(\d+)-(\d+)-(\d+) (\d+):(\d+)/);
+    return m ? Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5]) : NaN;
+  }
+  function nowMs() {
+    return parseTime(serverNow) + (Date.now() - loadedAt);
+  }
+  function timerDate(ms) {
+    var d = new Date(ms), p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return p(d.getUTCDate()) + "." + p(d.getUTCMonth() + 1) + " в " + p(d.getUTCHours()) + ":" + p(d.getUTCMinutes());
+  }
+  function timerLeft(ms) {
+    var min = Math.max(1, Math.ceil((ms - nowMs()) / 60000)), d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+    if (d) return d + " д" + (h ? " " + h + " ч" : "");
+    if (h) return h + " ч" + (m ? " " + m + " мин" : "");
+    return m + " мин";
+  }
   var byId = {};
   flowers.forEach(function (f) { byId[f.id] = f; });
 
@@ -120,6 +143,9 @@
       state.msg = r.ok ? { ok: true, text: "Сохранено, сайт обновлён" } : { ok: false, text: r.error || "Ошибка" };
       if (r.ok) {
         stamp = r.stamp;
+        Object.assign(state.b, { hideAt: r.hideAt, hiddenByTimerAt: r.hiddenByTimerAt, timer: "keep" });
+        serverNow = r.now;
+        loadedAt = Date.now();
         initial = clone(state.b);
         document.title = (state.b.name || "Без названия") + " — Управление сайтом";
       }
@@ -159,7 +185,7 @@
     // Шапка
     h += '<div class="row between"><div class="stack" style="gap: 6px"><a href="/admin/bouquets" class="small">← Все букеты</a><h1>' + esc(b.name || "Без названия") + "</h1></div>";
     h += '<div class="row"><span class="row small" style="gap: 8px"><button type="button" class="switch ' + (b.enabled ? "on" : "") + '" aria-label="Показывать на сайте"' +
-      on("click", function () { set({ enabled: !b.enabled }); }) + "></button>" + (b.enabled ? "На сайте" : "Выключен") + "</span>";
+      on("click", function () { set({ enabled: !b.enabled }); }) + "></button>" + (b.enabled ? "На сайте" : b.hiddenByTimerAt ? "Скрыт по таймеру" : "Выключен") + "</span>";
     h += '<button type="button" class="btn btn-outline"' + on("click", function () {
       state.b = clone(initial);
       state.packagingText = packagingTexts(initial);
@@ -229,9 +255,17 @@
     h += '<div class="row" style="gap: 12px"><label class="field" style="flex: 1 1 200px"><span>Формат</span><select class="input"' + on("change", function (e) { set({ format: e.target.value }); }) + ">";
     Object.keys(FORMATS).forEach(function (k) { h += '<option value="' + k + '"' + on_("selected", b.format === k) + ">" + esc(FORMATS[k].label) + "</option>"; });
     h += "</select></label>";
-    h += '<label class="check" style="margin-top: 22px" title="Большой блок «Букет дня · собран сегодня» на главной, один на сайт"><input type="checkbox"' + on_("checked", b.isDayBouquet) + on("change", function (e) { set({ isDayBouquet: e.target.checked }); }) + "> Букет дня (на главной)</label>";
+    h += '<label class="check" style="margin-top: 22px" title="Большой блок «Букет дня · собран сегодня» на главной, один на сайт"><input type="checkbox"' + on_("checked", b.isDayBouquet) + on("change", function (e) {
+      var p = { isDayBouquet: e.target.checked };
+      // «Букет дня» = собран сегодня: таймер ставим сразу (виден ниже, можно поменять или снять)
+      if (e.target.checked && !b.hideAt && b.timer === "keep") p.timer = data.timerHours;
+      if (!e.target.checked && !initial.isDayBouquet && b.timer !== "keep" && !initial.hideAt) p.timer = "keep";
+      set(p);
+    }) + "> Букет дня (на главной)</label>";
     h += '<label class="check" style="margin-top: 22px"><input type="checkbox"' + on_("checked", b.isHit) + on("change", function (e) { set({ isHit: e.target.checked }); }) + "> Хит недели</label>";
     h += '<label class="check" style="margin-top: 22px"><input type="checkbox"' + on_("checked", b.isExclusive) + on("change", function (e) { set({ isExclusive: e.target.checked }); }) + "> Эксклюзив недели</label></div>";
+
+    h += timerView(on);
 
     // Состав
     h += '<div class="card stack" style="gap: 14px"><div class="row between"><span class="label" style="font-size: 18px">Состав</span><div class="row" style="gap: 6px"><span class="small muted">Размер:</span><div class="seg">';
@@ -341,6 +375,33 @@
     return h;
   }
 
+  // Таймер «собран сегодня» (решение владельца 2026-10-28): в срок букет сам выключается, не удаляется; включают вручную
+  function timerView(on) {
+    var b = state.b;
+    var hours = parseInt(state.timerText, 10);
+    var okHours = hours >= 1 && hours <= 720 && String(hours) === state.timerText.trim();
+    var t;
+    if (typeof b.timer === "number") t = "После сохранения букет сам скроется с сайта через " + b.timer + " ч — " + timerDate(nowMs() + b.timer * 3600000) + ".";
+    else if (b.timer === "off") t = "Таймер снимется после сохранения, букет останется на сайте.";
+    else if (b.hideAt) t = "Скроется с сайта <b>" + timerDate(parseTime(b.hideAt)) + "</b> — через " + timerLeft(parseTime(b.hideAt)) + ".";
+    else if (b.hiddenByTimerAt && !b.enabled) t = "Скрыт по таймеру " + timerDate(parseTime(b.hiddenByTimerAt)) + ". На сайт вернётся, только если включить «На сайте» вверху и сохранить.";
+    else t = "Таймера нет. Для готовых букетов: в срок букет сам выключится с сайта (не удалится), обратно — только вручную.";
+    var running = typeof b.timer === "number" || (b.hideAt && b.timer === "keep");
+    var h = '<div class="card stack" style="gap: 10px' + (running ? "; border-color: #e8c35a; background: #fffaf0" : "") + '">';
+    h += '<span class="label">⏱ Таймер «собран сегодня»</span><span class="small">' + t + "</span>";
+    if (running && !b.enabled) h += '<span class="small muted">Букет сейчас выключен, на сайте его и так не видно.</span>';
+    h += '<div class="row" style="gap: 8px; align-items: center"><span class="small">Скрыть через</span>' +
+      '<input class="input" data-k="timer-hours" inputmode="numeric" style="width: 80px" value="' + esc(state.timerText) + '"' +
+      on("input", function (e) { state.timerText = e.target.value; ui.render(); }) + '><span class="small">ч</span>';
+    h += '<button type="button" class="btn-outline btn small"' + on_("disabled", !okHours) + on("click", function () { set({ timer: hours }); }) + ">" +
+      (running ? "Поставить заново" : "Запустить таймер") + "</button>";
+    if (running) h += '<button type="button" class="btn-ghost small"' + on("click", function () { set({ timer: initial.hideAt ? "off" : "keep" }); }) + ">× Снять таймер</button>";
+    h += "</div>";
+    if (!okHours) h += '<span class="small" style="color: var(--danger)">Часы — целое число от 1 до 720 (30 дней)</span>';
+    h += '<span class="small muted">Отсчёт — с момента сохранения. ' + data.timerHours + " ч = полтора суток. Ставится сам, когда отмечаете «Букет дня».</span></div>";
+    return h;
+  }
+
   var ui = U.mount(document.getElementById("admin-app"), view);
   // Количество: ушли из поля — показываем число как есть («1,» → «1»). Без перерисовки, чтобы не сбить нажатие кнопки.
   document.getElementById("admin-app").addEventListener("focusout", function (e) {
@@ -352,4 +413,5 @@
     delete state.qtyText[k.slice(4)];
     if (item) e.target.value = U.qtyText(item.qty);
   });
+  setInterval(function () { if (state.b.hideAt) ui.render(); }, 60000); // «через …» идёт сам
 })();
