@@ -102,29 +102,6 @@ $cards = [
   </section>
 <?php endif ?>
 
-<section class="section">
-  <div class="band">
-    <div class="stack" style="flex: 1 1 420px; gap: 12px">
-      <h2>Не нашли свой? Соберём <span class="script">вместе.</span></h2>
-      <p>Напишите повод, любимые цвета и бюджет. Флорист предложит состав и пришлёт фото до отправки.</p>
-    </div>
-    <a href="<?= e($shop['telegram']) ?>" class="btn btn-pink btn-lg" target="_blank" rel="noopener">Написать флористу</a>
-  </div>
-</section>
-
-<section class="section">
-  <h2 class="h2 sec-title">Важно <span class="script">знать</span></h2>
-  <div class="cards-4">
-    <?php foreach ($cards as [$icon, $h, $text, $accent]): ?>
-      <div class="info-card<?= $accent ? ' info-accent' : '' ?>">
-        <i><?= Icons::get($icon) ?></i>
-        <h3><?= e($h) ?></h3>
-        <p><?= $text ?></p>
-      </div>
-    <?php endforeach ?>
-  </div>
-</section>
-
 <?php if ($exclusive): ?>
   <section class="section">
     <div class="stack sec-title" style="gap: 10px">
@@ -149,3 +126,26 @@ $cards = [
     </div>
   </section>
 <?php endif ?>
+
+<section class="section">
+  <div class="band">
+    <div class="stack" style="flex: 1 1 420px; gap: 12px">
+      <h2>Не нашли свой? Соберём <span class="script">вместе.</span></h2>
+      <p>Напишите повод, любимые цвета и бюджет. Флорист предложит состав и пришлёт фото до отправки.</p>
+    </div>
+    <a href="<?= e($shop['telegram']) ?>" class="btn btn-pink btn-lg" target="_blank" rel="noopener">Написать флористу</a>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="h2 sec-title">Важно <span class="script">знать</span></h2>
+  <div class="cards-4">
+    <?php foreach ($cards as [$icon, $h, $text, $accent]): ?>
+      <div class="info-card<?= $accent ? ' info-accent' : '' ?>">
+        <i><?= Icons::get($icon) ?></i>
+        <h3><?= e($h) ?></h3>
+        <p><?= $text ?></p>
+      </div>
+    <?php endforeach ?>
+  </div>
+</section>
