@@ -290,7 +290,8 @@
       set(p);
     }) + "> Букет дня (на главной)</label>";
     h += '<label class="check" style="margin-top: 22px"><input type="checkbox"' + on_("checked", b.isHit) + on("change", function (e) { set({ isHit: e.target.checked }); }) + "> Хит недели</label>";
-    h += '<label class="check" style="margin-top: 22px"><input type="checkbox"' + on_("checked", b.isExclusive) + on("change", function (e) { set({ isExclusive: e.target.checked }); }) + "> Эксклюзив недели</label></div>";
+    h += '<label class="check" style="margin-top: 22px"><input type="checkbox"' + on_("checked", b.isExclusive) + on("change", function (e) { set({ isExclusive: e.target.checked }); }) + "> Эксклюзив недели</label>";
+    h += '<label class="check" style="margin-top: 22px" title="Всегда в начале каталога: сразу после «Букета дня», выше хитов и новых букетов"><input type="checkbox"' + on_("checked", b.isPinned) + on("change", function (e) { set({ isPinned: e.target.checked }); }) + "> ⭐ Избранный (всегда в начале)</label></div>";
 
     h += timerView(on);
 

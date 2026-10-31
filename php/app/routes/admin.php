@@ -195,7 +195,13 @@ Http::get('/admin/bouquets', function () {
         'timer' => fn ($x) => $x['b']['hideAt'] !== null || ($x['b']['hiddenByTimerAt'] !== null && !$x['b']['enabled']),
     ];
     $counts = array_map(fn ($f) => count(array_filter($list, $f)), $is);
+    // Сколько раз букет заказывали за 2 месяца (отменённые не считаем) — подсказка, что ставить в избранные
+    $sold = array_map('intval', array_column(Db::all("SELECT i.bouquetId, SUM(i.qty) AS n FROM order_items i JOIN orders o ON o.id = i.orderId
+        WHERE i.bouquetId IS NOT NULL AND o.status <> 'CANCELLED' AND o.createdAt >= NOW() - INTERVAL 60 DAY GROUP BY i.bouquetId"), 'n', 'bouquetId'));
     return admin_page('bouquets', [
+        'sold' => $sold,
+        'daySlug' => Settings::get('shop')['dayBouquet'],
+        'catalogCfg' => Settings::get('catalog'),
         'title' => 'Букеты',
         'tab' => $tab,
         'counts' => $counts,
@@ -238,13 +244,33 @@ Http::post('/admin/bouquets/order', function () {
     Http::json(['ok' => true]);
 });
 
+// «🔀 Перемешать остальные»: букеты без значков — в случайном порядке (Букет дня, ⭐, хиты и эксклюзивы на местах)
+Http::post('/admin/bouquets/shuffle', function () {
+    Auth::requireAdmin('catalog');
+    Auth::checkCsrf();
+    Catalog::shuffleRest();
+    Http::redirect('/admin/bouquets' . (($t = $_POST['tab'] ?? '') && preg_match('/^[a-z]+$/', $t) ? "?tab=$t" : ''));
+});
+
+// Галочка «Перемешивать каждый день»
+Http::post('/admin/bouquets/shuffle-daily', function () {
+    Auth::requireAdmin('catalog');
+    Auth::checkCsrf();
+    $on = admin_body()['on'] ?? null;
+    if (!is_bool($on)) admin_fail('Ошибка');
+    // включили — сегодня уже не перемешиваем сами (хозяйка видит текущий порядок), начнём с завтра
+    Settings::save('catalog', ['shuffleDaily' => $on, 'shuffledOn' => date('Y-m-d')] + Settings::get('catalog'));
+    Http::json(['ok' => true]);
+});
+
 // «+ Собран сегодня»: тот же новый букет, но в карточке сразу отмечены «Букет дня», «На сайте» и таймер (сохраняются кнопкой «Сохранить»)
 Http::post('/admin/bouquets/new', function () {
     Auth::requireAdmin('catalog');
     Auth::checkCsrf();
     $today = ($_POST['today'] ?? '') === '1';
     $id = Db::insert('bouquets', [
-        'sortOrder' => (int) Db::value('SELECT COALESCE(MIN(sortOrder), 0) - 1 FROM bouquets'), // новый — первым
+        // новый — в конец «остальных»: наверху остаются Букет дня, ⭐ избранные и хиты (решение владельца 2026-10-31)
+        'sortOrder' => (int) Db::value('SELECT COALESCE(MAX(sortOrder), 0) + 1 FROM bouquets'),
         'name' => 'Новый букет', 'slug' => admin_free_slug('bouquets', 'novyy-buket'), 'description' => '',
         'enabled' => 0, 'packagingKop' => 800, 'colors' => '[]', 'occasions' => '[]', 'sections' => '[]', 'photos' => '[]',
     ]);
@@ -261,7 +287,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
     $initial = [
         'id' => (int) $b['id'], 'name' => $b['name'], 'slug' => $b['slug'], 'description' => $b['description'], 'format' => $b['format'],
         'enabled' => (bool) $b['enabled'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'], 'photoSize' => $b['photoSize'],
-        'weddingOnly' => (bool) $b['weddingOnly'],
+        'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'],
         'isDayBouquet' => Settings::get('shop')['dayBouquet'] === $b['slug'],
         'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']), 'photos' => Db::fromJson($b['photos']),
         'sections' => Db::fromJson($b['sections']),
@@ -317,7 +343,7 @@ Http::post('/admin/bouquets/save', function () {
     $lists = ['colors' => [10, 20], 'occasions' => [10, 30], 'photos' => [12, 300]];
     if (!admin_is_int($id) || admin_str($in['description'] ?? null, 2000) === null
         || !array_key_exists($in['format'] ?? '', Occasions::FORMATS) || !in_array($photoSize, Pricing::SIZE_ORDER, true)
-        || !is_bool($in['enabled'] ?? null) || !is_bool($in['isHit'] ?? null) || !is_bool($in['isExclusive'] ?? null) || !is_bool($in['weddingOnly'] ?? true)
+        || !is_bool($in['enabled'] ?? null) || !is_bool($in['isHit'] ?? null) || !is_bool($in['isExclusive'] ?? null) || !is_bool($in['weddingOnly'] ?? true) || !is_bool($in['isPinned'] ?? false)
         || !(($in['collectionId'] ?? null) === null || admin_is_int($in['collectionId']))
         || !is_array($in['sizes'] ?? null) || count($in['sizes']) > count(Pricing::SIZE_ORDER)) admin_fail($bad);
     // таймер «собран сегодня»: keep — не трогать, off — снять, число — скрыть через столько часов от сохранения
@@ -371,7 +397,7 @@ Http::post('/admin/bouquets/save', function () {
             Db::update('bouquets', $id, [
                 'name' => $name, 'slug' => $slug, 'description' => $in['description'], 'format' => $in['format'],
                 'packagingKop' => $photo['packagingKop'], 'enabled' => (int) $in['enabled'], 'isHit' => (int) $in['isHit'],
-                'isExclusive' => (int) $in['isExclusive'], 'weddingOnly' => (int) ($in['weddingOnly'] ?? true), 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
+                'isExclusive' => (int) $in['isExclusive'], 'isPinned' => (int) ($in['isPinned'] ?? false), 'weddingOnly' => (int) ($in['weddingOnly'] ?? true), 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
                 'occasions' => Db::json($in['occasions']), 'sections' => Db::json(array_values(array_unique($sections))),
                 'photos' => Db::json($in['photos']), 'collectionId' => $in['collectionId'],
             ]);
@@ -421,7 +447,7 @@ Http::post('/admin/bouquets/{id}/clone', function (string $id) {
         $name = Occasions::FORMATS[$format]['label'] . ' «' . str_replace(['«', '»'], '', $collection) . '»';
         $copyId = Db::insert('bouquets', [
             'name' => $name, 'slug' => admin_free_slug('bouquets', admin_slugify($name)), 'description' => $src['description'],
-            'format' => $format, 'packagingKop' => $src['packagingKop'],
+            'format' => $format, 'packagingKop' => $src['packagingKop'], 'sortOrder' => (int) Db::value('SELECT COALESCE(MAX(sortOrder), 0) + 1 FROM bouquets'),
             'enabled' => 0, // включите, когда добавите фото
             'colors' => '[]', 'occasions' => $src['occasions'], 'sections' => $src['sections'] ?? '[]', 'photos' => '[]', 'collectionId' => $collectionId,
         ]);

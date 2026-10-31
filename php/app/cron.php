@@ -18,6 +18,7 @@ try {
     Db::migrate();
     $hidden = Catalog::hideExpired();
     if (in_array('-v', $argv, true)) echo "Скрыто по таймеру букетов: $hidden\n";
+    if (Catalog::shuffleIfDue() && in_array('-v', $argv, true)) echo "Букеты без значков перемешаны (раз в сутки)\n";
     $n = Notify::retryPending();
     if (in_array('-v', $argv, true)) echo "Проверено заказов с недошедшими уведомлениями: $n\n";
     if (Maintenance::due()) Maintenance::daily(in_array('-v', $argv, true));

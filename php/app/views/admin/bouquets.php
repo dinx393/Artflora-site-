@@ -78,7 +78,19 @@ $filterFlowers = $sortNames($filterFlowers);
   <button type="button" class="btn-ghost small" data-filters-reset hidden>× Сбросить фильтры</button>
 </div>
 <p class="small muted" data-search-empty hidden style="margin: 0">Ничего не нашлось. Уберите один из фильтров или откройте вкладку «Все».</p>
-<p class="small muted" style="margin: 0" data-order-hint>Порядок на сайте: потяните букет за ⠿ (на телефоне — пальцем) или нажмите стрелки, сохраняется сразу. Новый букет появляется первым.</p>
+<div class="card stack" style="gap: 8px; padding: 14px 16px">
+  <span class="small" data-order-hint><b>Порядок на сайте</b> идёт сам: <b>Букет дня</b> → <b>⭐ избранные</b> → <b>хиты и эксклюзивы недели</b> → остальные.
+    Значки ставятся в карточке букета. Внутри своей группы букет можно передвинуть: потяните за ⠿ (на телефоне — пальцем) или нажмите стрелки, сохраняется сразу.
+    Новый букет встаёт в конец списка и наверх не лезет.</span>
+  <div class="row" style="gap: 14px; align-items: center">
+    <form method="post" action="/admin/bouquets/shuffle" style="margin: 0">
+      <?= Auth::csrfField() ?>
+      <input type="hidden" name="tab" value="<?= e($tab) ?>">
+      <button class="btn btn-outline" title="Букеты без значков встанут в случайном порядке. Букет дня, избранные, хиты и эксклюзивы останутся на своих местах">🔀 Перемешать остальные</button>
+    </form>
+    <label class="check"><input type="checkbox" data-shuffle-daily<?= $catalogCfg['shuffleDaily'] ? ' checked' : '' ?>> Перемешивать их сами каждый день</label>
+  </div>
+</div>
 <p class="small" data-order-msg hidden></p>
 <div class="table-wrap">
   <table class="table" data-bouquet-list>
@@ -86,8 +98,12 @@ $filterFlowers = $sortNames($filterFlowers);
       <tr><th aria-label="Порядок"></th><th>Букет</th><th>Состав (M)</th><th>Упаковка</th><th>На сайте</th><th>Статус</th><th>Показывать</th></tr>
     </thead>
     <tbody>
-      <?php foreach ($shown as ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $price, 'swaps' => $swaps]): ?>
-        <tr class="<?= $vis['visible'] ? '' : 'off' ?>" data-id="<?= $b['id'] ?>" data-search="<?= e($searchText($b)) ?>"
+      <?php $lastRank = null; foreach ($shown as ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $price, 'swaps' => $swaps]):
+        $rank = Catalog::rank($b, $daySlug); ?>
+        <?php if ($rank !== $lastRank): $lastRank = $rank; ?>
+          <tr class="rank-head" data-rank-head="<?= $rank ?>"><td colspan="7" class="small muted" style="font-weight: 800; padding-top: 14px"><?= e(Catalog::RANK_NAMES[$rank]) ?></td></tr>
+        <?php endif ?>
+        <tr class="<?= $vis['visible'] ? '' : 'off' ?>" data-id="<?= $b['id'] ?>" data-rank="<?= $rank ?>" data-search="<?= e($searchText($b)) ?>"
           data-collection="<?= e($b['collectionId'] ?? 'none') ?>" data-format="<?= e($b['format']) ?>" data-flowers="|<?= e(implode('|', $flowerIds($b))) ?>|" data-price="<?= (int) $price ?>">
           <td class="drag-cell">
             <span class="drag-handle" title="Перетащите, чтобы поменять порядок на сайте">⠿</span>
@@ -99,6 +115,10 @@ $filterFlowers = $sortNames($filterFlowers);
               <div class="stack" style="gap: 2px">
                 <a href="/admin/bouquets/<?= $b['id'] ?>" style="font-weight: 800"><?= e($b['name']) ?></a>
                 <span class="small muted"><?= $b['collectionName'] !== null ? e("Коллекция «{$b['collectionName']}» · ") : '' ?><?= e(Occasions::FORMATS[$b['format']]['label']) ?><?= $b['weddingOnly'] && in_array('wedding', $b['occasions'], true) ? ' · только в «Свадебных»' : '' ?></span>
+                <?php $marks = array_filter([$rank === 0 ? 'Букет дня' : null, $b['isPinned'] ? '⭐ Избранный' : null, $b['isHit'] ? 'Хит недели' : null, $b['isExclusive'] ? 'Эксклюзив недели' : null]);
+                  if ($marks || !empty($sold[$b['id']])): ?>
+                  <span class="small"><?= e(implode(' · ', $marks)) ?><?= $marks && !empty($sold[$b['id']]) ? ' · ' : '' ?><?php if (!empty($sold[$b['id']])): ?><span class="muted" title="Сколько штук заказали за последние 2 месяца (отменённые заказы не считаются)">🛒 <?= (int) $sold[$b['id']] ?> за 2 мес.</span><?php endif ?></span>
+                <?php endif ?>
               </div>
             </div>
           </td>

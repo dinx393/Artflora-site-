@@ -12,6 +12,7 @@ final class Settings
             'delivery' => Defaults::DELIVERY,
             'districts' => Defaults::DISTRICTS,
             'colors' => Occasions::COLORS,
+            'catalog' => Defaults::CATALOG,
             default => throw new InvalidArgumentException("Нет настройки $key"),
         };
     }

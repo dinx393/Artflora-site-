@@ -5,6 +5,57 @@ final class Catalog
     public const PLACEHOLDER = '/demo/placeholder.svg';
     public const TIMER_HOURS = 36; // таймер «собран сегодня» по умолчанию: полтора суток (владелец, 2026-10-28)
     private static bool $timersChecked = false;
+    private static bool $shuffleChecked = false;
+
+    // Группы порядка на сайте (решение владельца 2026-10-31): 0 — Букет дня, 1 — ⭐ избранные,
+    // 2 — хит или эксклюзив недели, 3 — все остальные. Внутри группы — как расставили в админке.
+    public const RANK_NAMES = ['Букет дня', '⭐ Избранные', 'Хиты и эксклюзивы недели', 'Остальные'];
+
+    public static function rank(array $b, string $daySlug): int
+    {
+        if ($daySlug !== '' && $b['slug'] === $daySlug) return 0;
+        if (!empty($b['isPinned'])) return 1;
+        if (!empty($b['isHit']) || !empty($b['isExclusive'])) return 2;
+        return 3;
+    }
+
+    // Список, уже идущий в порядке из админки, — по группам; внутри группы порядок не меняется
+    public static function ranked(array $list, string $daySlug): array
+    {
+        $n = 0;
+        $keyed = array_map(function ($b) use (&$n, $daySlug) { return [self::rank($b, $daySlug), $n++, $b]; }, $list);
+        usort($keyed, fn ($x, $y) => [$x[0], $x[1]] <=> [$y[0], $y[1]]);
+        return array_column($keyed, 2);
+    }
+
+    // «🔀 Перемешать остальные»: букеты без значков (группа 3) меняются местами случайно, между собой.
+    // Букет дня, избранные, хиты и эксклюзивы остаются, где были. Возвращает, сколько букетов перемешано.
+    public static function shuffleRest(): int
+    {
+        $day = Settings::get('shop')['dayBouquet'];
+        return Db::tx(function () use ($day) {
+            $rows = Db::all('SELECT id, slug, isPinned, isHit, isExclusive FROM bouquets ORDER BY sortOrder, id FOR UPDATE');
+            $ids = array_map('intval', array_column($rows, 'id'));
+            $slots = array_keys(array_filter($rows, fn ($b) => self::rank($b, $day) === 3));
+            $rest = array_map(fn ($i) => $ids[$i], $slots);
+            shuffle($rest);
+            foreach ($slots as $n => $pos) $ids[$pos] = $rest[$n];
+            foreach ($ids as $i => $id) Db::exec('UPDATE bouquets SET sortOrder = ? WHERE id = ?', [$i, $id]);
+            return count($rest);
+        });
+    }
+
+    // Галочка «Перемешивать каждый день»: первый раз за сутки (cron или первая загрузка каталога) — перемешать
+    public static function shuffleIfDue(): bool
+    {
+        self::$shuffleChecked = true;
+        $c = Settings::get('catalog');
+        $today = date('Y-m-d');
+        if (!$c['shuffleDaily'] || $c['shuffledOn'] === $today) return false;
+        Settings::save('catalog', ['shuffledOn' => $today] + $c);
+        self::shuffleRest();
+        return true;
+    }
 
     // Таймер «собран сегодня»: букеты, у которых вышел срок, выключаются (не удаляются) и помечаются «скрыт по таймеру».
     // Вызывает cron раз в 5 минут, а на случай, если cron не настроен, — и любая загрузка букетов (раз за запрос).
@@ -41,6 +92,13 @@ final class Catalog
     // $where — условие на таблицу bouquets (алиас b), например 'b.id IN (?, ?)'.
     public static function load(string $where = '1', array $params = []): array
     {
+        if (!self::$shuffleChecked) {
+            try {
+                self::shuffleIfDue();
+            } catch (Throwable $e) {
+                app_log('shuffleIfDue: ' . $e->getMessage()); // не мешаем показать каталог
+            }
+        }
         $rows = Db::all("SELECT b.*, c.slug AS collectionSlug, c.name AS collectionName
             FROM bouquets b LEFT JOIN collections c ON c.id = b.collectionId
             WHERE $where ORDER BY b.sortOrder, b.id", $params);
@@ -79,10 +137,11 @@ final class Catalog
                 'items' => $bySize[$s['id']] ?? [],
             ];
         }
+        $rows = self::ranked($rows, Settings::get('shop')['dayBouquet']);
         return array_map(fn ($b) => [
             'id' => (int) $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'enabled' => (bool) $b['enabled'], 'hideAt' => $b['hideAt'], 'hiddenByTimerAt' => $b['hiddenByTimerAt'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'],
-            'weddingOnly' => (bool) $b['weddingOnly'],
+            'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'],
             'photoSize' => $b['photoSize'], 'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']),
             'sections' => Db::fromJson($b['sections']), 'photos' => Db::fromJson($b['photos']), 'sortOrder' => (int) $b['sortOrder'],
             'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
@@ -108,7 +167,7 @@ final class Catalog
         foreach (Pricing::sortSizes($b['sizes']) as $s) foreach ($s['items'] as $i) $names[$i['flower']['name']] = true;
         return [
             'id' => $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
-            'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'], 'hideAt' => $b['hideAt'],
+            'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'], 'isPinned' => $b['isPinned'], 'hideAt' => $b['hideAt'],
             'weddingOnly' => $b['weddingOnly'] && in_array('wedding', $b['occasions'], true),
             'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $b['sections'],
             'photos' => $b['photos'] ? array_map([Uploads::class, 'url'], $b['photos']) : [self::PLACEHOLDER],

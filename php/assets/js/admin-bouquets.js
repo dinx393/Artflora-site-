@@ -83,6 +83,10 @@ document.addEventListener("click", function (e) {
       tr.hidden = !ok;
       if (ok) found++;
     });
+    // заголовок группы (Букет дня, ⭐ избранные…) прячем, если в ней ничего не нашлось
+    Array.prototype.forEach.call(table.querySelectorAll("[data-rank-head]"), function (h) {
+      h.hidden = !table.querySelector('tbody tr[data-rank="' + h.getAttribute("data-rank-head") + '"]:not([hidden])');
+    });
     var active = Object.keys(f).length > 0;
     // Пока что-то отфильтровано, порядок не меняем: соседние букеты скрыты, и стрелки двигали бы их вслепую
     table.classList.toggle("searching", active);
@@ -131,6 +135,8 @@ document.addEventListener("click", function (e) {
   var lastY = 0;
   var scrollTimer = null;
   function rows() { return Array.prototype.slice.call(list.querySelectorAll("tr[data-id]")); }
+  // Букет двигается только внутри своей группы (Букет дня, ⭐ избранные, хиты, остальные): порядок групп сайт держит сам
+  function same(a, b) { return a && b && a.getAttribute("data-rank") === b.getAttribute("data-rank"); }
   function save() {
     var ids = rows().map(function (tr) { return Number(tr.getAttribute("data-id")); });
     msg.hidden = false;
@@ -146,7 +152,7 @@ document.addEventListener("click", function (e) {
     if (!b) return;
     var tr = b.closest("tr");
     var other = Number(b.getAttribute("data-step")) < 0 ? tr.previousElementSibling : tr.nextElementSibling;
-    if (!other) return;
+    if (!same(tr, other)) return;
     if (Number(b.getAttribute("data-step")) < 0) list.insertBefore(tr, other);
     else list.insertBefore(other, tr);
     save();
@@ -155,7 +161,7 @@ document.addEventListener("click", function (e) {
   function moveTo(y) {
     var tr = rows().filter(function (r) {
       var box = r.getBoundingClientRect();
-      return r !== dragged && y >= box.top && y <= box.bottom;
+      return r !== dragged && same(r, dragged) && y >= box.top && y <= box.bottom;
     })[0];
     if (!tr) return;
     var all = rows();
@@ -195,3 +201,12 @@ document.addEventListener("click", function (e) {
   list.addEventListener("pointerup", end);
   list.addEventListener("pointercancel", end);
 })();
+
+// «Перемешивать каждый день» — сохраняется сразу
+document.addEventListener("change", function (e) {
+  var box = e.target.closest("[data-shuffle-daily]");
+  if (!box) return;
+  ArtfloraAdmin.post("/admin/bouquets/shuffle-daily", { on: box.checked }).then(function (r) {
+    if (!(r && r.ok)) box.checked = !box.checked;
+  });
+});
