@@ -55,21 +55,20 @@ final class Catalog
         $items = $sizeIds ? Db::all('SELECT i.sizeId, i.qty, f.id, f.name, f.kind, f.unit, f.priceKop, f.inStock
             FROM bouquet_items i JOIN flowers f ON f.id = i.flowerId
             WHERE i.sizeId ' . Db::in($sizeIds) . ' ORDER BY i.id', $sizeIds) : [];
-        $flowerIds = array_values(array_unique(array_column($items, 'id')));
+        // Замены — свои в каждом букете (bouquet_swaps), по порядку, который задали в карточке букета
         $subs = [];
-        if ($flowerIds) {
-            foreach (Db::all('SELECT s.flowerId, f.name, f.inStock FROM flower_substitutes s JOIN flowers f ON f.id = s.substituteId
-                WHERE s.flowerId ' . Db::in($flowerIds) . ' ORDER BY f.sortOrder, f.id', $flowerIds) as $s) {
-                $subs[$s['flowerId']][] = ['name' => $s['name'], 'inStock' => (bool) $s['inStock']];
-            }
+        foreach (Db::all('SELECT w.bouquetId, w.flowerId, f.name, f.inStock FROM bouquet_swaps w JOIN flowers f ON f.id = w.substituteId
+            WHERE w.bouquetId ' . Db::in($ids) . ' ORDER BY w.sortOrder, f.sortOrder, f.id', $ids) as $s) {
+            $subs[$s['bouquetId']][$s['flowerId']][] = ['name' => $s['name'], 'inStock' => (bool) $s['inStock']];
         }
+        $sizeBouquet = array_column($sizes, 'bouquetId', 'id');
         $bySize = [];
         foreach ($items as $i) {
             $bySize[$i['sizeId']][] = [
                 'qty' => (float) $i['qty'],
                 'flower' => [
                     'id' => (int) $i['id'], 'name' => $i['name'], 'kind' => $i['kind'], 'unit' => $i['unit'],
-                    'priceKop' => (int) $i['priceKop'], 'inStock' => (bool) $i['inStock'], 'substitutes' => $subs[$i['id']] ?? [],
+                    'priceKop' => (int) $i['priceKop'], 'inStock' => (bool) $i['inStock'], 'substitutes' => $subs[$sizeBouquet[$i['sizeId']]][$i['id']] ?? [],
                 ],
             ];
         }

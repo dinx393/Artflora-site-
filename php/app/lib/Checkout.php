@@ -31,7 +31,7 @@ final class Checkout
     }
 
     // Пересчитываем корзину по текущим ценам из базы.
-    // → ['lines' => [['bouquetId','slug','name','photo','size','sizes' => [['code','priceKop']],'qty','priceKop','composition']],
+    // → ['lines' => [['bouquetId','slug','name','photo','size','sizes' => [['code','priceKop']],'qty','priceKop','composition','swaps']],
     //    'addons' => [['addonId','name','qty','priceKop']], 'removed' => [что пропало из наличия], 'bouquetsKop', 'addonsKop']
     public static function priceCart(array $cart): array
     {
@@ -63,6 +63,7 @@ final class Checkout
                 'qty' => max(1, min(20, (int) $l['qty'])),
                 'priceKop' => Pricing::sizePriceKop($size),
                 'composition' => Pricing::compositionText($size['items']),
+                'swaps' => Pricing::swapsText($size['items']), // для флориста: что заменяем в этом заказе
             ];
         }
 
@@ -296,7 +297,7 @@ final class Checkout
                 Db::exec('UPDATE orders SET number = 10000 + id WHERE id = ?', [$id]);
                 foreach ($t['priced']['lines'] as $l) {
                     Db::insert('order_items', ['orderId' => $id, 'bouquetId' => $l['bouquetId'], 'name' => $l['name'], 'size' => $l['size'],
-                        'composition' => $l['composition'], 'qty' => $l['qty'], 'priceKop' => $l['priceKop']]);
+                        'composition' => $l['composition'], 'swaps' => mb_substr($l['swaps'], 0, 500), 'qty' => $l['qty'], 'priceKop' => $l['priceKop']]);
                 }
                 foreach ($t['priced']['addons'] as $a) {
                     Db::insert('order_items', ['orderId' => $id, 'addonId' => $a['addonId'], 'name' => $a['name'], 'composition' => '',
@@ -330,7 +331,7 @@ final class Checkout
         $o['deliveryZone'] = $o['deliveryZone'] === null ? null : (int) $o['deliveryZone'];
         $o['items'] = array_map(fn ($i) => [
             'id' => (int) $i['id'], 'bouquetId' => $i['bouquetId'] === null ? null : (int) $i['bouquetId'], 'name' => $i['name'],
-            'size' => $i['size'], 'composition' => $i['composition'], 'qty' => (int) $i['qty'], 'priceKop' => (int) $i['priceKop'],
+            'size' => $i['size'], 'composition' => $i['composition'], 'swaps' => $i['swaps'] ?? '', 'qty' => (int) $i['qty'], 'priceKop' => (int) $i['priceKop'],
         ], Db::all('SELECT * FROM order_items WHERE orderId = ? ORDER BY id', [$o['id']]));
         return $o;
     }

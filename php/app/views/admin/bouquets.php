@@ -5,6 +5,7 @@ $tabs = [
     'on' => "На сайте · {$counts['on']}",
     'off' => "Выключены · {$counts['off']}",
     'missing' => "Нет цветов · {$counts['missing']}",
+    'swap' => "🔁 Будет замена · {$counts['swap']}",
     'timer' => "⏱ Собран сегодня · {$counts['timer']}",
 ];
 // Что ищет поиск по списку: название, адрес, коллекция, вид и цветы всех размеров
@@ -29,7 +30,7 @@ $filterFlowers = $sortNames($filterFlowers);
 <div class="row between">
   <div class="stack" style="gap: 4px">
     <h1>Букеты</h1>
-    <span class="muted"><?= $counts['on'] ?> на сайте, <?= $counts['off'] ?> выключено вручную, <?= $counts['missing'] ?> скрыто: нет цветов</span>
+    <span class="muted"><?= $counts['on'] ?> на сайте<?= $counts['swap'] ? " (из них {$counts['swap']} с заменой)" : '' ?>, <?= $counts['off'] ?> выключено вручную, <?= $counts['missing'] ?> скрыто: нет цветов</span>
   </div>
   <div class="row" style="gap: 8px">
     <form method="post" action="/admin/bouquets/new">
@@ -85,7 +86,7 @@ $filterFlowers = $sortNames($filterFlowers);
       <tr><th aria-label="Порядок"></th><th>Букет</th><th>Состав (M)</th><th>Упаковка</th><th>На сайте</th><th>Статус</th><th>Показывать</th></tr>
     </thead>
     <tbody>
-      <?php foreach ($shown as ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $price]): ?>
+      <?php foreach ($shown as ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $price, 'swaps' => $swaps]): ?>
         <tr class="<?= $vis['visible'] ? '' : 'off' ?>" data-id="<?= $b['id'] ?>" data-search="<?= e($searchText($b)) ?>"
           data-collection="<?= e($b['collectionId'] ?? 'none') ?>" data-format="<?= e($b['format']) ?>" data-flowers="|<?= e(implode('|', $flowerIds($b))) ?>|" data-price="<?= (int) $price ?>">
           <td class="drag-cell">
@@ -107,6 +108,9 @@ $filterFlowers = $sortNames($filterFlowers);
           <td>
             <?php if ($vis['visible']): ?>
               <span class="pill ok">На сайте</span>
+              <?php foreach ($swaps as $x): ?>
+                <span class="pill swap" title="Этого цветка нет, в букете указана замена. Флорист увидит её в заказе">🔁 Будет замена: <?= e(mb_strtolower($x['flower'])) ?> → <?= e(mb_strtolower($x['to'])) ?></span>
+              <?php endforeach ?>
             <?php elseif ($vis['reason'] === 'disabled' && $b['hiddenByTimerAt'] !== null): ?>
               <span class="pill" title="Таймер «собран сегодня» сработал <?= e(Catalog::timerDate($b['hiddenByTimerAt'])) ?>. Вернуть на сайт — переключателем справа">⏱ Скрыт по таймеру <?= e(Catalog::timerDate($b['hiddenByTimerAt'])) ?></span>
             <?php elseif ($vis['reason'] === 'disabled'): ?>
@@ -129,5 +133,6 @@ $filterFlowers = $sortNames($filterFlowers);
 </div>
 <p class="small muted">
   Цена букета = цветы по ценам из раздела «Цветы» + упаковка. Букет без нужного цветка скрыт автоматически и вернётся сам, когда цветок снова появится.
+  Если в карточке букета для этого цветка указана замена и она есть в наличии, букет остаётся на сайте с пометкой 🔁 «Будет замена».
   ⏱ — таймер «собран сегодня»: в срок букет сам выключается (не удаляется), обратно его включают вручную.
 </p>

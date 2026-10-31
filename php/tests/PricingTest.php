@@ -47,6 +47,18 @@ test('нет цветка, но есть замена — размер оста�
     eq(Pricing::sizePriceKop($s), 2500);
     eq(Pricing::compositionText($s['items']), 'Статица (вместо: вероника) × 3, Роза кустовая 60 см × 1');
 });
+test('«будет замена»: для флориста и для пометки в админке', function () use ($veronica, $rose) {
+    $s = ['code' => 'M', 'note' => '', 'packagingKop' => 0, 'items' => [['qty' => 3, 'flower' => $veronica], ['qty' => 1, 'flower' => $rose]]];
+    eq(Pricing::swaps($s['items']), [['flower' => 'Вероника', 'to' => 'Статица']]);
+    eq(Pricing::swapsText($s['items']), 'Статица вместо: вероника');
+    eq(Pricing::swapsText([['qty' => 1, 'flower' => $rose]]), '', 'всё есть — замен нет');
+    eq(Pricing::bouquetSwaps(['enabled' => true, 'sizes' => [$s, $s]]), [['flower' => 'Вероника', 'to' => 'Статица']], 'по букету — один раз');
+});
+test('в букете у цветка нет замены — размер скрыт, даже если букет многосоставной', function () use ($rose, $eustoma) {
+    $noSwap = ['code' => 'M', 'note' => '', 'packagingKop' => 0, 'items' => [['qty' => 5, 'flower' => ['inStock' => false, 'substitutes' => []] + $eustoma], ['qty' => 3, 'flower' => $rose]]];
+    eq(Pricing::sizeAvailable($noSwap), false);
+    eq(Pricing::visibility(['enabled' => true, 'sizes' => [$noSwap]])['missing'], ['Эустома']);
+});
 test('замены тоже нет — размер скрыт', fn () => eq(Pricing::sizeAvailable(['code' => 'M', 'note' => '', 'packagingKop' => 0, 'items' => [['qty' => 1, 'flower' => $lonely]]]), false));
 test('1,5 ветки эвкалипта: цена округляется до копейки', function () use ($eucalyptus) {
     $euc = ['priceKop' => 333] + $eucalyptus;

@@ -1,11 +1,13 @@
 <?php
 // Цена размера = Σ (розничная цена цветка × количество) + упаковка этого размера.
 // Размер доступен, только если все его цветы есть в наличии или для них есть замена в наличии.
+// Замены задаются в каждом букете для каждого цветка свои (таблица bouquet_swaps, решение владельца 2026-10-31):
+// нет замены в этом букете — без цветка размер не собрать, даже если букет многосоставной.
 // Количество бывает дробным (1,5 ветки), цена позиции округляется до копейки.
 // Букет показываем, если он включён и у него остался хотя бы один доступный размер.
 //
 // Формы данных (массивы):
-//   цветок  ['id','name','priceKop','inStock', 'kind'?, 'substitutes' => [['name','inStock'], ...]?]
+//   цветок  ['id','name','priceKop','inStock', 'kind'?, 'substitutes' => [['name','inStock'], ...]?]  — замены в этом букете
 //   позиция ['qty' => 1.5, 'flower' => цветок]
 //   размер  ['code' => 'M', 'note' => '', 'packagingKop' => 0, 'items' => [позиция, ...]]
 //   букет   ['enabled' => true, 'photoSize'? => 'M', 'sizes' => [размер, ...]]
@@ -115,6 +117,31 @@ final class Pricing
                 ? "$sub (вместо: " . mb_strtolower($f['name']) . ') × ' . self::qtyText($i['qty'])
                 : $f['name'] . ' × ' . self::qtyText($i['qty']);
         }, $items));
+    }
+
+    // Какие цветы сейчас заменяем: [['flower' => 'Альстромерия белая', 'to' => 'Альстромерия розовая'], ...]
+    public static function swaps(array $items): array
+    {
+        $out = [];
+        foreach ($items as $i) {
+            $to = self::replacementFor($i['flower']);
+            if (is_string($to)) $out[] = ['flower' => $i['flower']['name'], 'to' => $to];
+        }
+        return $out;
+    }
+
+    // Для флориста в заказе: «Альстромерия розовая вместо: альстромерия белая; …» (пусто — замен нет)
+    public static function swapsText(array $items): string
+    {
+        return implode('; ', array_map(fn ($x) => $x['to'] . ' вместо: ' . mb_strtolower($x['flower']), self::swaps($items)));
+    }
+
+    // Замены по всему букету (все размеры, что можно собрать) — для пометки «будет замена» в админке
+    public static function bouquetSwaps(array $b): array
+    {
+        $out = [];
+        foreach (self::availableSizes($b) as $s) foreach (self::swaps($s['items']) as $x) $out[$x['flower']] = $x;
+        return array_values($out);
     }
 
     // Сколько всего цветков в размере, для подписи «11 цветков» (зелень не считаем).

@@ -65,17 +65,31 @@
           packagingKop: s.packagingKop,
           items: s.items.map(function (i) {
             var f = flowers[i.flowerId] || { name: "?", priceKop: 0, inStock: false, substitutes: [] };
+            // замены — свои в каждом букете (задаются в карточке букета)
             var subs = [];
-            f.substitutes.forEach(function (id) { if (flowers[id]) subs.push({ name: flowers[id].name, inStock: flowers[id].inStock }); });
+            ((b.swaps || {})[i.flowerId] || []).forEach(function (id) { if (flowers[id]) subs.push({ name: flowers[id].name, inStock: flowers[id].inStock }); });
             return { qty: i.qty, flower: { name: f.name, priceKop: f.priceKop, inStock: f.inStock, substitutes: subs } };
           }),
         };
       }),
     };
   }
+  // какие цветы букета сейчас заменяем: «эустома → альстромерия»
+  function swapList(b) {
+    var out = [];
+    availableSizes(b).forEach(function (s) {
+      s.items.forEach(function (i) {
+        var to = replacementFor(i.flower);
+        var t = i.flower.name.toLowerCase() + " → " + (to || "").toLowerCase();
+        if (to && out.indexOf(t) < 0) out.push(t);
+      });
+    });
+    return out;
+  }
   function summary(b) {
     var s = defaultSize(b);
-    return { vis: visibility(b), price: s ? sizePriceKop(s) : null };
+    var vis = visibility(b);
+    return { vis: vis, price: s ? sizePriceKop(s) : null, swaps: vis.visible ? swapList(b) : [] };
   }
 
   var before = {};
@@ -178,14 +192,16 @@
     var changes = bouquets
       .map(function (b) { return { b: b, was: summary(toPriced(b, before)), now: summary(toPriced(b, after)) }; })
       .filter(function (c) {
-        return c.was.price !== c.now.price || c.was.vis.visible !== c.now.vis.visible || (!c.now.vis.visible && c.now.vis.reason === "no-flowers");
+        return c.was.price !== c.now.price || c.was.vis.visible !== c.now.vis.visible || (!c.now.vis.visible && c.now.vis.reason === "no-flowers") || c.now.swaps.length > 0;
       });
-    var real = changes.filter(function (c) { return c.was.price !== c.now.price || c.was.vis.visible !== c.now.vis.visible; });
+    var real = changes.filter(function (c) {
+      return c.was.price !== c.now.price || c.was.vis.visible !== c.now.vis.visible || c.was.swaps.join("|") !== c.now.swaps.join("|");
+    });
 
     var h = "";
     h += '<div class="row between"><div class="stack" style="gap: 4px"><h1>Цветы</h1>';
     h += '<span class="muted">Розничная цена за штуку или ветку. Меняете цену здесь, и все букеты с этим цветком пересчитаются сами.</span>';
-    h += '<span class="small muted">Порядок меняется перетаскиванием за ⠿ (или стрелками ▲▼), потом «Сохранить». «В фильтре» — цветок виден в фильтре «Цветок» в каталоге (только основные, акцентные цветы).</span></div>';
+    h += '<span class="small muted">Порядок меняется перетаскиванием за ⠿ (или стрелками ▲▼), потом «Сохранить». «В фильтре» — цветок виден в фильтре «Цветок» в каталоге (только основные, акцентные цветы). «Обычно меняем на» — подсказка: в карточке букета такая замена добавляется одним нажатием, а работает только та, что указана в самом букете.</span></div>';
     h += '<button type="button" class="btn"' + on("click", function () {
       state.rows.push({ key: "new-" + Date.now(), name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, inFilter: false, substitutes: [] });
       ui.render();
@@ -234,7 +250,7 @@
         '<option value="FLOWER"' + U.attr("selected", r.kind === "FLOWER") + ">Цветы</option><option value=\"GREEN\"" + U.attr("selected", r.kind === "GREEN") + ">Зелень</option></select> · " +
         '<select style="border: 0; background: none"' + on("change", function (e) { patch(k, { unit: e.target.value }); }) + ">" +
         '<option value="STEM"' + U.attr("selected", r.unit === "STEM") + ">за ветку</option><option value=\"PIECE\"" + U.attr("selected", r.unit === "PIECE") + ">за штуку</option></select></div>";
-      h += '<div class="subs small"><span class="muted">Замена:</span>';
+      h += '<div class="subs small" title="Подсказка: в карточке букета эти замены добавляются одним нажатием. Сама замена задаётся в каждом букете"><span class="muted">Обычно меняем на:</span>';
       r.substitutes.forEach(function (id) {
         var x = state.rows.filter(function (y) { return y.id === id; })[0];
         if (!x) return;
@@ -280,6 +296,8 @@
         h += '<span class="pill warn">' + (was.vis.visible ? "Скроется" : "Скрыт") + ": нет " + esc(now.vis.missing.join(", ").toLowerCase()) + "</span>";
       } else if (!was.vis.visible && now.vis.visible) {
         h += '<span class="pill ok">Вернётся на сайт</span>';
+      } else if (was.price === now.price && now.swaps.length) {
+        h += '<span class="pill swap">🔁 Будет замена: ' + esc(now.swaps.join(", ")) + "</span>";
       } else {
         h += "<span>" + (was.price !== null ? U.formatByn(was.price) : "—") + " → <b>" + (now.price !== null ? U.formatByn(now.price) : "—") + "</b> ";
         if (was.price !== null && now.price !== null) {
@@ -292,7 +310,7 @@
     });
     h += U.msgHtml(state.msg);
     h += '<button type="button" class="btn btn-lg"' + U.attr("disabled", state.pending) + on("click", save) + ">" + (state.pending ? "Сохраняем…" : "Сохранить и обновить сайт") + "</button>";
-    h += '<span class="small muted">Цена букета = цветы по цене из этой таблицы × количество + упаковка. Если цветка нет в наличии и нет замены в наличии, букет скрывается с сайта и вернётся сам, когда цветок появится. С заменой букет остаётся по прежней цене, а в составе пишем «статица (вместо: вероника)».</span>';
+    h += '<span class="small muted">Цена букета = цветы по цене из этой таблицы × количество + упаковка. Закрыли цветок: букеты, где для него указана замена (в карточке букета, «🔁 Замены в этом букете»), остаются на сайте по прежней цене с пометкой «будет замена»; остальные, и монобукеты, скрываются и вернутся сами, когда цветок появится.</span>';
     h += "</div></div>";
     return h;
   }

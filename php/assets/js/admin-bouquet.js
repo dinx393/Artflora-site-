@@ -20,6 +20,7 @@
   var initial = clone(data.initial);
   if (!initial.sections) initial.sections = [];
   if (initial.weddingOnly === undefined) initial.weddingOnly = true;
+  if (!initial.swaps || Array.isArray(initial.swaps)) initial.swaps = {}; // замены в этом букете: {цветок: [замена, …]}
   // упаковка у каждого размера своя; текст поля храним отдельно, чтобы можно было стереть и набрать
   function packagingTexts(x) {
     var t = {};
@@ -68,10 +69,28 @@
   function flowersKop(s) {
     return s.items.reduce(function (sum, i) { return sum + Math.round(((byId[i.flowerId] || {}).priceKop || 0) * i.qty); }, 0);
   }
-  // чем заменим цветок, которого нет: первая замена в наличии
+  // Замены задаются в этом букете для каждого цветка свои (решение владельца 2026-10-31)
+  function swapsOf(flowerId) {
+    return state.b.swaps[flowerId] || [];
+  }
+  // чем заменим цветок, которого нет: первая замена из этого букета в наличии
   function replacement(f) {
     if (!f || f.inStock) return undefined;
-    return f.substitutes.map(function (id) { return byId[id]; }).filter(function (x) { return x && x.inStock; })[0];
+    return swapsOf(f.id).map(function (id) { return byId[id]; }).filter(function (x) { return x && x.inStock; })[0];
+  }
+  function setSwaps(flowerId, list) {
+    var w = Object.assign({}, state.b.swaps);
+    if (list.length) w[flowerId] = list;
+    else delete w[flowerId];
+    set({ swaps: w });
+  }
+  // все цветы букета (из всех размеров), по порядку появления
+  function bouquetFlowers() {
+    var seen = {}, out = [];
+    state.b.sizes.forEach(function (x) {
+      x.items.forEach(function (i) { if (!seen[i.flowerId] && byId[i.flowerId]) { seen[i.flowerId] = true; out.push(byId[i.flowerId]); } });
+    });
+    return out;
   }
   function priceOf(s) {
     return s.items.length ? U.roundPriceKop(flowersKop(s) + s.packagingKop) : null;
@@ -298,7 +317,7 @@
         var qt = state.qtyText[qk];
         if (qt === undefined || parseFloat(qt.replace(",", ".")) !== i.qty) qt = U.qtyText(i.qty);
         h += "<tr><td><b>" + esc(f ? f.name : "?") + '</b><div class="small muted">' + (f && f.kind === "GREEN" ? "Зелень" : "Цветы") +
-          (f && !f.inStock ? (rep ? " · нет, заменим на: " + esc(rep.name.toLowerCase()) : " · нет в наличии") : "") + "</div></td>";
+          (f && !f.inStock ? (rep ? " · нет, 🔁 заменим на: " + esc(rep.name.toLowerCase()) : " · нет в наличии, замены нет") : "") + "</div></td>";
         h += '<td><div class="qty"><button type="button"' + on("click", function () { setQty(i.flowerId, i.qty > 1 ? i.qty - 1 : 0.5); }) + ">−</button>" +
           '<input class="num" style="width: 52px; border: 0; text-align: center" data-k="qty-' + qk + '" value="' + esc(qt) + '" inputmode="decimal"' +
           on("input", function (e) {
@@ -343,8 +362,10 @@
       }) + ">Скопировать состав из M</button>";
     }
     var miss = missing(s);
-    if (miss.length) h += '<p class="error">Нет в наличии: ' + esc(miss.join(", ")) + ". Этот размер скрыт на сайте.</p>";
-    h += "</div></div>";
+    if (miss.length) h += '<p class="error">Нет в наличии: ' + esc(miss.join(", ")) + ". Замены в этом букете нет, поэтому размер скрыт на сайте.</p>";
+    h += "</div>";
+    h += swapsView(on);
+    h += "</div>";
 
     // Правая колонка: цена и коллекция
     h += '<div class="stack" style="gap: 16px; position: sticky; top: 16px"><div class="card stack" style="gap: 10px">';
@@ -381,6 +402,55 @@
     }) + ">Удалить букет</button>";
     h += "</div></div>";
     return h;
+  }
+
+  // Замены в этом букете: для каждого цветка свой пул. Цветок закрыли в «Цветах» — есть замена в наличии,
+  // букет остаётся на сайте с пометкой «будет замена» (флорист увидит её в заказе); замены нет — размер скрыт.
+  function swapsView(on) {
+    var list = bouquetFlowers();
+    var h = '<div class="card stack" style="gap: 12px"><span class="label" style="font-size: 18px">🔁 Замены в этом букете</span>';
+    h += '<span class="small muted">Если цветок закончится, чем его можно заменить именно в этом букете. Можно несколько, первая в наличии и пойдёт в букет. ' +
+      "Без замены: цветка нет — букет скрывается с сайта. Главный цветок (например, в монобукете) оставьте без замены.</span>";
+    if (!list.length) return h + '<span class="small muted">Сначала добавьте цветы в состав.</span></div>';
+    var mains = list.filter(function (f) { return f.kind !== "GREEN"; });
+    list.forEach(function (f) {
+      var ids = swapsOf(f.id);
+      var rep = replacement(f);
+      var status;
+      if (f.inStock) status = ids.length ? '<span class="small muted">Есть в наличии</span>' : '<span class="small muted">Есть в наличии · без замены</span>';
+      else if (rep) status = '<span class="pill swap">Нет · 🔁 будет замена: ' + esc(rep.name.toLowerCase()) + "</span>";
+      else status = '<span class="pill warn">Нет · ' + (ids.length ? "замен тоже нет" : "без замены") + ", букет скрыт</span>";
+      h += '<div class="stack" style="gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line-soft)">';
+      h += '<div class="row between" style="gap: 8px"><b>' + esc(f.name) + (mains.length === 1 && mains[0].id === f.id ? ' <span class="small muted">· монобукет</span>' : "") + "</b>" + status + "</div>";
+      h += '<div class="row" style="gap: 6px; align-items: center">';
+      if (!ids.length) h += '<span class="small muted">Без замены</span>';
+      ids.forEach(function (id, n) {
+        var x = byId[id];
+        if (!x) return;
+        h += '<span class="sub-chip ' + (x.inStock ? "" : "off") + '" title="' + (x.inStock ? "" : "Этой замены сейчас тоже нет") + '">' + (ids.length > 1 ? n + 1 + ". " : "") + esc(x.name) +
+          (n > 0 ? '<button type="button" aria-label="Поднять выше" title="Выше: эту замену берём раньше"' + on("click", function () {
+            var l = ids.slice(); l.splice(n, 1); l.splice(n - 1, 0, id); setSwaps(f.id, l);
+          }) + ">▲</button>" : "") +
+          '<button type="button" aria-label="Убрать замену"' + on("click", function () { setSwaps(f.id, ids.filter(function (y) { return y !== id; })); }) + ">×</button></span>";
+      });
+      h += '<select class="input" style="width: auto; min-height: 34px; padding: 4px 10px"' +
+        on("change", function (e) { if (e.target.value) setSwaps(f.id, ids.concat([Number(e.target.value)])); }) + ">";
+      h += '<option value="">' + (ids.length ? "+ ещё замена" : "+ указать замену") + "</option>";
+      flowers.forEach(function (y) {
+        if (y.id !== f.id && ids.indexOf(y.id) < 0) h += '<option value="' + y.id + '">' + esc(y.name) + (y.inStock ? "" : " (нет)") + "</option>";
+      });
+      h += "</select>";
+      // подсказка из справочника «Цветы»: одним нажатием
+      (f.substitutes || []).forEach(function (id) {
+        var y = byId[id];
+        if (!y || ids.indexOf(id) >= 0) return;
+        h += '<button type="button" class="chip" style="font-size: 13px; min-height: 30px; padding: 4px 10px" title="Замена из справочника цветов"' +
+          on("click", function () { setSwaps(f.id, ids.concat([id])); }) + ">+ " + esc(y.name) + "</button>";
+      });
+      h += "</div></div>";
+    });
+    h += '<span class="small muted">Цена букета при замене не меняется. Покупатель видит в составе «розовая (вместо: белая)», флорист — «🔁 Будет замена» в заказе, письме и Telegram.</span>';
+    return h + "</div>";
   }
 
   // Таймер «собран сегодня» (решение владельца 2026-10-28): в срок букет сам выключается, не удаляется; включают вручную

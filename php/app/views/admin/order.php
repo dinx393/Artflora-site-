@@ -16,6 +16,7 @@ $created = date('d.m.Y, H:i:s', strtotime($o['createdAt']));
         <div class="stack" style="gap: 2px; padding-bottom: 8px; border-bottom: 1px solid var(--line-soft)">
           <div class="sum-row"><b><?= e($i['name'] . ($i['size'] ? ", {$i['size']}" : '')) ?> × <?= $i['qty'] ?></b><span><?= e(Money::format($i['priceKop'] * $i['qty'])) ?></span></div>
           <?php if ($i['composition']): ?><span class="small muted"><?= e($i['composition']) ?></span><?php endif ?>
+          <?php if (!empty($i['swaps'])): ?><span class="pill swap" style="align-self: flex-start">🔁 Будет замена: <?= e($i['swaps']) ?></span><?php endif ?>
         </div>
       <?php endforeach ?>
       <div class="sum-row"><b>🎁 В подарок: <?= e(mb_strtolower(OrderEmail::GIFT)) ?></b></div>

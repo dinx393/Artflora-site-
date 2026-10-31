@@ -72,7 +72,7 @@ final class Notify
     {
         $lines = [
             "🌸 Новый заказ №{$o['number']} — " . Money::format($o['totalKop']),
-            ...array_map(fn ($i) => "• {$i['name']}" . ($i['size'] ? ", {$i['size']}" : '') . " × {$i['qty']}" . (!empty($i['url']) ? "\n  {$i['url']}" : ''), $o['items']),
+            ...array_map(fn ($i) => "• {$i['name']}" . ($i['size'] ? ", {$i['size']}" : '') .  " × {$i['qty']}" . (!empty($i['swaps']) ? "\n  🔁 Будет замена: {$i['swaps']}" : '') . (!empty($i['url']) ? "\n  {$i['url']}" : ''), $o['items']),
             '🎁 В подарок: ' . mb_strtolower(OrderEmail::GIFT),
             $o['deliveryMethod'] === 'PICKUP'
                 ? "Самовывоз: {$o['shop']}"
@@ -190,7 +190,7 @@ final class Notify
             'comment' => $o['comment'],
             'cardText' => $o['cardText'],
             'items' => array_map(fn ($i) => [
-                'name' => $i['name'], 'size' => $i['size'], 'qty' => $i['qty'], 'priceKop' => $i['priceKop'],
+                'name' => $i['name'], 'size' => $i['size'], 'qty' => $i['qty'], 'priceKop' => $i['priceKop'], 'swaps' => $i['swaps'] ?? '',
                 'photo' => self::absolute($i['bouquetId'] !== null ? ($photo[$i['bouquetId']] ?? null) : null),
                 'url' => $i['bouquetId'] !== null ? ($link[$i['bouquetId']] ?? null) : null,
             ], $o['items']),

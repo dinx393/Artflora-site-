@@ -21,6 +21,7 @@ function admin_stamp(string $what, int $id = 0): string
         'bouquet' => [
             Db::one('SELECT name, slug, description, format, enabled, hideAt, isHit, isExclusive, photoSize, packagingKop, colors, occasions, sections, photos, collectionId FROM bouquets WHERE id = ?', [$id]),
             Db::all('SELECT s.code, s.note, s.packagingKop, i.flowerId, i.qty FROM bouquet_sizes s LEFT JOIN bouquet_items i ON i.sizeId = s.id WHERE s.bouquetId = ? ORDER BY s.code, i.id', [$id]),
+            Db::all('SELECT flowerId, substituteId, sortOrder FROM bouquet_swaps WHERE bouquetId = ? ORDER BY flowerId, sortOrder, substituteId', [$id]),
         ],
         'flowers' => [
             Db::all('SELECT id, name, kind, unit, priceKop, inStock, inFilter, sortOrder FROM flowers ORDER BY id'),
@@ -156,9 +157,23 @@ function admin_telegram_ready(): bool
 
 // ---------- Букеты ----------
 
+// Замены цветов в букете: {цветок: [замена, …]} по порядку (первая в наличии и пойдёт в букет)
+function admin_bouquet_swaps(?int $bouquetId = null): array
+{
+    $out = [];
+    $rows = $bouquetId === null
+        ? Db::all('SELECT bouquetId, flowerId, substituteId FROM bouquet_swaps ORDER BY bouquetId, flowerId, sortOrder, substituteId')
+        : Db::all('SELECT bouquetId, flowerId, substituteId FROM bouquet_swaps WHERE bouquetId = ? ORDER BY flowerId, sortOrder, substituteId', [$bouquetId]);
+    foreach ($rows as $r) {
+        if ($bouquetId === null) $out[$r['bouquetId']][$r['flowerId']][] = (int) $r['substituteId'];
+        else $out[$r['flowerId']][] = (int) $r['substituteId'];
+    }
+    return $out;
+}
+
 Http::get('/admin/bouquets', function () {
     Auth::requireAdmin('catalog');
-    $tab = in_array($_GET['tab'] ?? '', ['all', 'on', 'off', 'missing', 'timer'], true) ? $_GET['tab'] : 'all';
+    $tab = in_array($_GET['tab'] ?? '', ['all', 'on', 'off', 'missing', 'swap', 'timer'], true) ? $_GET['tab'] : 'all';
     $list = array_map(function ($b) {
         $vis = Pricing::visibility($b);
         $main = Pricing::defaultSize($b);
@@ -166,13 +181,16 @@ Http::get('/admin/bouquets', function () {
             foreach (Pricing::sortSizes($b['sizes']) as $s) if ($s['code'] === 'M') $main = $s;
             $main ??= $b['sizes'][0] ?? null;
         }
-        return ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $main ? Pricing::sizePriceKop($main) : 0];
+        // «будет замена»: цветка нет, но в этом букете для него указана замена в наличии — букет на сайте
+        $swaps = $vis['visible'] ? Pricing::bouquetSwaps($b) : [];
+        return ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $main ? Pricing::sizePriceKop($main) : 0, 'swaps' => $swaps];
     }, Catalog::load());
     $is = [
         'all' => fn ($x) => true,
         'on' => fn ($x) => $x['vis']['visible'],
         'off' => fn ($x) => !$x['vis']['visible'] && $x['vis']['reason'] === 'disabled',
         'missing' => fn ($x) => !$x['vis']['visible'] && $x['vis']['reason'] === 'no-flowers',
+        'swap' => fn ($x) => (bool) $x['swaps'],
         // таймер «собран сегодня»: идёт или уже сработал и букет так и не включили обратно
         'timer' => fn ($x) => $x['b']['hideAt'] !== null || ($x['b']['hiddenByTimerAt'] !== null && !$x['b']['enabled']),
     ];
@@ -258,6 +276,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
                 'items' => array_map(fn ($i) => ['flowerId' => (int) $i['flowerId'], 'qty' => (float) $i['qty']], $its),
             ];
         }, Pricing::SIZE_ORDER),
+        'swaps' => (object) admin_bouquet_swaps((int) $b['id']),
     ];
     $subs = [];
     foreach (Db::all('SELECT flowerId, substituteId FROM flower_substitutes ORDER BY substituteId') as $s) $subs[$s['flowerId']][] = (int) $s['substituteId'];
@@ -325,13 +344,28 @@ Http::post('/admin/bouquets/save', function () {
         if ($merged) $sizes[] = ['code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop'], 'items' => $merged];
     }
     if (!$sizes) admin_fail('Добавьте цветы хотя бы в один размер');
+    // Замены в этом букете: {цветок: [замена, …]} по порядку. Только для цветов из состава; пусто — без замены.
+    $swapsIn = $in['swaps'] ?? [];
+    if (!is_array($swapsIn) || count($swapsIn) > 200) admin_fail($bad);
+    $inBouquet = [];
+    foreach ($sizes as $s) foreach ($s['items'] as $flowerId => $_) $inBouquet[$flowerId] = true;
+    $swaps = [];
+    foreach ($swapsIn as $flowerId => $list) {
+        if (!admin_is_int($flowerId) || !is_array($list) || !array_is_list($list) || count($list) > 20 || array_filter($list, fn ($x) => !admin_is_int($x))) admin_fail($bad);
+        $list = array_values(array_unique(array_filter($list, fn ($x) => (int) $x !== (int) $flowerId)));
+        if (isset($inBouquet[(int) $flowerId]) && $list) $swaps[(int) $flowerId] = array_map('intval', $list);
+    }
+    $known = array_merge(array_keys($swaps), ...array_values($swaps));
+    if ($known && (int) Db::value('SELECT COUNT(*) FROM flowers WHERE id ' . Db::in(array_values(array_unique($known))), array_values(array_unique($known))) !== count(array_unique($known))) {
+        admin_fail('Какого-то цветка из замен уже нет в справочнике. Обновите страницу (F5).');
+    }
     if (Db::value('SELECT 1 FROM bouquets WHERE slug = ? AND id <> ?', [$slug, $id])) admin_fail('Такой адрес страницы уже занят другим букетом');
     // упаковка размера «на фото» — её же подставляем новым размерам
     $photo = $sizes[0];
     foreach ($sizes as $s) if ($s['code'] === $photoSize) $photo = $s;
     $oldSlug = Db::value('SELECT slug FROM bouquets WHERE id = ?', [$id]);
     try {
-        Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes, $sections, $timer) {
+        Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes, $sections, $timer, $swaps) {
             Db::all('SELECT id FROM bouquets WHERE id = ? FOR UPDATE', [$id]);
             admin_check_stamp($in['stamp'] ?? null, 'bouquet', $id);
             Db::update('bouquets', $id, [
@@ -348,6 +382,10 @@ Http::post('/admin/bouquets/save', function () {
             foreach ($sizes as $s) {
                 $sizeId = Db::insert('bouquet_sizes', ['bouquetId' => $id, 'code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop']]);
                 foreach ($s['items'] as $flowerId => $qty) Db::insert('bouquet_items', ['sizeId' => $sizeId, 'flowerId' => $flowerId, 'qty' => $qty]);
+            }
+            Db::exec('DELETE FROM bouquet_swaps WHERE bouquetId = ?', [$id]);
+            foreach ($swaps as $flowerId => $list) {
+                foreach ($list as $n => $sub) Db::insert('bouquet_swaps', ['bouquetId' => $id, 'flowerId' => $flowerId, 'substituteId' => $sub, 'sortOrder' => $n]);
             }
         });
         // «Букет дня» на главной — один на весь сайт (галочка в карточке букета, решение владельца 2026-10-25)
@@ -391,6 +429,8 @@ Http::post('/admin/bouquets/{id}/clone', function (string $id) {
             $sizeId = Db::insert('bouquet_sizes', ['bouquetId' => $copyId, 'code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop']]);
             Db::exec('INSERT INTO bouquet_items (sizeId, flowerId, qty) SELECT ?, flowerId, qty FROM bouquet_items WHERE sizeId = ? ORDER BY id', [$sizeId, $s['id']]);
         }
+        // тот же состав — те же замены
+        Db::exec('INSERT INTO bouquet_swaps (bouquetId, flowerId, substituteId, sortOrder) SELECT ?, flowerId, substituteId, sortOrder FROM bouquet_swaps WHERE bouquetId = ?', [$copyId, $src['id']]);
         return $copyId;
     });
     Http::redirect("/admin/bouquets/$copyId");
@@ -428,8 +468,9 @@ Http::get('/admin/flowers', function () {
     Auth::requireAdmin('catalog');
     $sizes = Db::all('SELECT s.id, s.bouquetId, s.code, s.packagingKop FROM bouquet_sizes s ORDER BY s.id');
     $items = Db::all('SELECT sizeId, flowerId, qty FROM bouquet_items ORDER BY id');
+    $swaps = admin_bouquet_swaps();
     $bouquets = array_map(fn ($b) => [
-        'id' => (int) $b['id'], 'name' => $b['name'], 'enabled' => (bool) $b['enabled'],
+        'id' => (int) $b['id'], 'name' => $b['name'], 'enabled' => (bool) $b['enabled'], 'swaps' => (object) ($swaps[$b['id']] ?? []),
         'sizes' => array_values(array_map(fn ($s) => [
             'code' => $s['code'], 'packagingKop' => (int) $s['packagingKop'],
             'items' => array_values(array_map(
