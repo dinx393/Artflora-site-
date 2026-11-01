@@ -95,7 +95,7 @@
     document.querySelectorAll("[data-cart-link]").forEach(function (el) { el.setAttribute("aria-label", "Корзина, товаров: " + n); });
   }
 
-  // Цели для Яндекс Метрики, Facebook и Google (через GTM): «в корзину», «оформление», «заказ оформлен».
+  // Цели для Яндекс Метрики, Facebook и Google (через GTM): «в корзину» (basket), «оформление» (checkout), «заказ оформлен» (order) — basket и order уже были заведены в Метрике 55261273.
   // Счётчики работают только после «Принять» на плашке cookie (partials/counters.php): до этого цели ждут в очереди
   // и уходят, как только посетитель согласится. Если отказался — не уходят совсем.
   // ArtfloraGoal({ ym: "order", fb: "Purchase", params: { order_price: 180, currency: "BYN" } })
@@ -129,7 +129,7 @@
       else c.lines.push({ bouquetId: line.bouquetId, size: line.size, qty: line.qty });
       if (cardText && cardText.trim()) c.cardText = cardText;
       write(c);
-      window.ArtfloraGoal({ ym: "cart", fb: "AddToCart", fbParams: { content_ids: [String(line.bouquetId)], content_type: "product" } });
+      window.ArtfloraGoal({ ym: "basket", fb: "AddToCart", fbParams: { content_ids: [String(line.bouquetId)], content_type: "product" } });
     },
     hasAddon: function (id) { return hasAddon(read(), id); },
     // Положить доп в корзину или убрать его оттуда. Возвращает true, если теперь он в корзине.
