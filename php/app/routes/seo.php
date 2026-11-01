@@ -13,6 +13,13 @@ Http::get('/robots.txt', function () {
         . 'Sitemap: ' . Seo::absUrl('/sitemap.xml') . "\n";
 });
 
+// IndexNow: ключ-файл, по которому Яндекс понимает, что сообщение «страницы обновились» пришло от нас (2026-11-01).
+// Сообщить Яндексу обо всех страницах: php app/cli.php indexnow
+Http::get('/' . Seo::INDEXNOW_KEY . '.txt', function () {
+    header('Content-Type: text/plain; charset=utf-8');
+    return Seo::INDEXNOW_KEY;
+});
+
 Http::get('/sitemap.xml', function () {
     $all = Catalog::visible();
     $urls = [['/', 'daily', '1.0'], ['/catalog', 'daily', '0.9']];

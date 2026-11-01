@@ -6,6 +6,8 @@
 //   php app/cli.php photos       — уменьшить фото, загруженные прямо с iPhone (HDR-фото выглядят тёмными на iPhone 12+)
 //   php app/cli.php mail         — подключить почту для писем о заказах: спросит ящик и пароль, сам найдёт сервер,
 //                                  отправит пробное письмо и запишет настройки в app/config.php
+//   php app/cli.php indexnow     — сообщить Яндексу (IndexNow), что все страницы из sitemap.xml обновились:
+//                                  он придёт посмотреть их быстрее
 //   php app/cli.php backup       — резервная копия базы и фото сейчас (обычно её сам делает cron каждую ночь)
 //   php app/cli.php restore ~/backups/artflora.by/db-2026-10-26.sql.gz
 //                                — вернуть базу из копии (спросит подтверждение)
@@ -23,6 +25,16 @@ Db::migrate();
 
 if ($cmd === 'migrate') {
     echo "База в порядке\n";
+} elseif ($cmd === 'indexnow') {
+    $xml = @file_get_contents(Seo::absUrl('/sitemap.xml')) ?: exit("Не удалось открыть sitemap.xml\n");
+    preg_match_all('~<loc>([^<]+)</loc>~', $xml, $m);
+    $urls = array_map(fn ($u) => html_entity_decode($u, ENT_QUOTES), $m[1]);
+    $host = parse_url(Seo::absUrl('/'), PHP_URL_HOST);
+    $body = json_encode(['host' => $host, 'key' => Seo::INDEXNOW_KEY, 'keyLocation' => Seo::absUrl('/' . Seo::INDEXNOW_KEY . '.txt'), 'urlList' => $urls], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => "Content-Type: application/json; charset=utf-8\r\n", 'content' => $body, 'ignore_errors' => true, 'timeout' => 30]]);
+    @file_get_contents('https://yandex.com/indexnow', false, $ctx);
+    $code = isset($http_response_header[0]) ? (int) explode(' ', $http_response_header[0])[1] : 0;
+    echo in_array($code, [200, 202], true) ? 'Яндекс принял ' . count($urls) . " страниц (код $code)\n" : "Яндекс ответил кодом $code — попробуйте позже\n";
 } elseif ($cmd === 'photos') {
     $n = Uploads::shrinkAll(true);
     echo $n ? "Уменьшено фото с iPhone: $n\n" : "Фото в порядке\n";
