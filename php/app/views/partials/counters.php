@@ -9,6 +9,7 @@ if (!Seo::isMainSite()) return;
 ?>
 <?php if ($part === 'head'): ?>
 <meta name="facebook-domain-verification" content="7yx8swwmmi4i2ioz5m1igtawb1bl9u">
+<meta name="yandex-verification" content="4f2be21c9431bf58"><?php /* Яндекс Вебмастер, аккаунт artflora-minsk (2026-11-01) */ ?>
 <script>
 window.afCounters = function () {
   if (window.afCountersOn) return; window.afCountersOn = true;
