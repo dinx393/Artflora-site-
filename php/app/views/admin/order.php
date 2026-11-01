@@ -25,6 +25,7 @@ $created = date('d.m.Y, H:i:s', strtotime($o['createdAt']));
     <div class="card stack" style="gap: 6px">
       <span class="label"><?= $o['deliveryMethod'] === 'PICKUP' ? 'Самовывоз' : 'Доставка' ?></span>
       <span><b><?= e(admin_date($o['deliveryDate'], true)) ?></b>, <?= e($o['deliverySlot'] ?: 'время уточнить') ?></span>
+      <?php if (!empty($o['preorder'])): ?><span class="pill swap" style="align-self: flex-start"><?= e(Preorder::orderNote($o['preorder'], $o['preorderChoice'] ?? null)) ?></span><?php endif ?>
       <?php if ($o['deliveryMethod'] === 'DELIVERY'): ?>
         <?php if ($o['addressUnknown']): ?>
           <span class="pill" style="align-self: flex-start; background: var(--lavender)">Адрес и время уточнить у получателя</span>

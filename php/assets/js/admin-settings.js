@@ -84,6 +84,19 @@
     h += '<label class="sum-row" style="justify-content: flex-start; gap: 12px"><span>Принимаем заказ на сегодня минимум за, часов:</span>' +
       '<input class="num" style="width: 90px" type="number" step="0.5" data-k="lead" value="' + (isFinite(shop.leadHours) ? shop.leadHours : "") + '"' +
       on("input", function (e) { shop.leadHours = parseFloat(e.target.value); }) + "></label>";
+    // Предзаказ (2026-11-01): до какого срока успеваем закупить цветы под заказ и с какого дня они в магазине
+    var days = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"];
+    function daySelect(key) {
+      var cur = shop[key] || 3;
+      return '<select class="input" style="width: auto" data-k="' + key + '"' + on("change", function (e) { shop[key] = parseInt(e.target.value, 10); }) + ">" +
+        days.map(function (d, i) { return '<option value="' + (i + 1) + '"' + U.attr("selected", cur === i + 1) + ">" + d + "</option>"; }).join("") + "</select>";
+    }
+    h += '<div class="stack" style="gap: 8px"><span class="label">📅 Предзаказ</span>' +
+      '<div class="row" style="gap: 10px; align-items: center"><span>Покупатель успевает, если оформил до</span>' + daySelect("preorderDeadlineDay") +
+      '<input class="input" style="width: 90px" data-k="preorderDeadlineTime" placeholder="23:59" value="' + esc(shop.preorderDeadlineTime || "23:59") + '"' +
+      on("input", function (e) { shop.preorderDeadlineTime = e.target.value.trim(); }) + "></div>" +
+      '<div class="row" style="gap: 10px; align-items: center"><span>Цветы новой поставки в магазине с</span>' + daySelect("preorderReadyDay") + "</div>" +
+      '<span class="small muted">Успел до срока — цветы закупим специально под заказ, доставка с этого дня следующей недели. Дата раньше — сайт предупредит, что закупка уже сделана.</span></div>';
     h += "</div>";
 
     h += '<p class="small muted">Зоны доставки, районы и магазины — в разделе <a href="/admin/delivery" style="font-weight: 700">«Доставка»</a>, там они на карте.</p>';

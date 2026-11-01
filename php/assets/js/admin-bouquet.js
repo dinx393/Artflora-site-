@@ -292,6 +292,10 @@
     h += '<label class="check" style="margin-top: 22px"><input type="checkbox"' + on_("checked", b.isHit) + on("change", function (e) { set({ isHit: e.target.checked }); }) + "> Хит недели</label>";
     h += '<label class="check" style="margin-top: 22px"><input type="checkbox"' + on_("checked", b.isExclusive) + on("change", function (e) { set({ isExclusive: e.target.checked }); }) + "> Эксклюзив недели</label>";
     h += '<label class="check" style="margin-top: 22px" title="Всегда в начале каталога: сразу после «Букета дня», выше хитов и новых букетов"><input type="checkbox"' + on_("checked", b.isPinned) + on("change", function (e) { set({ isPinned: e.target.checked }); }) + "> ⭐ Избранный (всегда в начале)</label></div>";
+    // Предзаказ (2026-11-01): букет в разделе «Предзаказ», даже если цветов сейчас нет — закупим к дате
+    h += '<div class="stack" style="gap: 4px"><label class="check"><input type="checkbox"' + on_("checked", b.isPreorder) + on("change", function (e) { set({ isPreorder: e.target.checked }); }) +
+      "> 📅 Предзаказ (раздел «Предзаказ на неделю»)</label>" +
+      '<span class="small muted">Букет виден в разделе «Предзаказ», даже если каких-то цветов сейчас нет: их закупим к дате. Покупателю, который выбрал дату, когда закупка уже сделана, сайт покажет предупреждение. Срок закупки — в «Настройках».</span></div>';
 
     h += timerView(on);
 

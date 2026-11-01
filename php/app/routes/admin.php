@@ -287,7 +287,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
     $initial = [
         'id' => (int) $b['id'], 'name' => $b['name'], 'slug' => $b['slug'], 'description' => $b['description'], 'format' => $b['format'],
         'enabled' => (bool) $b['enabled'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'], 'photoSize' => $b['photoSize'],
-        'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'],
+        'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'], 'isPreorder' => (bool) $b['isPreorder'],
         'isDayBouquet' => Settings::get('shop')['dayBouquet'] === $b['slug'],
         'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']), 'photos' => Db::fromJson($b['photos']),
         'sections' => Db::fromJson($b['sections']),
@@ -343,7 +343,7 @@ Http::post('/admin/bouquets/save', function () {
     $lists = ['colors' => [10, 20], 'occasions' => [10, 30], 'photos' => [12, 300]];
     if (!admin_is_int($id) || admin_str($in['description'] ?? null, 2000) === null
         || !array_key_exists($in['format'] ?? '', Occasions::FORMATS) || !in_array($photoSize, Pricing::SIZE_ORDER, true)
-        || !is_bool($in['enabled'] ?? null) || !is_bool($in['isHit'] ?? null) || !is_bool($in['isExclusive'] ?? null) || !is_bool($in['weddingOnly'] ?? true) || !is_bool($in['isPinned'] ?? false)
+        || !is_bool($in['enabled'] ?? null) || !is_bool($in['isHit'] ?? null) || !is_bool($in['isExclusive'] ?? null) || !is_bool($in['weddingOnly'] ?? true) || !is_bool($in['isPinned'] ?? false) || !is_bool($in['isPreorder'] ?? false)
         || !(($in['collectionId'] ?? null) === null || admin_is_int($in['collectionId']))
         || !is_array($in['sizes'] ?? null) || count($in['sizes']) > count(Pricing::SIZE_ORDER)) admin_fail($bad);
     // таймер «собран сегодня»: keep — не трогать, off — снять, число — скрыть через столько часов от сохранения
@@ -397,7 +397,7 @@ Http::post('/admin/bouquets/save', function () {
             Db::update('bouquets', $id, [
                 'name' => $name, 'slug' => $slug, 'description' => $in['description'], 'format' => $in['format'],
                 'packagingKop' => $photo['packagingKop'], 'enabled' => (int) $in['enabled'], 'isHit' => (int) $in['isHit'],
-                'isExclusive' => (int) $in['isExclusive'], 'isPinned' => (int) ($in['isPinned'] ?? false), 'weddingOnly' => (int) ($in['weddingOnly'] ?? true), 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
+                'isExclusive' => (int) $in['isExclusive'], 'isPinned' => (int) ($in['isPinned'] ?? false), 'isPreorder' => (int) ($in['isPreorder'] ?? false), 'weddingOnly' => (int) ($in['weddingOnly'] ?? true), 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
                 'occasions' => Db::json($in['occasions']), 'sections' => Db::json(array_values(array_unique($sections))),
                 'photos' => Db::json($in['photos']), 'collectionId' => $in['collectionId'],
             ]);
@@ -911,6 +911,12 @@ Http::post('/admin/settings/save', function () {
     }
     if (!admin_is_num($s['leadHours'] ?? null) || $s['leadHours'] < 0 || $s['leadHours'] > 24) admin_fail('Проверьте поля: shop → leadHours');
     $shop['leadHours'] = $s['leadHours'];
+    foreach (['preorderDeadlineDay', 'preorderReadyDay'] as $k) {
+        if (!admin_is_int($s[$k] ?? null) || $s[$k] < 1 || $s[$k] > 7) admin_fail('Проверьте дни предзаказа');
+        $shop[$k] = $s[$k];
+    }
+    if (!is_string($s['preorderDeadlineTime'] ?? null) || !preg_match('/^([01]?\d|2[0-3]):[0-5]\d$/', $s['preorderDeadlineTime'])) admin_fail('Проверьте время предзаказа: например, 12:00');
+    $shop['preorderDeadlineTime'] = $s['preorderDeadlineTime'];
     if (!admin_emails_ok($shop['orderEmail'])) admin_fail('Проверьте почту для заказов');
 
     $colors = [];

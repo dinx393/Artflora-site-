@@ -145,6 +145,18 @@ $config = [
             <?php endforeach ?>
           </div>
           <p class="error" data-co-slot-error hidden></p>
+          <?php /* Предзаказ: если закупка на выбранную дату уже сделана — предупреждение и галочка «Понимаю» (checkout.js, Preorder) */ ?>
+          <div class="preorder-note stack" style="gap: 6px" data-co-preorder hidden>
+            <span data-co-preorder-text></span>
+            <button type="button" class="btn btn-outline" style="align-self: flex-start" data-co-preorder-pick hidden></button>
+            <label class="check" data-co-preorder-agree hidden><input type="checkbox" data-co-preorder-ok>Понимаю, оформить на эту дату</label>
+            <?php /* Цена цветов к дате может измениться — выбор обязателен (решение владельца 2026-11-01) */ ?>
+            <b style="margin-top: 6px">Почему мы спрашиваем о цене</b>
+            <span>Цветы мы закупаем свежими каждую неделю, и цена у поставщиков меняется от недели к неделе. Поэтому к вашей дате букет может стоить немного больше или меньше, чем сегодня. Выберите, что для вас важнее:</span>
+            <?php foreach (Preorder::CHOICES as $code => $label): ?>
+              <label class="check"><input type="radio" name="preorderChoice" value="<?= e($code) ?>" data-co-preorder-choice><?= e($label) ?></label>
+            <?php endforeach ?>
+          </div>
         </div>
 
         <?php /* На телефоне первый шаг сразу показывает, сколько выйдет с доставкой */ ?>

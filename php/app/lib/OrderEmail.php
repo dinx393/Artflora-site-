@@ -5,7 +5,7 @@
 // recipientName, recipientPhone, callRecipient, anonymous, method (DELIVERY/PICKUP), address, addressUnknown,
 // shopName («Уручье, пр. Независимости 168/1»), deliveryDate ('YYYY-MM-DD'), deliverySlot, comment, cardText,
 // items [['name','size','qty','priceKop','swaps' (замены для флориста, может не быть),'photo' (полный адрес или null),'url' (страница букета на сайте или null)]], itemsKop, discountKop, deliveryKop, totalKop, adminUrl,
-// company (реквизиты для безнала: ['text' => …], или null).
+// company (реквизиты для безнала: ['text' => …], или null), preorder (BUY/STOCK или null — см. Preorder::orderNote).
 final class OrderEmail
 {
     public const STATUS_LABEL = [
@@ -64,6 +64,7 @@ final class OrderEmail
         }
         $r[] = [$o['method'] === 'PICKUP' ? 'Самовывоз' : 'Адрес доставки', self::deliveryLine($o)];
         $r[] = ['Когда', self::day($o['deliveryDate']) . ', ' . ($o['deliverySlot'] ?: 'время уточнить')];
+        if (!empty($o['preorder'])) $r[] = ['Предзаказ', mb_substr(Preorder::orderNote($o['preorder'], $o['preorderChoice'] ?? null), mb_strlen('📅 Предзаказ: '))];
         $notes = array_filter([$o['callRecipient'] ? 'позвонить получателю перед доставкой' : '', $o['anonymous'] ? 'не говорить, от кого букет' : '']);
         if ($notes) $r[] = ['Важно', implode('; ', $notes)];
         $r[] = ['В подарок положить', self::GIFT];

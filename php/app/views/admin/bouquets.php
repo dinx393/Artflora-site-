@@ -115,7 +115,7 @@ $filterFlowers = $sortNames($filterFlowers);
               <div class="stack" style="gap: 2px">
                 <a href="/admin/bouquets/<?= $b['id'] ?>" style="font-weight: 800"><?= e($b['name']) ?></a>
                 <span class="small muted"><?= $b['collectionName'] !== null ? e("Коллекция «{$b['collectionName']}» · ") : '' ?><?= e(Occasions::FORMATS[$b['format']]['label']) ?><?= $b['weddingOnly'] && in_array('wedding', $b['occasions'], true) ? ' · только в «Свадебных»' : '' ?></span>
-                <?php $marks = array_filter([$rank === 0 ? 'Букет дня' : null, $b['isPinned'] ? '⭐ Избранный' : null, $b['isHit'] ? 'Хит недели' : null, $b['isExclusive'] ? 'Эксклюзив недели' : null]);
+                <?php $marks = array_filter([$rank === 0 ? 'Букет дня' : null, $b['isPinned'] ? '⭐ Избранный' : null, $b['isHit'] ? 'Хит недели' : null, $b['isExclusive'] ? 'Эксклюзив недели' : null, !empty($b['isPreorder']) ? '📅 Предзаказ' : null]);
                   if ($marks || !empty($sold[$b['id']])): ?>
                   <span class="small"><?= e(implode(' · ', $marks)) ?><?= $marks && !empty($sold[$b['id']]) ? ' · ' : '' ?><?php if (!empty($sold[$b['id']])): ?><span class="muted" title="Сколько штук заказали за последние 2 месяца (отменённые заказы не считаются)">🛒 <?= (int) $sold[$b['id']] ?> за 2 мес.</span><?php endif ?></span>
                 <?php endif ?>
@@ -136,7 +136,7 @@ $filterFlowers = $sortNames($filterFlowers);
             <?php elseif ($vis['reason'] === 'disabled'): ?>
               <span class="pill">Выключен</span>
             <?php else: ?>
-              <span class="pill warn">Скрыт: нет в наличии <?= e(mb_strtolower(implode(', ', $vis['missing']))) ?></span>
+              <span class="pill warn">Скрыт: нет в наличии <?= e(mb_strtolower(implode(', ', $vis['missing']))) ?><?= !empty($b['isPreorder']) ? ' (в «Предзаказе» виден)' : '' ?></span>
             <?php endif ?>
             <?php if ($b['hideAt'] !== null): ?>
               <span class="pill timer" title="Таймер «собран сегодня»: <?= e(Catalog::timerDate($b['hideAt'])) ?> букет сам выключится. Поменять или снять — в карточке букета">⏱ Скроется через <?= e(Catalog::timerLeft($b['hideAt'])) ?></span>

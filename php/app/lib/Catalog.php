@@ -141,7 +141,7 @@ final class Catalog
         return array_map(fn ($b) => [
             'id' => (int) $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'enabled' => (bool) $b['enabled'], 'hideAt' => $b['hideAt'], 'hiddenByTimerAt' => $b['hiddenByTimerAt'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'],
-            'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'],
+            'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'], 'isPreorder' => (bool) ($b['isPreorder'] ?? false),
             'photoSize' => $b['photoSize'], 'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']),
             'sections' => Db::fromJson($b['sections']), 'photos' => Db::fromJson($b['photos']), 'sortOrder' => (int) $b['sortOrder'],
             'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
@@ -168,6 +168,7 @@ final class Catalog
         return [
             'id' => $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'], 'isPinned' => $b['isPinned'], 'hideAt' => $b['hideAt'],
+            'isPreorder' => $b['isPreorder'],
             'weddingOnly' => $b['weddingOnly'] && in_array('wedding', $b['occasions'], true),
             'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $b['sections'],
             'photos' => $b['photos'] ? array_map([Uploads::class, 'url'], $b['photos']) : [self::PLACEHOLDER],
@@ -185,10 +186,18 @@ final class Catalog
         return array_values(array_filter(array_map([self::class, 'toView'], self::load("b.enabled = 1 AND ($where)", $params))));
     }
 
+    // Букет-предзаказ виден по ссылке, даже если цветов сейчас нет: их закупим к дате (Preorder)
     public static function bySlug(string $slug): ?array
     {
         $b = self::load('b.slug = ?', [$slug])[0] ?? null;
-        return $b ? self::toView($b) : null;
+        if (!$b) return null;
+        return self::toView($b['isPreorder'] ? Preorder::asInStock($b) : $b);
+    }
+
+    // Раздел «Предзаказ»: включённые букеты с галочкой «Предзаказ», в том числе те, чьих цветов сейчас нет
+    public static function preorder(): array
+    {
+        return array_values(array_filter(array_map(fn ($b) => self::toView(Preorder::asInStock($b)), self::load('b.enabled = 1 AND b.isPreorder = 1'))));
     }
 
     // Свадебный букет с галочкой «Только в свадебном разделе» виден лишь в разделе «Свадебные букеты» (повод wedding):

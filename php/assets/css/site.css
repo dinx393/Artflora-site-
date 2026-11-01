@@ -814,3 +814,10 @@ tr.dragging { opacity: .45; }
 .footer-pay { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; margin: 28px 0 20px; padding: 12px 18px; background: #fff; border-radius: 14px; width: fit-content; max-width: 100%; }
 .footer-pay img { height: 28px; width: auto; max-width: 100%; }
 .pay-mir { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 6px; background: linear-gradient(90deg, #0F754E, #00A0E3); color: #fff; font: 800 italic 17px/1 Arial, sans-serif; letter-spacing: .5px; }
+/* Предзаказ (2026-11-01): подсказка на странице букета и предупреждение в корзине, лавандовые как «будет замена» */
+.preorder-note { background: #f1ebf7; color: #5b4580; border-radius: 14px; padding: 12px 16px; font-size: 15px; line-height: 1.45; }
+.preorder-note a { color: #5b4580; font-weight: 700; }
+.preorder-note.warn { background: #fbeef0; color: var(--danger); }
+.preorder-note .check { margin-top: 8px; color: var(--cherry); font-weight: 700; }
+.preorder-rule { padding: 24px 28px; margin-top: 16px; }
+@media (max-width: 720px) { .preorder-rule { padding: 18px; } }

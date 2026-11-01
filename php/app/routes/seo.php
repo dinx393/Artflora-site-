@@ -32,6 +32,7 @@ Http::get('/sitemap.xml', function () {
     }
     foreach ($all as $b) $urls[] = ["/bouquet/{$b['slug']}", 'weekly', '0.7'];
     $urls[] = ['/single', 'weekly', '0.6'];
+    $urls[] = [Preorder::URL, 'weekly', '0.6'];
     $urls[] = ['/delivery', 'monthly', '0.6'];
     $urls[] = ['/blog', 'monthly', '0.5'];
     foreach (Articles::all() as $a) $urls[] = ["/blog/{$a['slug']}", 'yearly', '0.4'];

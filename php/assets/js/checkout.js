@@ -93,6 +93,7 @@
     comment: $("[data-co-comment]"),
     consent: $("[data-co-consent]"),
     date: $("[data-co-date]"),
+    preorderOk: $("[data-co-preorder-ok]"),
   };
   // Реквизиты для безнала (способ оплаты INVOICE) — одним текстом. Сервер проверяет то же самое (Checkout::parseCompany).
   var companyText = $("[data-co-company-text]");
@@ -329,6 +330,24 @@
       b.disabled = slots.indexOf(s) === -1;
       b.hidden = b.disabled; // прошедшие интервалы не показываем, их теперь много
     });
+    // Предзаказ: цветы закупаем раз в неделю. Дата раньше «from» — закупка уже сделана: предупреждаем, нужна галочка «Понимаю»
+    var po = t && t.priced.preorder;
+    var poLate = !!po && date() < po.from;
+    var poBox = $("[data-co-preorder]");
+    poBox.hidden = !po;
+    poBox.classList.toggle("warn", poLate || !!(st.error && st.error.field === "preorder"));
+    if (po) {
+      setText("[data-co-preorder-text]", poLate
+        ? "📅 Цветы на эту дату мы уже закупили. Соберём букет из того, что будет в магазине, и при необходимости согласуем с вами замену. Чтобы закупить цветы специально под ваш заказ, выберите дату с " + po.fromText + "."
+        : "📅 Предзаказ: цветы для букета закупим специально под ваш заказ.");
+      var pick = $("[data-co-preorder-pick]");
+      pick.hidden = !poLate;
+      pick.textContent = "Выбрать " + po.fromText;
+      $("[data-co-preorder-agree]").hidden = !poLate;
+    }
+    var poChoice = ($$("[data-co-preorder-choice]").filter(function (r) { return r.checked; })[0] || {}).value || "";
+    var poOk = !po || ((!poLate || inputs.preorderOk.checked) && !!poChoice);
+
     var slotErr = $("[data-co-slot-error]");
     slotErr.hidden = !(st.error && st.error.field === "slot");
     if (!slotErr.hidden) slotErr.textContent = st.error.text;
@@ -372,7 +391,7 @@
     var address = inputs.address.value.trim();
     var deliveryReady = st.method === "PICKUP" || unknown || !!d;
     var canNext1 = lines.length > 0;
-    var canNext2 = unknown ? slots.length > 0 : deliveryReady && !!st.slot && (st.method === "PICKUP" || address.length > 3);
+    var canNext2 = (unknown ? slots.length > 0 : deliveryReady && !!st.slot && (st.method === "PICKUP" || address.length > 3)) && poOk;
     var canSubmit = canNext1 && canNext2 && recipientOk && inputs.customerName.value.trim().length > 0 && digits(inputs.customerPhone.value).length >= 9 && inputs.consent.checked && !companyErr;
 
     var err = $("[data-co-error]");
@@ -387,6 +406,8 @@
     hint.textContent =
       (!unknown && (!deliveryReady || (st.method === "DELIVERY" && address.length <= 3)) ? (d ? "Укажите адрес доставки. " : "Выберите на карте или кнопкой, куда везти. ") : "") +
       (!unknown && !st.slot ? "Выберите время. " : "") +
+      (po && !poChoice ? "Выберите под датой: точная копия или сохранить бюджет. " : "") +
+      (poLate && !inputs.preorderOk.checked ? "Отметьте «Понимаю» под датой или выберите дату предзаказа. " : "") +
       (!recipientOk ? "Укажите телефон получателя. " : "") +
       (!inputs.customerName.value.trim() ? "Укажите имя и телефон. " : "") +
       (companyErr ? companyErr + " " : "") +
@@ -432,6 +453,8 @@
         payment: st.payment,
         company: st.payment === "INVOICE" ? { text: companyText.value } : null,
         consent: inputs.consent.checked,
+        preorderOk: inputs.preorderOk.checked,
+        preorderChoice: ($$("[data-co-preorder-choice]").filter(function (r) { return r.checked; })[0] || {}).value || "",
         idempotencyKey: st.key,
       }),
     })
@@ -443,7 +466,8 @@
           return;
         }
         st.error = { text: r.error || "Не получилось оформить заказ", field: r.field };
-        if (r.field === "address" || r.field === "slot") st.step = 1;
+        if (r.field === "address" || r.field === "slot" || r.field === "preorder") st.step = 1;
+        if (r.field === "preorder") refresh(); // срок закупки мог пройти, пока оформляли
         if (r.field && (r.field.indexOf("customer") === 0 || r.field === "company" || r.field === "recipientPhone")) st.step = 2;
         if (r.removed) refresh();
       })
@@ -474,6 +498,17 @@
     b.addEventListener("click", function () { st.dayMode = b.getAttribute("data-co-day"); render(); });
   });
   inputs.date.addEventListener("change", function () { if (inputs.date.value) st.otherDate = inputs.date.value; render(); });
+  $("[data-co-preorder-pick]").addEventListener("click", function () {
+    var po = st.totals && st.totals.priced.preorder;
+    if (!po) return;
+    st.dayMode = "other";
+    st.otherDate = inputs.date.value = po.from;
+    st.error = null;
+    render();
+  });
+  [inputs.preorderOk].concat($$("[data-co-preorder-choice]")).forEach(function (el) {
+    el.addEventListener("change", function () { if (st.error && st.error.field === "preorder") st.error = null; render(); });
+  });
   $$("[data-co-slot]").forEach(function (b) {
     b.addEventListener("click", function () { st.slot = b.getAttribute("data-co-slot"); if (st.error && st.error.field === "slot") st.error = null; render(); });
   });

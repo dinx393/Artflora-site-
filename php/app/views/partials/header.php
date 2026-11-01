@@ -57,6 +57,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
       <a href="/#occasions">По поводу</a>
       <a href="/catalog/korziny-s-tsvetami">Корзины</a>
       <a href="/catalog/svadebnye-bukety">Свадьба</a>
+      <a href="/predzakaz">Предзаказ</a>
       <a href="/single">Поштучно</a>
       <a href="/delivery">Доставка и оплата</a>
     </nav>
@@ -88,6 +89,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
       </div>
       <a href="/catalog/korziny-s-tsvetami">Корзины<span aria-hidden="true">→</span></a>
       <a href="/catalog/svadebnye-bukety">Свадьба<span aria-hidden="true">→</span></a>
+      <a href="/predzakaz">Предзаказ<span aria-hidden="true">→</span></a>
       <a href="/single">Поштучно<span aria-hidden="true">→</span></a>
       <a href="/delivery" class="plain">Доставка и оплата<span aria-hidden="true">→</span></a>
     </nav>

@@ -62,6 +62,9 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
         <span class="price" style="font-size: 40px" data-price><?= ShopView::byn($def['priceKop']) ?></span>
         <span class="small muted" data-pickup>Самовывоз: <?= e($pickup($def['priceKop'])) ?></span>
       </div>
+      <?php if (!empty($preorder)): ?>
+        <div class="preorder-note">📅 <b>Предзаказ.</b> Оформите до <?= e($preorder['deadlineText']) ?>, и цветы закупим специально для вас: доставка с <?= e($preorder['fromText']) ?>. <a href="<?= e(Preorder::URL) ?>">Как это работает</a></div>
+      <?php endif ?>
 
       <?php if (count($b['sizes']) > 1): ?>
         <div class="stack" style="gap: 8px">

@@ -18,6 +18,7 @@ $sections = [
     ['Шляпные коробки', ['format' => 'HATBOX']],
     ['Сумки с цветами', ['format' => 'BAG']],
     ['Корзины', ['format' => 'BASKET']],
+    ['📅 Предзаказ', [], Preorder::URL],
     ['Поштучно', [], '/single'],
 ];
 $val = fn (string $k) => $sp[$k] ?? null;

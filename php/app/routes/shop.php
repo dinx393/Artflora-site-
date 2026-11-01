@@ -125,12 +125,27 @@ Http::get('/bouquet/{slug}', function (string $slug) {
         ],
         'b' => $b,
         'def' => $def,
+        'preorder' => $b['isPreorder'] ? Preorder::info() : null,
         'siblings' => $siblings,
         'similar' => array_map(fn ($p) => $p[0], array_slice($similar, 0, 4)),
         'shop' => Settings::get('shop'),
         'delivery' => $delivery,
         'districts' => Delivery::districtOptions(Settings::get('districts'), $delivery, $def['priceKop']),
         'addons' => ShopView::addons(false),
+        'scripts' => '<script src="' . View::asset('js/shop.js') . '"></script>',
+    ]);
+});
+
+// Предзаказ на неделю (решение владельца 2026-11-01): букеты с галочкой «Предзаказ» и правило закупки (Preorder)
+Http::get(Preorder::URL, function () {
+    $info = Preorder::info();
+    return View::page('shop/preorder', [
+        'title' => 'Предзаказ букетов на неделю вперёд — Минск',
+        'description' => 'Закажите букет заранее: закупим свежие цветы специально под ваш заказ и доставим по Минску в нужный день.',
+        'canonical' => Preorder::URL,
+        'list' => Catalog::preorder(),
+        'info' => $info,
+        'shop' => Settings::get('shop'),
         'scripts' => '<script src="' . View::asset('js/shop.js') . '"></script>',
     ]);
 });

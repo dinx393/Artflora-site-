@@ -42,6 +42,7 @@ final class Checkout
         $removed = [];
         foreach ($cart['lines'] as $l) {
             $b = $rows[$l['bouquetId']] ?? null;
+            if ($b && $b['isPreorder']) $b = Preorder::asInStock($b); // цветы закупим к дате
             if (!$b || !Pricing::visibility($b)['visible']) {
                 $removed[] = $b['name'] ?? 'Букет';
                 continue;
@@ -64,6 +65,7 @@ final class Checkout
                 'priceKop' => Pricing::sizePriceKop($size),
                 'composition' => Pricing::compositionText($size['items']),
                 'swaps' => Pricing::swapsText($size['items']), // для флориста: что заменяем в этом заказе
+                'preorder' => $b['isPreorder'],
             ];
         }
 
@@ -86,6 +88,8 @@ final class Checkout
             'removed' => $removed,
             'bouquetsKop' => array_sum(array_map(fn ($l) => $l['priceKop'] * $l['qty'], $lines)),
             'addonsKop' => array_sum(array_map(fn ($a) => $a['priceKop'] * $a['qty'], $addons)),
+            // Есть букеты-предзаказы — с какой даты закупим цветы специально и до какого срока оформить (Preorder::info)
+            'preorder' => array_filter($lines, fn ($l) => $l['preorder']) ? Preorder::info() : null,
         ];
     }
 
@@ -164,7 +168,9 @@ final class Checkout
             if (mb_strlen($v) > $max) return $bad('Слишком длинный текст, сократите', $k);
             $o[$k] = $v;
         }
-        foreach (['addressUnknown', 'callRecipient', 'anonymous'] as $k) $o[$k] = $bool($k);
+        foreach (['addressUnknown', 'callRecipient', 'anonymous', 'preorderOk'] as $k) $o[$k] = $bool($k);
+        // Предзаказ: если цена цветов к дате изменится — COPY (точная копия) или BUDGET (сохранить сумму); проверка в createOrder
+        $o['preorderChoice'] = is_string($raw['preorderChoice'] ?? null) && isset(Preorder::CHOICES[$raw['preorderChoice']]) ? $raw['preorderChoice'] : null;
 
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $o['date'])) return $bad('Выберите дату', 'date');
         if ($o['customerName'] === '') return $bad('Укажите ваше имя', 'customerName');
@@ -253,6 +259,17 @@ final class Checkout
             return ['ok' => false, 'error' => 'Часть букетов закончилась, корзина обновлена. Проверьте заказ ещё раз', 'removed' => $t['priced']['removed']];
         }
         if (!$t['priced']['lines']) return ['ok' => false, 'error' => 'Корзина пуста'];
+        // Предзаказ: закупка на эту дату уже сделана — оформляем, только если покупатель отметил «Понимаю»
+        $preorder = null;
+        if ($t['priced']['preorder']) {
+            $preorder = Preorder::guaranteed($o['date'], $now) ? 'BUY' : 'STOCK';
+            if ($preorder === 'STOCK' && !$o['preorderOk']) {
+                return ['ok' => false, 'error' => 'Цветы на эту дату уже закуплены. Отметьте «Понимаю» или выберите дату с ' . $t['priced']['preorder']['fromText'], 'field' => 'preorder'];
+            }
+            if ($o['preorderChoice'] === null) {
+                return ['ok' => false, 'error' => 'Выберите, что делать, если цена цветов изменится: точная копия или сохранить бюджет', 'field' => 'preorder'];
+            }
+        }
         if ($o['method'] === 'DELIVERY' && !$unknown && !($t['quote']['ok'] ?? false)) {
             return ['ok' => false, 'error' => 'Сюда мы не возим. Позвоните нам, что-нибудь придумаем', 'field' => 'address'];
         }
@@ -267,7 +284,7 @@ final class Checkout
         $q = $t['quote'];
 
         try {
-            $id = Db::tx(function () use ($o, $t, $q, $unknown, $shopCode) {
+            $id = Db::tx(function () use ($o, $t, $q, $unknown, $shopCode, $preorder) {
                 $id = Db::insert('orders', [
                     'customerName' => $o['customerName'],
                     'customerPhone' => $o['customerPhone'],
@@ -291,6 +308,8 @@ final class Checkout
                     'discountKop' => $t['discountKop'],
                     'deliveryKop' => $t['deliveryKop'],
                     'totalKop' => $t['totalKop'],
+                    'preorder' => $preorder,
+                    'preorderChoice' => $preorder ? $o['preorderChoice'] : null,
                     // Второй такой же запрос, пришедший одновременно, упрётся в уникальный ключ (см. catch ниже).
                     'idempotencyKey' => $o['idempotencyKey'],
                 ]);

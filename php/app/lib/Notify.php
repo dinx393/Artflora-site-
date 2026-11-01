@@ -80,6 +80,7 @@ final class Notify
                     ? "Доставка: адрес и время уточнить у получателя {$o['recipientPhone']}, доплата за доставку отдельно"
                     : "Доставка: {$o['address']} (зона " . ($o['deliveryZone'] ?? '?') . ')'),
             "Когда: {$o['deliveryDate']}, " . ($o['deliverySlot'] ?: 'время уточнить'),
+            ...(!empty($o['preorder']) ? [Preorder::orderNote($o['preorder'], $o['preorderChoice'] ?? null)] : []),
             "Клиент: {$o['customerName']}, {$o['customerPhone']}",
             ...(!empty($o['company'])
                 ? ['💼 Безнал, реквизиты для счёта:', $o['company']['text'] ?? '']
@@ -187,6 +188,8 @@ final class Notify
             'shopName' => $shop ? "{$shop['name']}, {$shop['address']}" : $o['shop'],
             'deliveryDate' => $o['deliveryDate'],
             'deliverySlot' => $o['deliverySlot'],
+            'preorder' => $o['preorder'] ?? null,
+            'preorderChoice' => $o['preorderChoice'] ?? null,
             'comment' => $o['comment'],
             'cardText' => $o['cardText'],
             'items' => array_map(fn ($i) => [
