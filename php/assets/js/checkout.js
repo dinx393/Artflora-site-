@@ -429,6 +429,7 @@
         callRecipient: st.method === "DELIVERY" && inputs.call.checked,
         anonymous: st.method === "DELIVERY" && inputs.anonymous.checked,
         comment: inputs.comment.value,
+        source: window.ArtfloraSource ? window.ArtfloraSource() : "",
         payment: st.payment,
         company: st.payment === "INVOICE" ? { text: companyText.value } : null,
         consent: inputs.consent.checked,

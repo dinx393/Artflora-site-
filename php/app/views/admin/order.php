@@ -66,6 +66,7 @@ $created = date('d.m.Y, H:i:s', strtotime($o['createdAt']));
       <span><?= e($o['customerName']) ?>, <?= $tel($o['customerPhone']) ?></span>
       <?php if ($o['comment']): ?><span class="muted">Комментарий: <?= e($o['comment']) ?></span><?php endif ?>
       <span class="small muted">Заказ оформлен <?= e($created) ?></span>
+      <span class="small muted">Откуда пришёл: <?= e(($o['source'] ?? '') !== '' ? $o['source'] : 'не известно (прямой заход или старая ссылка)') ?></span>
     </div>
     <?php if (!empty($o['company'])): ?>
       <div class="card stack" style="gap: 6px">

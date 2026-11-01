@@ -115,6 +115,37 @@
   window.ArtfloraGoal = function (g) { goals.push(g); sendGoals(); };
   window.afGoalsFlush = sendGoals;
 
+  // Откуда пришёл покупатель — уходит вместе с заказом, видно в админке и Telegram (решение 2026-11-01).
+  // Запоминаем на 30 дней: метку из рекламной ссылки (utm_source / utm_campaign) или сайт, с которого перешли.
+  // Реклама перезаписывает прежний источник, поиск и соцсети — только если ничего не запомнено.
+  (function () {
+    var KEY_SRC = "af-source", p = new URLSearchParams(location.search), src = "", strong = false;
+    if (p.get("utm_source")) { src = p.get("utm_source") + (p.get("utm_campaign") ? " / " + p.get("utm_campaign") : ""); strong = true; }
+    else if (p.get("yclid")) { src = "Реклама Яндекса"; strong = true; }
+    else if (p.get("gclid")) { src = "Реклама Google"; strong = true; }
+    else if (p.get("fbclid")) src = "Instagram / Facebook";
+    else if (document.referrer) {
+      var h = "";
+      try { h = new URL(document.referrer).hostname.replace(/^www\./, ""); } catch (e) {}
+      if (h && h !== location.hostname) {
+        src = /yandex|ya\.ru/.test(h) ? (/maps/.test(document.referrer) ? "Яндекс Карты" : "Поиск Яндекс")
+          : /google/.test(h) ? "Поиск Google" : /instagram/.test(h) ? "Instagram" : /facebook|fb\./.test(h) ? "Facebook"
+          : /2gis/.test(h) ? "2ГИС" : h;
+      }
+    }
+    try {
+      var old = JSON.parse(localStorage.getItem(KEY_SRC) || "null");
+      if (old && Date.now() - old.t > 30 * 86400000) old = null;
+      if (src && (strong || !old)) localStorage.setItem(KEY_SRC, JSON.stringify({ s: src.slice(0, 100), t: Date.now() }));
+    } catch (e) {}
+  })();
+  window.ArtfloraSource = function () {
+    try {
+      var v = JSON.parse(localStorage.getItem("af-source") || "null");
+      return v && Date.now() - v.t <= 30 * 86400000 ? v.s : "";
+    } catch (e) { return ""; }
+  };
+
   // ArtfloraCart.add({ bouquetId: 5, size: "M", qty: 1 }, "текст открытки")
   window.ArtfloraCart = {
     get: read,

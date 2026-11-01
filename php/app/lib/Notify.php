@@ -81,6 +81,7 @@ final class Notify
                     : "Доставка: {$o['address']} (зона " . ($o['deliveryZone'] ?? '?') . ')'),
             "Когда: {$o['deliveryDate']}, " . ($o['deliverySlot'] ?: 'время уточнить'),
             "Клиент: {$o['customerName']}, {$o['customerPhone']}",
+            ...(($o['source'] ?? '') !== '' ? ["📣 Откуда: {$o['source']}"] : []),
             ...(!empty($o['company'])
                 ? ['💼 Безнал, реквизиты для счёта:', $o['company']['text'] ?? '']
                 : []),
