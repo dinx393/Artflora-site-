@@ -17,6 +17,8 @@ window.afCounters = function () {
   ym(57278797,'init',{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
   fbq('init','112703594081498');fbq('track','PageView');
+  window.afYmId = 57278797;
+  if (window.afGoalsFlush) window.afGoalsFlush(); // цели, которые ждали согласия (assets/js/site.js)
 };
 try { if (localStorage.getItem('af-cookies') === 'yes') window.afCounters(); } catch (e) {}
 </script>

@@ -95,6 +95,24 @@
     document.querySelectorAll("[data-cart-link]").forEach(function (el) { el.setAttribute("aria-label", "Корзина, товаров: " + n); });
   }
 
+  // Цели для Яндекс Метрики, Facebook и Google (через GTM): «в корзину», «оформление», «заказ оформлен».
+  // Счётчики работают только после «Принять» на плашке cookie (partials/counters.php): до этого цели ждут в очереди
+  // и уходят, как только посетитель согласится. Если отказался — не уходят совсем.
+  // ArtfloraGoal({ ym: "order", fb: "Purchase", params: { order_price: 180, currency: "BYN" } })
+  var goals = [];
+  function sendGoals() {
+    if (!window.afCountersOn) return;
+    goals.splice(0).forEach(function (g) {
+      try {
+        if (window.ym && window.afYmId) window.ym(window.afYmId, "reachGoal", g.ym, g.params || {});
+        if (window.fbq && g.fb) window.fbq("track", g.fb, g.fbParams || {});
+        (window.dataLayer = window.dataLayer || []).push(Object.assign({ event: "af_" + g.ym }, g.params || {}));
+      } catch (e) {}
+    });
+  }
+  window.ArtfloraGoal = function (g) { goals.push(g); sendGoals(); };
+  window.afGoalsFlush = sendGoals;
+
   // ArtfloraCart.add({ bouquetId: 5, size: "M", qty: 1 }, "текст открытки")
   window.ArtfloraCart = {
     get: read,
@@ -109,6 +127,7 @@
       else c.lines.push({ bouquetId: line.bouquetId, size: line.size, qty: line.qty });
       if (cardText && cardText.trim()) c.cardText = cardText;
       write(c);
+      window.ArtfloraGoal({ ym: "cart", fb: "AddToCart", fbParams: { content_ids: [String(line.bouquetId)], content_type: "product" } });
     },
     hasAddon: function (id) { return hasAddon(read(), id); },
     // Положить доп в корзину или убрать его оттуда. Возвращает true, если теперь он в корзине.

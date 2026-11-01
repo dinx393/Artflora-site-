@@ -5,6 +5,8 @@
   if (!root) return;
   var cfg = JSON.parse(document.getElementById("checkout-config").textContent);
   var Cart = window.ArtfloraCart;
+  // Цель «Начал оформление»: открыл корзину, в которой есть букеты
+  if (Cart.get().lines.length) window.ArtfloraGoal({ ym: "checkout", fb: "InitiateCheckout" });
   var $ = function (sel) { return root.querySelector(sel); };
   var $$ = function (sel) { return Array.prototype.slice.call(root.querySelectorAll(sel)); };
 

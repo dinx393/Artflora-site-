@@ -87,3 +87,19 @@ $o = $order;
     </div>
   </div>
 </div>
+<?php /* Цель «Заказ оформлен» для Метрики (order), Facebook (Purchase) и Google через GTM (af_order) — решение 2026-11-01.
+   Один раз на заказ: если страницу обновили или открыли ещё раз, цель не повторяется. */
+$goal = [
+    'number' => (int) $o['number'],
+    'ym' => ['order_price' => $o['totalKop'] / 100, 'currency' => 'BYN', 'order_id' => (string) $o['number']],
+    'fb' => ['value' => $o['totalKop'] / 100, 'currency' => 'BYN', 'content_type' => 'product', 'num_items' => array_sum(array_column($o['items'], 'qty'))],
+];
+?>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var g = <?= json_encode($goal, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+  var key = "af-goal-order-" + g.number;
+  try { if (localStorage.getItem(key)) return; localStorage.setItem(key, "1"); } catch (e) {}
+  if (window.ArtfloraGoal) window.ArtfloraGoal({ ym: "order", params: g.ym, fb: "Purchase", fbParams: g.fb });
+});
+</script>
