@@ -210,3 +210,72 @@ document.addEventListener("change", function (e) {
     if (!(r && r.ok)) box.checked = !box.checked;
   });
 });
+
+// Массовые действия: галочки у букетов (как выбор фото в галерее) → внизу панель «Что сделать?» → «Применить».
+// Выбор не сбрасывается поиском и фильтрами: можно найти одни букеты, отметить, найти другие и отметить ещё.
+(function () {
+  var bar = document.querySelector("[data-bulk-bar]");
+  var all = document.querySelector("[data-pick-all]");
+  if (!bar || !all) return;
+  var count = bar.querySelector("[data-bulk-count]");
+  var action = bar.querySelector("[data-bulk-action]");
+  var apply = bar.querySelector("[data-bulk-apply]");
+  var msg = bar.querySelector("[data-bulk-msg]");
+  var KEY = "artflora-admin-bulk-msg";
+  function boxes() { return Array.prototype.slice.call(document.querySelectorAll("[data-pick]")); }
+  function shownBoxes() { return boxes().filter(function (b) { return !b.closest("tr").hidden; }); }
+  function picked() { return boxes().filter(function (b) { return b.checked; }); }
+  function word(n) {
+    var m10 = n % 10, m100 = n % 100;
+    return m10 === 1 && m100 !== 11 ? "букет" : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? "букета" : "букетов";
+  }
+  function refresh() {
+    var n = picked().length;
+    boxes().forEach(function (b) { b.closest("tr").classList.toggle("picked", b.checked); });
+    bar.hidden = n === 0 && !msg.textContent;
+    count.textContent = n ? "Выбрано: " + n + " " + word(n) : "";
+    var shown = shownBoxes();
+    all.checked = shown.length > 0 && shown.every(function (b) { return b.checked; });
+    all.indeterminate = !all.checked && shown.some(function (b) { return b.checked; });
+  }
+  document.addEventListener("change", function (e) {
+    if (e.target.matches("[data-pick]")) { msg.textContent = ""; refresh(); }
+  });
+  all.addEventListener("change", function () {
+    msg.textContent = "";
+    shownBoxes().forEach(function (b) { b.checked = all.checked; });
+    refresh();
+  });
+  // Поиск/фильтры прячут строки — обновляем «Выбрать все»
+  var search = document.querySelector("[data-bouquet-search]");
+  if (search) search.addEventListener("input", function () { setTimeout(refresh, 0); });
+  document.querySelectorAll("[data-filter], [data-filters-reset]").forEach(function (c) {
+    c.addEventListener(c.tagName === "BUTTON" ? "click" : "input", function () { setTimeout(refresh, 0); });
+    c.addEventListener("change", function () { setTimeout(refresh, 0); });
+  });
+  bar.querySelector("[data-bulk-clear]").addEventListener("click", function () {
+    boxes().forEach(function (b) { b.checked = false; });
+    msg.textContent = "";
+    refresh();
+  });
+  apply.addEventListener("click", function () {
+    var ids = picked().map(function (b) { return Number(b.value); });
+    if (!action.value) { msg.className = "small error"; msg.textContent = "Выберите, что сделать"; action.focus(); return; }
+    if (!ids.length) return;
+    var label = action.options[action.selectedIndex].textContent.trim();
+    apply.disabled = true;
+    msg.className = "small muted";
+    msg.textContent = "Сохраняем…";
+    ArtfloraAdmin.post("/admin/bouquets/bulk", { ids: ids, action: action.value }).then(function (r) {
+      apply.disabled = false;
+      if (!(r && r.ok)) { msg.className = "small error"; msg.textContent = (r && r.error) || "Не удалось сохранить"; return; }
+      try { sessionStorage.setItem(KEY, "Готово: «" + label + "» — изменено " + r.changed + " из " + ids.length + " " + word(ids.length)); } catch (e) {}
+      location.reload(); // статусы, значки и группы в списке пересчитывает сервер
+    });
+  });
+  // После перезагрузки — что получилось
+  var done = null;
+  try { done = sessionStorage.getItem(KEY); sessionStorage.removeItem(KEY); } catch (e) {}
+  if (done) { msg.className = "small"; msg.textContent = "✓ " + done; }
+  refresh();
+})();

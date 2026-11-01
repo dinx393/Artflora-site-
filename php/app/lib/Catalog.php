@@ -227,4 +227,35 @@ final class Catalog
             return true;
         }));
     }
+
+    // Массовые действия в списке букетов (галочки у букетов → «Применить»). Возвращает, какие поля поменять у букета,
+    // [] — менять нечего, null — такого действия нет. $b — строка из bouquets (occasions и sections — JSON).
+    // Действия: show, hide, pin, unpin, hit, unhit, section-add:<раздел>, section-remove:<раздел>, occasion-add:<повод>, occasion-remove:<повод>.
+    public static function bulkPatch(array $b, string $action): ?array
+    {
+        [$verb, $arg] = array_pad(explode(':', $action, 2), 2, '');
+        $flag = ['show' => ['enabled', 1], 'hide' => ['enabled', 0], 'pin' => ['isPinned', 1], 'unpin' => ['isPinned', 0], 'hit' => ['isHit', 1], 'unhit' => ['isHit', 0]];
+        if (isset($flag[$verb]) && $arg === '') {
+            [$col, $v] = $flag[$verb];
+            if ((int) $b[$col] === $v) return [];
+            // включили вручную — пометка «скрыт по таймеру» больше не нужна (как у переключателя «Показывать»)
+            return $verb === 'show' ? ['enabled' => 1, 'hiddenByTimerAt' => null] : [$col => $v];
+        }
+        // «Экзотика» среди разделов — это повод exotic
+        if (($verb === 'section-add' || $verb === 'section-remove') && $arg === 'exotic') $verb = str_replace('section', 'occasion', $verb);
+        if ($verb === 'section-add' || $verb === 'section-remove') {
+            if (!in_array($arg, Occasions::STORED_SECTIONS, true)) return null;
+            $col = 'sections';
+        } elseif ($verb === 'occasion-add' || $verb === 'occasion-remove') {
+            if (!in_array($arg, array_column(Occasions::LIST, 'slug'), true)) return null;
+            $col = 'occasions';
+        } else {
+            return null;
+        }
+        $list = Db::fromJson($b[$col] ?? '[]') ?: [];
+        $has = in_array($arg, $list, true);
+        if (str_ends_with($verb, '-add') === $has) return [];
+        $list = str_ends_with($verb, '-add') ? [...$list, $arg] : array_values(array_diff($list, [$arg]));
+        return [$col => Db::json($list)];
+    }
 }

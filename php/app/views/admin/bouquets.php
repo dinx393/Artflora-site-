@@ -52,6 +52,7 @@ $filterFlowers = $sortNames($filterFlowers);
 <div class="row" style="gap: 12px">
   <input type="search" class="input" data-bouquet-search value="<?= e($q) ?>" placeholder="Найти букет: название, коллекция или цветок" aria-label="Поиск букетов" autocomplete="off" style="flex: 1; max-width: 520px">
   <span class="small muted" data-search-count hidden></span>
+  <label class="check" title="Отметить галочками все букеты, которые сейчас видны в списке (с учётом поиска и фильтров)"><input type="checkbox" data-pick-all> Выбрать все</label>
 </div>
 <div class="row admin-filters" style="gap: 10px; align-items: flex-end" data-bouquet-filters>
   <label class="field"><span>Коллекция</span>
@@ -111,6 +112,7 @@ $filterFlowers = $sortNames($filterFlowers);
           </td>
           <td>
             <div class="row" style="gap: 12px; flex-wrap: nowrap">
+              <label class="pick" title="Выбрать для массового действия"><input type="checkbox" data-pick value="<?= $b['id'] ?>" aria-label="Выбрать «<?= e($b['name']) ?>»"></label>
               <img src="<?= e($b['photos'][0] ?? Catalog::PLACEHOLDER) ?>" alt="" style="width: 52px; height: 52px; border-radius: 10px; object-fit: cover">
               <div class="stack" style="gap: 2px">
                 <a href="/admin/bouquets/<?= $b['id'] ?>" style="font-weight: 800"><?= e($b['name']) ?></a>
@@ -151,8 +153,41 @@ $filterFlowers = $sortNames($filterFlowers);
     </tbody>
   </table>
 </div>
+<?php /* Панель массовых действий: появляется внизу экрана, когда отмечен хотя бы один букет (admin-bouquets.js) */ ?>
+<div class="bulk-bar" data-bulk-bar hidden>
+  <b data-bulk-count></b>
+  <select class="input" data-bulk-action aria-label="Что сделать с выбранными букетами">
+    <option value="">Что сделать?</option>
+    <optgroup label="На сайте">
+      <option value="show">Показывать на сайте</option>
+      <option value="hide">Скрыть с сайта (выключить)</option>
+    </optgroup>
+    <optgroup label="Добавить в раздел каталога">
+      <?php foreach (Occasions::SECTIONS as $k => $label): ?><option value="section-add:<?= e($k) ?>">+ <?= e($label) ?></option><?php endforeach ?>
+    </optgroup>
+    <optgroup label="Убрать из раздела">
+      <?php foreach (Occasions::SECTIONS as $k => $label): ?><option value="section-remove:<?= e($k) ?>">− <?= e($label) ?></option><?php endforeach ?>
+    </optgroup>
+    <optgroup label="Добавить повод">
+      <?php foreach (Occasions::LIST as $o): if ($o['slug'] === 'exotic') continue; ?><option value="occasion-add:<?= e($o['slug']) ?>">+ <?= e($o['label']) ?><?= $o['slug'] === 'wedding' ? ' (будут только в «Свадебных»)' : '' ?></option><?php endforeach ?>
+    </optgroup>
+    <optgroup label="Убрать повод">
+      <?php foreach (Occasions::LIST as $o): if ($o['slug'] === 'exotic') continue; ?><option value="occasion-remove:<?= e($o['slug']) ?>">− <?= e($o['label']) ?></option><?php endforeach ?>
+    </optgroup>
+    <optgroup label="Значки">
+      <option value="pin">⭐ Сделать избранными</option>
+      <option value="unpin">Убрать ⭐</option>
+      <option value="hit">Хит недели</option>
+      <option value="unhit">Убрать «Хит недели»</option>
+    </optgroup>
+  </select>
+  <button type="button" class="btn" data-bulk-apply>Применить</button>
+  <button type="button" class="btn-ghost small" data-bulk-clear>Снять выбор</button>
+  <span class="small" data-bulk-msg></span>
+</div>
 <p class="small muted">
   Цена букета = цветы по ценам из раздела «Цветы» + упаковка. Букет без нужного цветка скрыт автоматически и вернётся сам, когда цветок снова появится.
   Если в карточке букета для этого цветка указана замена и она есть в наличии, букет остаётся на сайте с пометкой 🔁 «Будет замена».
   ⏱ — таймер «собран сегодня»: в срок букет сам выключается (не удаляется), обратно его включают вручную.
+  Чтобы поменять много букетов сразу, отметьте их галочками (или «Выбрать все»), внизу появится панель: выберите действие и нажмите «Применить».
 </p>

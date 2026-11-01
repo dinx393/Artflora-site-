@@ -222,6 +222,30 @@ Http::post('/admin/bouquets/toggle', function () {
     Http::json(['ok' => true]);
 });
 
+// Массовые действия: галочки у букетов в списке → скрыть/показать, в раздел/из раздела, повод, ⭐, хит (Catalog::bulkPatch)
+Http::post('/admin/bouquets/bulk', function () {
+    Auth::requireAdmin('catalog');
+    Auth::checkCsrf();
+    $in = admin_body();
+    $ids = $in['ids'] ?? null;
+    $action = $in['action'] ?? null;
+    if (!is_array($ids) || !$ids || !array_is_list($ids) || count($ids) > 2000 || array_filter($ids, fn ($x) => !admin_is_int($x))
+        || !is_string($action) || Catalog::bulkPatch(['enabled' => 0, 'isPinned' => 0, 'isHit' => 0, 'sections' => '[]', 'occasions' => '[]'], $action) === null) {
+        admin_fail('Ошибка, обновите страницу');
+    }
+    $changed = 0;
+    Db::tx(function () use ($ids, $action, &$changed) {
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        foreach (Db::all("SELECT id, enabled, isPinned, isHit, sections, occasions FROM bouquets WHERE id IN ($marks) FOR UPDATE", array_map('intval', $ids)) as $b) {
+            $patch = Catalog::bulkPatch($b, $action);
+            if (!$patch) continue;
+            Db::update('bouquets', (int) $b['id'], $patch);
+            $changed++;
+        }
+    });
+    Http::json(['ok' => true, 'changed' => $changed]);
+});
+
 // Порядок букетов на сайте (перетаскивание в списке). ids — букеты вкладки в новом порядке: они меняются
 // местами между собой, остальные стоят где стояли.
 Http::post('/admin/bouquets/order', function () {
