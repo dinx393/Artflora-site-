@@ -99,9 +99,11 @@
   // Счётчики работают только после «Принять» на плашке cookie (partials/counters.php): до этого цели ждут в очереди
   // и уходят, как только посетитель согласится. Если отказался — не уходят совсем.
   // ArtfloraGoal({ ym: "order", fb: "Purchase", params: { order_price: 180, currency: "BYN" } })
-  var goals = [];
+  var goals = [], waits = 0;
   function sendGoals() {
-    if (!window.afCountersOn) return;
+    if (!window.afCountersOn || !goals.length) return;
+    // Метрику загружает GTM, она появляется не сразу: подождём до 15 секунд
+    if (!window.ym && waits < 30) { waits++; setTimeout(sendGoals, 500); return; }
     goals.splice(0).forEach(function (g) {
       try {
         if (window.ym && window.afYmId) window.ym(window.afYmId, "reachGoal", g.ym, g.params || {});
