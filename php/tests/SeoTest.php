@@ -74,3 +74,10 @@ test('розы: по составу и отмеченные вручную', fun
     eq(count(Catalog::filter($list, ['flower' => 'Роза'])), 2);
     eq(count(Catalog::filter($list, ['flower' => 'Роза Кения'])), 1, 'конкретный цветок — только по составу');
 });
+test('вау-букеты: только отмеченные вручную, свой адрес со старого сайта', function () use ($secB) {
+    $list = [$secB('BOUQUET', [], ['wow']), $secB('HATBOX', [], ['wow', 'HATBOX']), $secB('BOUQUET', [], [])];
+    eq(count(Catalog::filter($list, ['section' => 'wow'])), 2);
+    eq(Seo::catalogUrl(['section' => 'wow']), '/catalog/vau--bukety-');
+    eq(Seo::oldCatalogTarget('vau--bukety-'), '/catalog/vau--bukety-');
+    eq(Seo::catalogCanonical(['section' => 'wow', 'sort' => 'cheap']), '/catalog/vau--bukety-');
+});

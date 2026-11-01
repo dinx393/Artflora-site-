@@ -23,12 +23,16 @@ final class Occasions
 
     // Разделы над каталогом, которые можно отметить у букета вручную (несколько сразу). «Экзотика» хранится как повод exotic.
     public const SECTIONS = [
+        'wow' => 'Вау-букеты', // большие букеты для тех, кому нужно «вау» (решение владельца 2026-11-01)
         'roses' => 'Розы',
         'exotic' => 'Экзотика',
         'HATBOX' => 'Шляпные коробки',
         'BAG' => 'Сумки с цветами',
         'BASKET' => 'Корзины',
     ];
+
+    // Разделы, которые хранятся в bouquets.sections («Экзотика» — повод, поэтому её тут нет)
+    public const STORED_SECTIONS = ['wow', 'roses', 'HATBOX', 'BAG', 'BASKET'];
 
     public const PRICE_RANGES = [
         ['slug' => 'to100', 'label' => 'До 100 BYN', 'min' => 0, 'max' => 10000],

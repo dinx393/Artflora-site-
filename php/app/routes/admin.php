@@ -350,7 +350,7 @@ Http::post('/admin/bouquets/save', function () {
     $timer = $in['timer'] ?? 'keep';
     if (!in_array($timer, ['keep', 'off'], true) && !admin_is_int($timer, 1, 24 * 30)) admin_fail('Таймер: от 1 часа до 30 дней');
     $sections = $in['sections'] ?? [];
-    if (!is_array($sections) || !array_is_list($sections) || array_diff($sections, ['roses', 'HATBOX', 'BAG', 'BASKET'])) admin_fail($bad);
+    if (!is_array($sections) || !array_is_list($sections) || array_diff($sections, Occasions::STORED_SECTIONS)) admin_fail($bad);
     foreach ($lists as $k => [$max, $len]) {
         $l = $in[$k] ?? null;
         if (!is_array($l) || !array_is_list($l) || count($l) > $max) admin_fail($bad);

@@ -198,7 +198,7 @@ final class Catalog
         return array_values(array_filter($list, fn ($b) => empty($b['weddingOnly'])));
     }
 
-    // Фильтр каталога: occasion, price ['min','max'], flower, colors [...] (хотя бы один), format, collection, q (поиск)
+    // Фильтр каталога: occasion, price ['min','max'], flower, colors [...] (хотя бы один), format, section (раздел, отмеченный в админке, — «Вау-букеты»), collection, q (поиск)
     public static function filter(array $list, array $f): array
     {
         $q = mb_strtolower(trim($f['q'] ?? ''));
@@ -214,6 +214,7 @@ final class Catalog
                 if (!$marked && !array_filter($b['flowerNames'], fn ($n) => str_contains(mb_strtolower($n), $needle))) return false;
             }
             if (!empty($f['format']) && $b['format'] !== $f['format'] && !in_array($f['format'], $b['sections'] ?? [], true)) return false;
+            if (!empty($f['section']) && !in_array($f['section'], $b['sections'] ?? [], true)) return false;
             if (!empty($f['collection']) && $b['collectionSlug'] !== $f['collection']) return false;
             if ($q !== '') {
                 $hay = mb_strtolower(implode(' ', [$b['name'], $b['description'], ...$b['flowerNames']]));

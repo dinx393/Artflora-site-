@@ -13,6 +13,7 @@ $href = function (array $sp, array $patch): string {
 $isOn = fn (array $sp, array $patch): bool => $patch && !array_filter(array_keys($patch), fn ($k) => ($sp[$k] ?? null) !== $patch[$k]);
 // Быстрые разделы над каталогом
 $sections = [
+    ['Вау-букеты', ['section' => 'wow']],
     ['Розы', ['flower' => 'Роза']],
     ['Экзотика', ['occasion' => 'exotic']],
     ['Шляпные коробки', ['format' => 'HATBOX']],
@@ -25,7 +26,7 @@ $shown = max($pageSize, (int) floor((float) ($sp['n'] ?? 0)));
 $minDelivery = Money::format(Delivery::minKop($delivery));
 $colorLabels = array_map(fn ($c) => mb_strtolower($c['label']), array_values(array_filter($colorList, fn ($c) => in_array($c['slug'], $colors, true))));
 $activeFilters = array_values(array_filter([$range['label'] ?? null, $val('flower'), $colorLabels ? 'цвет: ' . implode(', ', $colorLabels) : null]));
-$allBouquets = !$val('occasion') && !$val('flower') && !$val('format') && !$val('collection') && !$val('q');
+$allBouquets = !$val('occasion') && !$val('flower') && !$val('format') && !$val('section') && !$val('collection') && !$val('q');
 $format = Occasions::FORMATS[$val('format') ?? ''] ?? null;
 $activeCount = count(array_filter([$range, $occ, $val('flower'), $format])) + count($colors);
 $sort = in_array($val('sort'), ['cheap', 'expensive'], true) ? $val('sort') : '';

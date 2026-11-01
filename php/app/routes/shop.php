@@ -45,7 +45,7 @@ Http::get('/', function () {
 function catalog_page(?string $landingSlug = null): string
 {
     $landing = $landingSlug !== null ? Seo::LANDINGS[$landingSlug] : null;
-    $keys = ['occasion', 'price', 'flower', 'color', 'format', 'collection', 'q', 'sort', 'n'];
+    $keys = ['occasion', 'price', 'flower', 'color', 'format', 'section', 'collection', 'q', 'sort', 'n'];
     $sp = $landing['filter'] ?? [];
     foreach ($keys as $k) if (($v = Http::str($k, 100)) !== '') $sp[$k] = $v;
     $all = Catalog::visible();
@@ -60,6 +60,7 @@ function catalog_page(?string $landingSlug = null): string
         'flower' => $sp['flower'] ?? null,
         'colors' => $colors,
         'format' => $sp['format'] ?? null,
+        'section' => $sp['section'] ?? null,
         'collection' => $sp['collection'] ?? null,
         'q' => $sp['q'] ?? null,
     ]);

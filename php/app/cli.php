@@ -108,7 +108,7 @@ if ($cmd === 'migrate') {
                 'id' => $x['id'], 'slug' => $x['slug'], 'name' => $x['name'], 'description' => $x['description'], 'format' => $x['format'],
                 'packagingKop' => $x['packagingKop'], 'enabled' => $b($x['enabled']), 'isHit' => $b($x['isHit']), 'isExclusive' => $b($x['isExclusive']),
                 'photoSize' => $x['photoSize'], 'colors' => Db::json($x['colors']), 'occasions' => Db::json($x['occasions']),
-                'sections' => Db::json(array_values(array_intersect((array) ($x['sections'] ?? []), ['roses', 'HATBOX', 'BAG', 'BASKET']))), 'photos' => Db::json($x['photos']),
+                'sections' => Db::json(array_values(array_intersect((array) ($x['sections'] ?? []), Occasions::STORED_SECTIONS))), 'photos' => Db::json($x['photos']),
                 'sortOrder' => $x['sortOrder'], 'collectionId' => $x['collectionId'],
             ]);
             foreach ($x['sizes'] as $s) {

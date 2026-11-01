@@ -54,6 +54,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
     </div>
     <nav class="nav" aria-label="Разделы">
       <a href="/catalog">Букеты</a>
+      <a href="/catalog/vau--bukety-">Вау-букеты</a>
       <a href="/#occasions">По поводу</a>
       <a href="/catalog/korziny-s-tsvetami">Корзины</a>
       <a href="/catalog/svadebnye-bukety">Свадьба</a>
@@ -86,6 +87,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
           <?php endforeach ?>
         </div>
       </div>
+      <a href="/catalog/vau--bukety-">Вау-букеты<span aria-hidden="true">→</span></a>
       <a href="/catalog/korziny-s-tsvetami">Корзины<span aria-hidden="true">→</span></a>
       <a href="/catalog/svadebnye-bukety">Свадьба<span aria-hidden="true">→</span></a>
       <a href="/single">Поштучно<span aria-hidden="true">→</span></a>

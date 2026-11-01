@@ -13,6 +13,12 @@ final class Seo
     // Разделы каталога с понятными адресами: /catalog/<адрес> = каталог с готовым фильтром.
     // h1 — [обычные слова, рукописное слово]. Первые адреса взяты со старого сайта как есть.
     public const LANDINGS = [
+        // Адрес со старого сайта. Букеты в раздел отмечают в админке: «Разделы каталога» → «Вау-букеты».
+        'vau--bukety-' => [
+            'filter' => ['section' => 'wow'], 'h1' => ['Вау-', 'букеты'],
+            'title' => 'Вау-букеты: большие и роскошные букеты с доставкой по Минску',
+            'description' => 'Большие букеты, от которых говорят «вау»: 51, 101 роза, пышные сборные букеты и композиции. Доставка по Минску в день заказа, фото букета до отправки.',
+        ],
         'svadebnye-bukety' => [
             'filter' => ['occasion' => 'wedding'], 'h1' => ['Свадебные', 'букеты'],
             'title' => 'Букет невесты и свадебные букеты в Минске с доставкой',
@@ -113,7 +119,6 @@ final class Seo
         'den-rozhdeniya' => 'na-den-rozhdeniya', 'yubilej' => 'na-den-rozhdeniya',
         'svidanie' => 'lyubimoj', 'bukety-k-14-fevralya' => 'lyubimoj', 'bukety-k-8-marta-' => 'lyubimoj',
         'znak-vnimaniya' => 'bez-povoda',
-        'vau--bukety-' => 'buketykompozitsii-ot-150-rublej',
     ];
 
     // Старые страницы магазина → новые адреса
@@ -164,7 +169,7 @@ final class Seo
     public static function catalogCanonical(array $sp): ?string
     {
         if (($sp['q'] ?? '') !== '') return null;
-        $main = array_intersect_key($sp, array_flip(['occasion', 'format', 'flower', 'price', 'collection']));
+        $main = array_intersect_key($sp, array_flip(['occasion', 'format', 'section', 'flower', 'price', 'collection']));
         return count($main) > 1 ? null : self::catalogUrl($main);
     }
 
