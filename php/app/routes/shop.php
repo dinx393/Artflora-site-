@@ -27,7 +27,7 @@ Http::get('/', function () {
     }
     if (!$tile) $tile[] = '/demo/autumn.jpg'; // каталог пока пуст — фото букета из магазина
     return View::page('shop/home', [
-        'jsonLd' => [Seo::business($shop, Settings::get('delivery'))],
+        'jsonLd' => [Seo::business($shop, Settings::get('delivery')), Seo::faqLd(Seo::homeFaq($shop, Settings::get('delivery')))],
         'all' => $all,
         'shop' => $shop,
         'delivery' => Settings::get('delivery'),

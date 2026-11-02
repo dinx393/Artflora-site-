@@ -187,6 +187,35 @@ final class Seo
         return '/catalog';
     }
 
+    // Вопросы и ответы внизу главной (решение 2026-11-01, SEO под «доставка цветов Минск»): цены берём из настроек,
+    // тот же список уходит в разметку FAQPage, чтобы Яндекс и Google могли показать ответы прямо в поиске.
+    public static function homeFaq(array $shop, array $delivery): array
+    {
+        $shops = implode(' и ', array_map(fn ($s) => "{$s['name']} ({$s['address']})", $delivery['shops']));
+        $zones = array_map(fn ($z) => Money::format((int) $z['priceKop']), $delivery['zones']);
+        return [
+            ['Сколько стоит доставка цветов по Минску?',
+                'Доставка по Минску стоит от ' . Money::format(Delivery::minKop($delivery)) . ' до ' . end($zones) . ' — зависит от того, как далеко адрес от ближайшего нашего магазина. За МКАД — ' . Money::format($delivery['outsideMkadKop']) . '. При заказе от ' . Money::format($delivery['freeFromKop']) . ' доставка по Минску бесплатная, а самовывоз дешевле на ' . $delivery['pickupDiscountPct'] . '%.'],
+            ['Можно ли заказать букет с доставкой сегодня?',
+                'Да. Букет можно заказать на сегодня, если до доставки осталось ' . Text::fromHours($shop['leadHours']) . '. Мы везём цветы из ближайшего салона, поэтому доставка по Минску в день заказа — обычное дело.'],
+            ['Как убедиться, что букет будет как на фото?',
+                'Перед отправкой флорист присылает фото именно вашего букета в Viber или Telegram. Если что-то не нравится, поправим до того, как курьер выедет.'],
+            ['Где можно забрать букет самому?',
+                "В наших салонах: $shops. Самовывоз со скидкой {$delivery['pickupDiscountPct']}%, оплатить можно на месте картой или наличными."],
+            ['Как оплатить заказ?',
+                'Через ЕРИП, картой Visa, MasterCard или МИР по ссылке WebPay, а организации — безналичным расчётом по счёту. При самовывозе — в магазине.'],
+            ['Что положить к букету?',
+                'К каждому букету мы бесплатно кладём открытку с вашим текстом и подкормку для цветов. Свежесть гарантируем 24 часа: если с букетом что-то не так, заменим.'],
+        ];
+    }
+
+    public static function faqLd(array $faq): array
+    {
+        return ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(fn ($q) => [
+            '@type' => 'Question', 'name' => $q[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q[1]],
+        ], $faq)];
+    }
+
     // <script type="application/ld+json"> для разметки schema.org
     public static function jsonLd(array $data): string
     {

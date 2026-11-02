@@ -214,8 +214,9 @@ select.input {
 .hero-shape path { fill: var(--cherry); }
 .hero-text { position: absolute; left: 44px; right: 44px; top: 52px; display: flex; flex-direction: column; gap: 20px; }
 .hero-text .eyebrow { color: var(--pink); }
-.hero h1 { max-width: 560px; font-size: 56px; line-height: 1.04; }
-.hero h1 .script { font-size: 1.3em; color: var(--pink); }
+.hero .hero-title { max-width: 560px; font-family: var(--serif); font-weight: 500; font-size: 56px; line-height: 1.04; }
+.hero-text h1.eyebrow { font-family: inherit; line-height: 1.4; }
+.hero .hero-title .script { font-size: 1.3em; color: var(--pink); }
 .hero-text p { max-width: 400px; font-size: 17px; line-height: 1.55; color: var(--blush); }
 .hero-facts { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-width: 560px; }
 .hero-facts li { display: flex; flex-direction: column; gap: 4px; padding: 14px 14px 12px; border-radius: 18px; background: rgba(255, 255, 255, .08); }
@@ -497,7 +498,7 @@ tr.dragging { opacity: .45; }
   .hero-main { padding: 28px 22px 24px; gap: 18px; }
   .hero-text { gap: 18px; }
   .hero-text .eyebrow { font-size: 12px; }
-  .hero h1 { font-size: 36px; }
+  .hero .hero-title { font-size: 36px; }
   .hero-text p { font-size: 15px; }
   .hero-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-facts b { font-size: 22px; }
@@ -822,3 +823,7 @@ tr.dragging { opacity: .45; }
 .footer-pay { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; margin: 28px 0 20px; padding: 12px 18px; background: #fff; border-radius: 14px; width: fit-content; max-width: 100%; }
 .footer-pay img { height: 28px; width: auto; max-width: 100%; }
 .pay-mir { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 6px; background: linear-gradient(90deg, #0F754E, #00A0E3); color: #fff; font: 800 italic 17px/1 Arial, sans-serif; letter-spacing: .5px; }
+
+/* SEO-блок внизу главной (2026-11-01) */
+.seo-block p { margin: 0; font-size: 16px; line-height: 1.6; color: var(--muted); }
+.seo-block p a { color: inherit; text-decoration: underline; }

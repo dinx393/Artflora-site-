@@ -30,8 +30,9 @@ $cards = [
     <div class="hero-main">
       <svg class="hero-shape" viewBox="0 0 706 588" preserveAspectRatio="none" aria-hidden="true"><path d="<?= $heroNotch ?>" /></svg>
       <div class="hero-text">
-        <span class="eyebrow desktop-only">Сеть салонов цветов: Уручье, Малиновка</span>
-        <h1>Букетов много,<br> а запомнят <span class="script">ваш</span></h1>
+        <?php /* Заголовок страницы для поиска — «Доставка цветов в Минске» (2026-11-01); слоган из макета остаётся крупным, но уже не h1 */ ?>
+        <h1 class="eyebrow">Доставка цветов в Минске · салоны в Уручье и Малиновке</h1>
+        <div class="hero-title">Букетов много,<br> а запомнят <span class="script">ваш</span></div>
         <?php /* Главное за 3 секунды: крупное слово + подпись (вариант Б, решение владельца 2026-10-23) */ ?>
         <ul class="hero-facts">
           <?php foreach ($heroFacts as [$big, $note]): ?>
@@ -147,5 +148,26 @@ $cards = [
         <p><?= $text ?></p>
       </div>
     <?php endforeach ?>
+  </div>
+</section>
+
+<?php /* Текст и вопросы для поиска (2026-11-01): «цветы Минск», «доставка цветов Минск». Внизу страницы, дизайн не трогает. */ ?>
+<section class="section seo-block">
+  <div class="row" style="gap: 40px; align-items: flex-start">
+    <div class="stack" style="flex: 1 1 420px; gap: 14px">
+      <h2 class="h2">Доставка цветов <span class="script">в Минске</span></h2>
+      <p>«Артфлора.by» — салоны цветов в Минске с 2007 года: в Уручье на пр. Независимости, 168/1 и в Малиновке на ул. Яна Чечота, 7. Собираем букеты из роз, хризантем, пионов, тюльпанов и экзотических цветов, композиции в шляпных коробках и корзинах, свадебные букеты и цветы поштучно.</p>
+      <p>Доставка цветов по Минску — в день заказа, из ближайшего к получателю салона, поэтому букет приезжает свежим. Возим по всему Минску и Минскому району, за МКАД — по одной цене. Перед отправкой присылаем фото именно вашего букета, к каждому кладём открытку и подкормку для цветов.</p>
+      <p>Заказать цветы с доставкой можно прямо на сайте за пару минут: выберите букет в <a href="/catalog">каталоге</a>, укажите адрес и время. Подробнее о ценах — на странице <a href="/delivery">«Доставка и оплата»</a>.</p>
+    </div>
+    <div class="acc" style="flex: 1 1 420px">
+      <h2 class="h2" style="margin-bottom: 8px">Частые <span class="script">вопросы</span></h2>
+      <?php foreach (Seo::homeFaq($shop, $delivery) as [$q, $a]): ?>
+        <details>
+          <summary><?= e($q) ?></summary>
+          <div><?= e($a) ?></div>
+        </details>
+      <?php endforeach ?>
+    </div>
   </div>
 </section>
