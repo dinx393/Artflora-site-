@@ -220,6 +220,12 @@ $f = fn (array $patch) => e($href($sp, $patch));
       </div>
     <?php endif ?>
 
+    <?php if (!empty($seoText)): /* Текст для поиска (2026-11-02): у разделов и районов свой, у общего каталога общий */ ?>
+      <div class="seo-block stack" style="gap: 12px; max-width: 860px">
+        <?php foreach ($seoText as $para): ?><p><?= e($para) ?></p><?php endforeach ?>
+      </div>
+    <?php endif ?>
+
     <div class="band">
       <div class="stack" style="flex: 1 1 320px; gap: 10px">
         <h2>Тот самый букет ещё <span class="script">не придуман?</span></h2>

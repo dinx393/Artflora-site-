@@ -47,7 +47,8 @@ function catalog_page(?string $landingSlug = null): string
     $landing = $landingSlug !== null ? Seo::LANDINGS[$landingSlug] : null;
     $keys = ['occasion', 'price', 'flower', 'color', 'format', 'section', 'collection', 'q', 'sort', 'n'];
     $sp = $landing['filter'] ?? [];
-    foreach ($keys as $k) if (($v = Http::str($k, 100)) !== '') $sp[$k] = $v;
+    $userKeys = [];
+    foreach ($keys as $k) if (($v = Http::str($k, 100)) !== '') { $sp[$k] = $v; $userKeys[] = $k; }
     $all = Catalog::visible();
     // Свадебные «только в разделе» — лишь в «Свадебных букетах» (Catalog::filter убирает их и сам; здесь — для фильтра цветов)
     if (($sp['occasion'] ?? '') !== 'wedding') $all = Catalog::general($all);
@@ -69,7 +70,11 @@ function catalog_page(?string $landingSlug = null): string
     if ($sort === 'expensive') usort($list, fn ($a, $b) => $b['priceKop'] <=> $a['priceKop']);
     $occ = array_values(array_filter(Occasions::LIST, fn ($o) => $o['slug'] === ($sp['occasion'] ?? '')))[0] ?? null;
     $canonical = Seo::catalogCanonical($sp);
+    // Страница района показывает весь каталог: своя, пока посетитель не включил фильтр
+    if (!empty($landing['district']) && !array_diff($userKeys, ['n'])) $canonical = "/catalog/$landingSlug";
     $isLanding = $landing && $canonical === "/catalog/$landingSlug";
+    // Текст для поиска внизу: у раздела свой, у общего каталога без фильтров — общий
+    $seoText = $isLanding ? ($landing['text'] ?? []) : ($canonical === '/catalog' && !$userKeys ? Seo::CATALOG_TEXT : []);
     return View::page('shop/catalog', [
         'title' => $isLanding ? $landing['title'] : ($occ ? "Букеты {$occ['title']} с доставкой по Минску" : 'Каталог букетов с доставкой по Минску'),
         'description' => $isLanding ? $landing['description']
@@ -77,6 +82,7 @@ function catalog_page(?string $landingSlug = null): string
         'canonical' => $canonical,
         'noindex' => $canonical === null,
         'landing' => $isLanding ? $landing : null,
+        'seoText' => $seoText,
         'sp' => $sp,
         'all' => $all,
         'list' => $list,
