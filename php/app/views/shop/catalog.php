@@ -13,6 +13,8 @@ $href = function (array $sp, array $patch): string {
 $isOn = fn (array $sp, array $patch): bool => $patch && !array_filter(array_keys($patch), fn ($k) => ($sp[$k] ?? null) !== $patch[$k]);
 // Быстрые разделы над каталогом
 $sections = [
+    ['Авторские букеты', ['section' => 'author']],
+    ['Монобукеты', ['section' => 'mono']],
     ['Вау-букеты', ['section' => 'wow']],
     ['Розы', ['flower' => 'Роза']],
     ['Экзотика', ['occasion' => 'exotic']],

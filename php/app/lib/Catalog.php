@@ -165,11 +165,13 @@ final class Catalog
         $def = Pricing::defaultSize($b);
         $names = [];
         foreach (Pricing::sortSizes($b['sizes']) as $s) foreach ($s['items'] as $i) $names[$i['flower']['name']] = true;
+        $sections = $b['sections'];
+        if (!in_array('mono', $sections, true) && self::isMono($b)) $sections[] = 'mono';
         return [
             'id' => $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'], 'isPinned' => $b['isPinned'], 'hideAt' => $b['hideAt'],
             'weddingOnly' => $b['weddingOnly'] && in_array('wedding', $b['occasions'], true),
-            'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $b['sections'],
+            'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $sections,
             'photos' => $b['photos'] ? array_map([Uploads::class, 'url'], $b['photos']) : [self::PLACEHOLDER],
             'collectionId' => $b['collectionId'], 'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
             'flowerNames' => array_keys($names),
@@ -177,6 +179,18 @@ final class Catalog
             'defaultSize' => $def['code'],
             'priceKop' => Pricing::sizePriceKop($def),
         ];
+    }
+
+    // Монобукет — во всех размерах один вид цветов (зелень не считается). Вид = первое слово названия:
+    // «Роза Кения» и «Роза кустовая» — обе розы. Такие букеты сами попадают в раздел «Монобукеты».
+    public static function isMono(array $b): bool
+    {
+        $kinds = [];
+        foreach ($b['sizes'] as $s) foreach ($s['items'] as $i) {
+            if (($i['flower']['kind'] ?? 'FLOWER') === 'GREEN') continue;
+            $kinds[mb_strtolower(preg_split('/[\s,]+/u', trim($i['flower']['name']))[0])] = true;
+        }
+        return count($kinds) === 1;
     }
 
     // Все видимые букеты для витрины
@@ -198,7 +212,7 @@ final class Catalog
         return array_values(array_filter($list, fn ($b) => empty($b['weddingOnly'])));
     }
 
-    // Фильтр каталога: occasion, price ['min','max'], flower, colors [...] (хотя бы один), format, section (раздел, отмеченный в админке, — «Вау-букеты»), collection, q (поиск)
+    // Фильтр каталога: occasion, price ['min','max'], flower, colors [...] (хотя бы один), format, section (раздел, отмеченный в админке: «Авторские», «Монобукеты» (+ сами), «Вау-букеты»), collection, q (поиск)
     public static function filter(array $list, array $f): array
     {
         $q = mb_strtolower(trim($f['q'] ?? ''));

@@ -23,6 +23,8 @@ final class Occasions
 
     // Разделы над каталогом, которые можно отметить у букета вручную (несколько сразу). «Экзотика» хранится как повод exotic.
     public const SECTIONS = [
+        'author' => 'Авторские букеты', // решение владельца 2026-11-03, только вручную
+        'mono' => 'Монобукеты', // из одного вида цветов: попадают сами (Catalog::isMono) + можно отметить вручную
         'wow' => 'Вау-букеты', // большие букеты для тех, кому нужно «вау» (решение владельца 2026-11-01)
         'roses' => 'Розы',
         'exotic' => 'Экзотика',
@@ -32,7 +34,7 @@ final class Occasions
     ];
 
     // Разделы, которые хранятся в bouquets.sections («Экзотика» — повод, поэтому её тут нет)
-    public const STORED_SECTIONS = ['wow', 'roses', 'HATBOX', 'BAG', 'BASKET'];
+    public const STORED_SECTIONS = ['author', 'mono', 'wow', 'roses', 'HATBOX', 'BAG', 'BASKET'];
 
     public const PRICE_RANGES = [
         ['slug' => 'to100', 'label' => 'До 100 BYN', 'min' => 0, 'max' => 10000],

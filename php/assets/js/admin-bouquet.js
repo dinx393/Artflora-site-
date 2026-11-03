@@ -258,11 +258,20 @@
     var hasRoses = b.sizes.some(function (s) {
       return s.items.some(function (i) { var f = byId[i.flowerId]; return f && f.name.toLowerCase().indexOf("роза") >= 0; });
     });
+    // Монобукет — один вид цветов во всех размерах, зелень не считается (как Catalog::isMono на сервере)
+    var monoKinds = {};
+    b.sizes.forEach(function (s) {
+      s.items.forEach(function (i) {
+        var f = byId[i.flowerId];
+        if (f && f.kind !== "GREEN") monoKinds[f.name.trim().toLowerCase().split(/[\s,]+/)[0]] = true;
+      });
+    });
+    var isMono = Object.keys(monoKinds).length === 1;
     h += '<div class="stack" style="gap: 8px"><span class="label">Разделы каталога <span class="small muted">(кнопки над каталогом, можно несколько)</span></span><div class="row" style="gap: 6px">';
     Object.keys(SECTIONS).forEach(function (k) {
-      var auto = k === "roses" ? hasRoses : k === b.format;
+      var auto = k === "roses" ? hasRoses : k === "mono" ? isMono : k === b.format;
       var onNow = k === "exotic" ? b.occasions.indexOf("exotic") >= 0 : auto || b.sections.indexOf(k) >= 0;
-      var why = k === "roses" ? "В составе есть роза, букет и так в «Розах»" : "Так выбран формат букета";
+      var why = k === "roses" ? "В составе есть роза, букет и так в «Розах»" : k === "mono" ? "Букет из одного вида цветов, он и так в «Монобукетах»" : "Так выбран формат букета";
       h += '<button type="button" class="chip ' + (onNow ? "on" : "") + '"' + (auto ? ' title="' + why + '"' + on_("disabled", true) :
         on("click", function () {
           if (k === "exotic") set({ occasions: toggleIn(b.occasions, "exotic") });
@@ -270,7 +279,7 @@
         })) + ">" + esc(SECTIONS[k]) + "</button>";
     });
     h += "</div>";
-    h += '<span class="small muted">«Розы» включаются сами, если в составе есть роза; шляпная коробка, сумка и корзина — по полю «Формат» ниже.</span></div>';
+    h += '<span class="small muted">«Розы» включаются сами, если в составе есть роза; «Монобукеты» — если букет из одного вида цветов (зелень не считается); шляпная коробка, сумка и корзина — по полю «Формат» ниже.</span></div>';
 
     h += '<div class="stack" style="gap: 8px"><span class="label">Цвет букета <span class="small muted">(для фильтра в каталоге, можно несколько; свои цвета — в «Настройках»)</span></span><div class="row" style="gap: 6px">';
     colors.forEach(function (c) {

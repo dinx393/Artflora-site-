@@ -19,6 +19,18 @@ final class Seo
     ];
 
     public const LANDINGS = [
+        // Решение владельца 2026-11-03. Букеты отмечают в админке: «Разделы каталога» → «Авторские букеты».
+        'avtorskie-bukety' => [
+            'filter' => ['section' => 'author'], 'h1' => ['Авторские', 'букеты'],
+            'title' => 'Авторские букеты с доставкой по Минску',
+            'description' => 'Авторские букеты от флористов «Артфлора.by»: необычные сочетания цветов, собранные с душой. Доставка по Минску в день заказа, фото букета до отправки.',
+        ],
+        // Адрес со старого сайта. Сюда сами попадают букеты из одного вида цветов, остальные можно отметить в админке.
+        'monobukety' => [
+            'filter' => ['section' => 'mono'], 'h1' => ['Моно', 'букеты'],
+            'title' => 'Монобукеты из роз, тюльпанов, хризантем с доставкой по Минску',
+            'description' => 'Монобукеты из одного вида цветов: розы, тюльпаны, хризантемы, гортензии, пионы. Доставка по Минску в день заказа, фото букета до отправки.',
+        ],
         // Адрес со старого сайта. Букеты в раздел отмечают в админке: «Разделы каталога» → «Вау-букеты».
         'vau--bukety-' => [
             'filter' => ['section' => 'wow'], 'h1' => ['Вау-', 'букеты'],
@@ -146,7 +158,6 @@ final class Seo
     public const OLD_CATALOG = [
         'bukety-s-rozami-' => 'rozy', '51roza--ekvador-' => 'rozy', '101-roza-ekvador-' => 'rozy', 'rozy-' => 'rozy',
         'kustovye-rozy-buketykompozitsii-' => 'rozy', 'rozy-k-14-fevralya-' => 'rozy', 'rozy-k-8-marta-' => 'rozy',
-        'monobukety' => 'rozy',
         'svadebnye-bukety-do-120-rublej-' => 'svadebnye-bukety', 'svadebnye-bukety-ot-120-do-160-rublej-' => 'svadebnye-bukety',
         'svadebnye-bukety-ot-160-do-300-rublej-' => 'svadebnye-bukety', 'stojkie-svadebnye-bukety-' => 'svadebnye-bukety',
         'svadba' => 'svadebnye-bukety',

@@ -81,3 +81,18 @@ test('вау-букеты: только отмеченные вручную, с�
     eq(Seo::oldCatalogTarget('vau--bukety-'), '/catalog/vau--bukety-');
     eq(Seo::catalogCanonical(['section' => 'wow', 'sort' => 'cheap']), '/catalog/vau--bukety-');
 });
+test('авторские букеты: только отмеченные вручную, свой адрес', function () use ($secB) {
+    $list = [$secB('BOUQUET', [], ['author']), $secB('BOUQUET', [], ['wow'])];
+    eq(count(Catalog::filter($list, ['section' => 'author'])), 1);
+    eq(Seo::catalogUrl(['section' => 'author']), '/catalog/avtorskie-bukety');
+});
+test('монобукеты: один вид цветов (зелень не считается), адрес со старого сайта', function () {
+    $it = fn (string $name, string $kind = 'FLOWER') => ['qty' => 5, 'flower' => ['name' => $name, 'kind' => $kind]];
+    $b = fn (array ...$sizes) => ['sizes' => array_map(fn ($items) => ['items' => $items], $sizes)];
+    ok(Catalog::isMono($b([$it('Роза Кения'), $it('Эвкалипт', 'GREEN')], [$it('Роза Эквадор')])), 'розы разных сортов + зелень');
+    ok(!Catalog::isMono($b([$it('Роза Кения'), $it('Эустома')])), 'сборный');
+    ok(!Catalog::isMono($b([$it('Роза')], [$it('Тюльпан')])), 'в другом размере другой цветок');
+    ok(!Catalog::isMono($b([$it('Эвкалипт', 'GREEN')])), 'только зелень');
+    eq(Seo::catalogUrl(['section' => 'mono']), '/catalog/monobukety');
+    eq(Seo::oldCatalogTarget('monobukety'), '/catalog/monobukety');
+});
