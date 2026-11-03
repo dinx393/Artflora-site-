@@ -33,8 +33,9 @@ final class Occasions
         'BASKET' => 'Корзины',
     ];
 
-    // Разделы, которые хранятся в bouquets.sections («Экзотика» — повод, поэтому её тут нет)
-    public const STORED_SECTIONS = ['author', 'mono', 'wow', 'roses', 'HATBOX', 'BAG', 'BASKET'];
+    // Разделы, которые хранятся в bouquets.sections («Экзотика» — повод, поэтому её тут нет).
+    // nomono — «не монобукет», хотя по составу похож: владелец сняла отметку в карточке букета (2026-11-03)
+    public const STORED_SECTIONS = ['author', 'mono', 'nomono', 'wow', 'roses', 'HATBOX', 'BAG', 'BASKET'];
 
     public const PRICE_RANGES = [
         ['slug' => 'to100', 'label' => 'До 100 BYN', 'min' => 0, 'max' => 10000],

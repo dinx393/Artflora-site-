@@ -96,3 +96,7 @@ test('монобукеты: один вид цветов (зелень не сч
     eq(Seo::catalogUrl(['section' => 'mono']), '/catalog/monobukety');
     eq(Seo::oldCatalogTarget('monobukety'), '/catalog/monobukety');
 });
+test('монобукеты: «+ Монобукеты» в списке отменяет снятую в карточке отметку', function () {
+    eq(Catalog::bulkPatch(['sections' => '["nomono","wow"]'], 'section-add:mono'), ['sections' => '["wow","mono"]']);
+    eq(Catalog::bulkPatch(['sections' => '["mono"]'], 'section-add:mono'), []);
+});

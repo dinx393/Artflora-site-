@@ -269,9 +269,20 @@
     var isMono = Object.keys(monoKinds).length === 1;
     h += '<div class="stack" style="gap: 8px"><span class="label">Разделы каталога <span class="small muted">(кнопки над каталогом, можно несколько)</span></span><div class="row" style="gap: 6px">';
     Object.keys(SECTIONS).forEach(function (k) {
-      var auto = k === "roses" ? hasRoses : k === "mono" ? isMono : k === b.format;
+      // «Монобукеты» по составу включаются сами, но их можно снять: тогда хранится nomono
+      if (k === "mono") {
+        var monoOn = isMono ? b.sections.indexOf("nomono") < 0 : b.sections.indexOf("mono") >= 0;
+        h += '<button type="button" class="chip ' + (monoOn ? "on" : "") + '"' + (isMono ? ' title="Букет из одного вида цветов — попал сюда сам. Нажмите, чтобы убрать"' : "") +
+          on("click", function () {
+            var l = b.sections.filter(function (x) { return x !== "mono" && x !== "nomono"; });
+            if (isMono) { if (monoOn) l.push("nomono"); } else if (!monoOn) l.push("mono");
+            set({ sections: l });
+          }) + ">" + esc(SECTIONS[k]) + "</button>";
+        return;
+      }
+      var auto = k === "roses" ? hasRoses : k === b.format;
       var onNow = k === "exotic" ? b.occasions.indexOf("exotic") >= 0 : auto || b.sections.indexOf(k) >= 0;
-      var why = k === "roses" ? "В составе есть роза, букет и так в «Розах»" : k === "mono" ? "Букет из одного вида цветов, он и так в «Монобукетах»" : "Так выбран формат букета";
+      var why = k === "roses" ? "В составе есть роза, букет и так в «Розах»" : "Так выбран формат букета";
       h += '<button type="button" class="chip ' + (onNow ? "on" : "") + '"' + (auto ? ' title="' + why + '"' + on_("disabled", true) :
         on("click", function () {
           if (k === "exotic") set({ occasions: toggleIn(b.occasions, "exotic") });
@@ -279,7 +290,7 @@
         })) + ">" + esc(SECTIONS[k]) + "</button>";
     });
     h += "</div>";
-    h += '<span class="small muted">«Розы» включаются сами, если в составе есть роза; «Монобукеты» — если букет из одного вида цветов (зелень не считается); шляпная коробка, сумка и корзина — по полю «Формат» ниже.</span></div>';
+    h += '<span class="small muted">«Розы» включаются сами, если в составе есть роза; «Монобукеты» — если букет из одного вида цветов (зелень не считается), их можно снять; шляпная коробка, сумка и корзина — по полю «Формат» ниже.</span></div>';
 
     h += '<div class="stack" style="gap: 8px"><span class="label">Цвет букета <span class="small muted">(для фильтра в каталоге, можно несколько; свои цвета — в «Настройках»)</span></span><div class="row" style="gap: 6px">';
     colors.forEach(function (c) {

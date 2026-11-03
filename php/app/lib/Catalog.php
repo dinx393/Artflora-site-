@@ -166,7 +166,7 @@ final class Catalog
         $names = [];
         foreach (Pricing::sortSizes($b['sizes']) as $s) foreach ($s['items'] as $i) $names[$i['flower']['name']] = true;
         $sections = $b['sections'];
-        if (!in_array('mono', $sections, true) && self::isMono($b)) $sections[] = 'mono';
+        if (!in_array('mono', $sections, true) && !in_array('nomono', $sections, true) && self::isMono($b)) $sections[] = 'mono';
         return [
             'id' => $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'], 'isPinned' => $b['isPinned'], 'hideAt' => $b['hideAt'],
@@ -268,8 +268,10 @@ final class Catalog
         }
         $list = Db::fromJson($b[$col] ?? '[]') ?: [];
         $has = in_array($arg, $list, true);
-        if (str_ends_with($verb, '-add') === $has) return [];
+        if (str_ends_with($verb, '-add') === $has && !($verb === 'section-add' && $arg === 'mono' && in_array('nomono', $list, true))) return [];
         $list = str_ends_with($verb, '-add') ? [...$list, $arg] : array_values(array_diff($list, [$arg]));
+        // «+ Монобукеты» отменяет и «не монобукет», снятый в карточке
+        if ($verb === 'section-add' && $arg === 'mono') $list = array_values(array_diff($list, ['nomono']));
         return [$col => Db::json($list)];
     }
 }
