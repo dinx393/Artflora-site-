@@ -156,7 +156,7 @@ $filterFlowers = $sortNames($filterFlowers);
 <?php /* Панель массовых действий: появляется внизу экрана, когда отмечен хотя бы один букет (admin-bouquets.js) */ ?>
 <div class="bulk-bar" data-bulk-bar hidden>
   <b data-bulk-count></b>
-  <select class="input" data-bulk-action aria-label="Что сделать с выбранными букетами">
+  <select class="input" data-bulk-action autocomplete="off" aria-label="Что сделать с выбранными букетами">
     <option value="">Что сделать?</option>
     <optgroup label="На сайте">
       <option value="show">Показывать на сайте</option>

@@ -277,5 +277,7 @@ document.addEventListener("change", function (e) {
   var done = null;
   try { done = sessionStorage.getItem(KEY); sessionStorage.removeItem(KEY); } catch (e) {}
   if (done) { msg.className = "small"; msg.textContent = "✓ " + done; }
+  // Браузер после перезагрузки может сам выставить прошлый пункт (и не тот, если список изменился) — всегда начинаем с «Что сделать?»
+  action.value = "";
   refresh();
 })();
