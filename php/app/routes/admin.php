@@ -502,7 +502,7 @@ Http::post('/admin/upload', function () {
 
 // ---------- Цветы ----------
 
-// Справочник в порядке, который задаёт владелец перетаскиванием
+// Справочник в порядке, который задаёт владелец перетаскиванием; новые цветки (за Catalog::NEW_FLOWER_DAYS дней) — сверху
 function admin_flowers(): array
 {
     $subs = [];
@@ -510,8 +510,14 @@ function admin_flowers(): array
     return array_map(fn ($f) => [
         'id' => (int) $f['id'], 'name' => $f['name'], 'kind' => $f['kind'], 'unit' => $f['unit'], 'priceKop' => (int) $f['priceKop'],
         'prevPriceKop' => $f['prevPriceKop'] === null ? null : (int) $f['prevPriceKop'], 'inStock' => (bool) $f['inStock'],
-        'inFilter' => (bool) $f['inFilter'], 'substitutes' => $subs[$f['id']] ?? [],
-    ], Db::all('SELECT * FROM flowers ORDER BY sortOrder, name'));
+        'inFilter' => (bool) $f['inFilter'], 'substitutes' => $subs[$f['id']] ?? [], 'isNew' => (bool) $f['fresh'],
+    ], Catalog::adminFlowerOrder(admin_flowers_rows()));
+}
+
+// Все цветки + fresh: добавлен за последние Catalog::NEW_FLOWER_DAYS дней (время считает база, как и createdAt)
+function admin_flowers_rows(): array
+{
+    return Db::all('SELECT *, createdAt >= NOW() - INTERVAL ' . Catalog::NEW_FLOWER_DAYS . ' DAY AS fresh FROM flowers ORDER BY sortOrder, name');
 }
 
 Http::get('/admin/flowers', function () {
@@ -563,7 +569,7 @@ Http::post('/admin/flowers/save', function () {
             Db::all('SELECT id FROM flowers FOR UPDATE');
             admin_check_stamp($in['stamp'] ?? null, 'flowers');
             $existing = [];
-            foreach (Db::all('SELECT * FROM flowers') as $f) $existing[(int) $f['id']] = $f;
+            foreach (admin_flowers_rows() as $f) $existing[(int) $f['id']] = $f;
             // Строка без id, но с названием уже существующего цветка (например, страницу не обновили
             // после прошлого сохранения) — это тот же цветок, обновляем его, а не создаём второй.
             $plan = [];
@@ -574,6 +580,8 @@ Http::post('/admin/flowers/save', function () {
                 }
                 $plan[] = [$r, $i, $old];
             }
+            // новые цветки (и только что добавленные) — в конце sortOrder, см. Catalog::flowerSortOrders
+            $orders = Catalog::flowerSortOrders(array_map(fn ($p) => !$p[2] || (bool) $p[2]['fresh'], $plan));
             $planned = array_filter(array_map(fn ($p) => $p[2] ? (int) $p[2]['id'] : null, $plan));
             // Цветок, которого нет в списке (удалён в другой вкладке и т.п.), но с тем же названием, что у строки, — мешает.
             foreach ($existing as $f) {
@@ -584,7 +592,7 @@ Http::post('/admin/flowers/save', function () {
             // Сначала временные названия: так можно поменять двум цветкам названия местами.
             foreach ($plan as [, , $old]) if ($old) Db::update('flowers', (int) $old['id'], ['name' => "__tmp_{$old['id']}"]);
             foreach ($plan as [$r, $i, $old]) {
-                $row = ['name' => $r['name'], 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => (int) $r['inStock'], 'inFilter' => (int) $r['inFilter'], 'sortOrder' => $i];
+                $row = ['name' => $r['name'], 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => (int) $r['inStock'], 'inFilter' => (int) $r['inFilter'], 'sortOrder' => $orders[$i]];
                 if ($old) {
                     $id = (int) $old['id'];
                     $row['prevPriceKop'] = (int) $old['priceKop'] !== $r['priceKop'] ? (int) $old['priceKop'] : $old['prevPriceKop'];

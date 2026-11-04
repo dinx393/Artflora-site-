@@ -19,6 +19,37 @@ final class Catalog
         return 3;
     }
 
+    // Справочник «Цветы» (решение владельца 2026-11-04): цветок, добавленный за последние NEW_FLOWER_DAYS дней,
+    // в админке стоит вверху (самый свежий первым), потом сам уходит в конец обычного списка.
+    // В базе новые всегда в конце sortOrder, поэтому в фильтре «Цветок» на сайте они идут последними.
+    public const NEW_FLOWER_DAYS = 7;
+
+    // Порядок в админке: строки с 'fresh' (новые) — сверху по убыванию sortOrder, остальные — по sortOrder
+    public static function adminFlowerOrder(array $rows): array
+    {
+        usort($rows, function ($a, $b) {
+            $fa = (bool) $a['fresh'];
+            $fb = (bool) $b['fresh'];
+            if ($fa !== $fb) return $fa ? -1 : 1;
+            $c = $fa ? (int) $b['sortOrder'] <=> (int) $a['sortOrder'] : (int) $a['sortOrder'] <=> (int) $b['sortOrder'];
+            return $c ?: strcmp((string) $a['name'], (string) $b['name']);
+        });
+        return $rows;
+    }
+
+    // sortOrder при сохранении списка, пришедшего в порядке админки: обычные — 0, 1, 2…, новые — после них,
+    // причём верхний (самый свежий) получает самый большой номер. Так порядок на экране сохраняется,
+    // а через NEW_FLOWER_DAYS дней новые оказываются в конце списка в порядке добавления.
+    public static function flowerSortOrders(array $fresh): array
+    {
+        $regular = count(array_filter($fresh, fn ($f) => !$f));
+        $newLeft = count($fresh) - $regular;
+        $out = [];
+        $i = 0;
+        foreach ($fresh as $f) $out[] = $f ? $regular + --$newLeft : $i++;
+        return $out;
+    }
+
     // Список, уже идущий в порядке из админки, — по группам; внутри группы порядок не меняется
     public static function ranked(array $list, string $daySlug): array
     {

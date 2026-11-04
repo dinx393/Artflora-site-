@@ -20,6 +20,7 @@
       inStock: f.inStock,
       inFilter: f.inFilter,
       substitutes: f.substitutes.slice(),
+      isNew: !!f.isNew,
     };
   }
 
@@ -201,10 +202,15 @@
     var h = "";
     h += '<div class="row between"><div class="stack" style="gap: 4px"><h1>Цветы</h1>';
     h += '<span class="muted">Розничная цена за штуку или ветку. Меняете цену здесь, и все букеты с этим цветком пересчитаются сами.</span>';
-    h += '<span class="small muted">Порядок меняется перетаскиванием за ⠿ (или стрелками ▲▼), потом «Сохранить». «В фильтре» — цветок виден в фильтре «Цветок» в каталоге (только основные, акцентные цветы). «Обычно меняем на» — подсказка: в карточке букета такая замена добавляется одним нажатием, а работает только та, что указана в самом букете.</span></div>';
+    h += '<span class="small muted">Порядок меняется перетаскиванием за ⠿ (или стрелками ▲▼), потом «Сохранить». Новый цветок первую неделю стоит вверху с пометкой «новый», потом сам уходит в конец списка (в фильтре на сайте новые и так в конце). «В фильтре» — цветок виден в фильтре «Цветок» в каталоге (только основные, акцентные цветы). «Обычно меняем на» — подсказка: в карточке букета такая замена добавляется одним нажатием, а работает только та, что указана в самом букете.</span></div>';
     h += '<button type="button" class="btn"' + on("click", function () {
-      state.rows.push({ key: "new-" + Date.now(), name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, inFilter: false, substitutes: [] });
+      // новый цветок — сразу вверху списка, чтобы не листать; поле названия получает фокус
+      var key = "new-" + Date.now();
+      state.rows.unshift({ key: key, name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, inFilter: false, substitutes: [], isNew: true });
+      if (state.filter === "GREEN") state.filter = "all";
       ui.render();
+      var input = document.querySelector('[data-k="name-' + key + '"]');
+      if (input) input.focus();
     }) + ">+ Добавить цветок</button></div>";
 
     h += '<div class="tabs">';
@@ -246,7 +252,7 @@
 
       h += '<td><input class="input" style="padding: 8px 10px; font-weight: 700" data-k="name-' + esc(k) + '" value="' + esc(r.name) + '" placeholder="Название"' +
         on("input", function (e) { patch(k, { name: e.target.value }); }) + ">";
-      h += '<div class="row small muted" style="gap: 6px; margin-top: 4px"><select style="border: 0; background: none"' + on("change", function (e) { patch(k, { kind: e.target.value }); }) + ">" +
+      h += '<div class="row small muted" style="gap: 6px; margin-top: 4px">' + (r.isNew ? '<span class="pill" title="Добавлен на этой неделе: стоит вверху списка, потом уйдёт в конец">новый</span> ' : "") + '<select style="border: 0; background: none"' + on("change", function (e) { patch(k, { kind: e.target.value }); }) + ">" +
         '<option value="FLOWER"' + U.attr("selected", r.kind === "FLOWER") + ">Цветы</option><option value=\"GREEN\"" + U.attr("selected", r.kind === "GREEN") + ">Зелень</option></select> · " +
         '<select style="border: 0; background: none"' + on("change", function (e) { patch(k, { unit: e.target.value }); }) + ">" +
         '<option value="STEM"' + U.attr("selected", r.unit === "STEM") + ">за ветку</option><option value=\"PIECE\"" + U.attr("selected", r.unit === "PIECE") + ">за штуку</option></select></div>";
