@@ -305,13 +305,13 @@
     var zone = $("[data-co-zone]");
     zone.hidden = !d;
     var deliveryKop = t ? t.deliveryKop : 0;
-    // Кнопкам зон под картой — сумма букетов, чтобы и там было «Бесплатно» (delivery-map.js)
-    if (t) document.dispatchEvent(new CustomEvent("zmap:subtotal", { detail: t.priced.bouquetsKop }));
+    // Кнопкам зон под картой — сумма корзины (букеты и допы), чтобы и там было «Бесплатно» (delivery-map.js)
+    if (t) document.dispatchEvent(new CustomEvent("zmap:subtotal", { detail: t.priced.bouquetsKop + t.priced.addonsKop }));
     if (d) {
       setText("[data-co-zone-name]", placeTitle(d));
       setHtml("[data-co-zone-price]", t.deliveryKop === 0 ? "Бесплатно" : byn(t.deliveryKop));
       setText("[data-co-zone-shop]", d.shopName ? "из магазина " + d.shopName : "из ближайшего магазина");
-      var left = Math.max(0, cfg.freeFromKop - t.priced.bouquetsKop);
+      var left = Math.max(0, cfg.freeFromKop - t.priced.bouquetsKop - t.priced.addonsKop);
       var free = $("[data-co-zone-free]");
       free.hidden = !(left > 0 && !d.area && !d.outside);
       free.textContent = "До бесплатной доставки " + formatByn(left);

@@ -11,7 +11,7 @@ $last = count($d['zones']) - 1;
     </div>
     <div class="info-card">
       <h3>Бесплатно от <?= e(Money::format($d['freeFromKop'])) ?></h3>
-      <p>Если букеты в заказе стоят <?= e(Money::format($d['freeFromKop'])) ?> или больше, доставка по Минску <span class="gift">в подарок</span>.</p>
+      <p>Если заказ (букеты и допы к ним) стоит <?= e(Money::format($d['freeFromKop'])) ?> или больше, доставка по Минску <span class="gift">в подарок</span>.</p>
     </div>
     <div class="info-card">
       <h3>Самовывоз −<?= e($d['pickupDiscountPct']) ?>%</h3>

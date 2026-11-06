@@ -15,7 +15,7 @@
     var map = null;
     var pin = null;
     var selected = null; // ключ выбранной кнопки: "zone:1", "outside", "area:Имя"
-    var subtotalKop = 0; // сумма букетов в корзине (событие «zmap:subtotal» от checkout.js): от неё бесплатная доставка
+    var subtotalKop = 0; // сумма корзины, букеты и допы (событие «zmap:subtotal» от checkout.js): от неё бесплатная доставка
 
     function esc(s) {
       return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });

@@ -103,7 +103,8 @@ final class Checkout
             // скидка за самовывоз — на всё, что в корзине: букеты и допы (решение владельца 2026-11-06)
             $discountKop = Delivery::pickupDiscountKop($goods, $cfg);
         } elseif ($place) {
-            $quote = Delivery::quotePlace($place, $priced['bouquetsKop'], $cfg);
+            // бесплатная доставка — от суммы всей корзины: букеты и допы (решение владельца 2026-11-06)
+            $quote = Delivery::quotePlace($place, $goods, $cfg);
             if ($quote['ok']) $deliveryKop = $quote['priceKop'];
         }
         return ['priced' => $priced, 'quote' => $quote, 'discountKop' => $discountKop, 'deliveryKop' => $deliveryKop, 'totalKop' => $goods - $discountKop + $deliveryKop];
