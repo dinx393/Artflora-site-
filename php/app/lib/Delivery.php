@@ -6,7 +6,7 @@
 //  - зоны по расстоянию от магазина: 6 / 10 / 14 / 18 BYN;
 //  - за МКАД: одна цена outsideMkadKop (решение владельца 2026-10-23, без доплаты за км), бесплатной доставки там нет;
 //  - бесплатно от суммы freeFromKop (внутри МКАД);
-//  - самовывоз: скидка pickupDiscountPct на букеты;
+//  - самовывоз: скидка pickupDiscountPct на букеты и допы (всё в корзине);
 //  - свои участки (нарисованы в админке на карте) важнее кругов: там своя цена или «не возим».
 //
 // Настройки — массив как Defaults::DELIVERY: shops, zones, mkadCenter, mkadRadiusKm, outsideMkadKop,
@@ -209,9 +209,9 @@ final class Delivery
         return 'Зона ' . ($quote['zone'] ?? '?') . ', ' . $at;
     }
 
-    public static function pickupDiscountKop(int $bouquetsKop, array $cfg): int
+    public static function pickupDiscountKop(int $goodsKop, array $cfg): int
     {
-        return (int) round($bouquetsKop * $cfg['pickupDiscountPct'] / 100);
+        return (int) round($goodsKop * $cfg['pickupDiscountPct'] / 100);
     }
 
     // Минимальная цена доставки — для надписи «Доставка от 6 BYN».
