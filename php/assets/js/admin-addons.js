@@ -49,7 +49,7 @@
     if (state.dirty) h += '<p class="small error" style="align-self: flex-start">Есть несохранённые изменения — нажмите «Сохранить».</p>';
 
     h += '<div class="card stack" style="gap: 12px">';
-    h += '<table class="table"><thead><tr><th>Название</th><th>Цена, BYN</th><th>В подарок</th><th>На сайте</th><th></th></tr></thead><tbody>';
+    h += '<table class="table"><thead><tr><th>Название</th><th>Цена, BYN</th><th>В подарок к каждому заказу</th><th>На сайте</th><th></th></tr></thead><tbody>';
     state.addons.forEach(function (a, i) {
       function set(p) {
         state.addons = state.addons.map(function (x, j) { return j === i ? Object.assign({}, x, p) : x; });
@@ -64,8 +64,8 @@
         state.price[key] = e.target.value;
         var k = U.parseByn(e.target.value);
         if (k !== null) set({ priceKop: k });
-      }) + "></td>";
-      h += '<td><input type="checkbox" title="Бесплатно, входит в каждый заказ (как открытка)"' + U.attr("checked", a.included) + on("change", function (e) { set({ included: e.target.checked }); }) + "></td>";
+      }) + ">" + (!a.included && a.priceKop === 0 ? '<div class="small muted">бесплатно, по желанию</div>' : "") + "</td>";
+      h += '<td><input type="checkbox" title="Бесплатно, кладём в каждый заказ (как подкормку)"' + U.attr("checked", a.included) + on("change", function (e) { set({ included: e.target.checked }); }) + "></td>";
       h += '<td><button type="button" class="switch ' + (a.active ? "on" : "") + '" aria-label="Показывать на сайте: ' + esc(a.name) + '"' + U.attr("disabled", state.pending) + on("click", function () {
         state.addons = state.addons.map(function (x, j) { return j === i ? Object.assign({}, x, { active: !a.active }) : x; });
         save(a.active ? "«" + a.name + "» убрали с сайта" : "«" + a.name + "» снова на сайте");
@@ -83,7 +83,7 @@
       state.dirty = true;
       ui.render();
     }) + ">+ Добавить товар</button>";
-    h += '<span class="small muted">«В подарок» — бесплатно в каждом заказе (открытка, подкормка). Порядок здесь = порядок на сайте.</span>';
+    h += '<span class="small muted">«В подарок к каждому заказу» — кладём всегда, покупатель ничего не выбирает (подкормка). Цена 0 без этой галочки — бесплатно, но по желанию: покупатель добавляет сам (открытка; когда её добавили, в корзине появляется поле «Текст открытки»). Порядок здесь = порядок на сайте.</span>';
     h += "</div>";
     return h;
   }

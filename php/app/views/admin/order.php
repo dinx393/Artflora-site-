@@ -20,7 +20,9 @@ $created = date('d.m.Y, H:i:s', strtotime($o['createdAt']));
         </div>
       <?php endforeach ?>
       <div class="sum-row"><b>🎁 В подарок: <?= e(mb_strtolower(OrderEmail::GIFT)) ?></b></div>
-      <div class="sum-row"><span>Открытка</span><span class="small"><?= $o['cardText'] ? e("«{$o['cardText']}»") : 'без текста' ?></span></div>
+      <?php if ($o['cardText'] !== ''): /* открытка — доп по желанию, она в списке выше; здесь её текст */ ?>
+        <div class="sum-row"><span>Текст открытки</span><span class="small"><?= e("«{$o['cardText']}»") ?></span></div>
+      <?php endif ?>
     </div>
     <div class="card stack" style="gap: 6px">
       <span class="label"><?= $o['deliveryMethod'] === 'PICKUP' ? 'Самовывоз' : 'Доставка' ?></span>

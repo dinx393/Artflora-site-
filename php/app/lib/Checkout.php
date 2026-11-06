@@ -70,14 +70,14 @@ final class Checkout
         $addonIds = array_column($cart['addons'], 'addonId');
         $addonRows = [];
         if ($addonIds) {
-            foreach (Db::all('SELECT id, name, priceKop FROM addons WHERE active = 1 AND included = 0 AND id ' . Db::in($addonIds), $addonIds) as $r) {
+            foreach (Db::all('SELECT id, code, name, priceKop FROM addons WHERE active = 1 AND included = 0 AND id ' . Db::in($addonIds), $addonIds) as $r) {
                 $addonRows[(int) $r['id']] = $r;
             }
         }
         $addons = [];
         foreach ($cart['addons'] as $a) {
             $r = $addonRows[$a['addonId']] ?? null;
-            if ($r) $addons[] = ['addonId' => (int) $r['id'], 'name' => $r['name'], 'qty' => max(1, min(10, $a['qty'])), 'priceKop' => (int) $r['priceKop']];
+            if ($r) $addons[] = ['addonId' => (int) $r['id'], 'code' => $r['code'], 'name' => $r['name'], 'qty' => max(1, min(10, $a['qty'])), 'priceKop' => (int) $r['priceKop']];
         }
 
         return [
@@ -275,7 +275,8 @@ final class Checkout
                     'recipientPhone' => $o['recipientPhone'],
                     'callRecipient' => (int) $o['callRecipient'],
                     'anonymous' => (int) $o['anonymous'],
-                    'cardText' => $o['cart']['cardText'],
+                    // текст открытки — только если открытку добавили (она по желанию, решение 2026-11-06)
+                    'cardText' => in_array('card', array_column($t['priced']['addons'], 'code'), true) ? $o['cart']['cardText'] : '',
                     'comment' => $o['comment'],
                     'source' => $o['source'],
                     'deliveryMethod' => $o['method'],

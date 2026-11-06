@@ -126,14 +126,11 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
       <div class="stack" style="gap: 8px">
         <div class="label">К букету</div>
         <div class="row" style="gap: 8px; align-items: stretch">
-          <div class="opt on" style="flex: 1 1 150px; background: var(--blush); cursor: default">
-            <span style="font-weight: 700">Открытка с текстом</span>
-            <span class="ok">Добавлена · бесплатно</span>
-          </div>
+          <?php /* Открытка — бесплатный доп по желанию (решение 2026-11-06), поле для текста появляется, когда её добавили */ ?>
           <?php foreach ($addons as $a): if ($a['included']) continue ?>
-            <button type="button" class="opt addon-opt" style="flex: 1 1 150px" data-addon="<?= e($a['id']) ?>" data-addon-name="<?= e($a['name']) ?>" data-price-text="<?= e(Money::format($a['priceKop'])) ?>" aria-pressed="false">
+            <button type="button" class="opt addon-opt" style="flex: 1 1 150px" data-addon="<?= e($a['id']) ?>" data-addon-code="<?= e($a['code']) ?>" data-addon-name="<?= e($a['name']) ?>" data-price-text="<?= e(ShopView::addonPrice($a['priceKop'])) ?>" aria-pressed="false">
               <span style="font-weight: 700"><?= e($a['name']) ?></span>
-              <span class="note">+ Добавить · <?= e(Money::format($a['priceKop'])) ?></span>
+              <span class="note">+ Добавить · <?= e(ShopView::addonPrice($a['priceKop'])) ?></span>
             </button>
           <?php endforeach ?>
           <?php foreach ($addons as $a): if (!$a['included']) continue ?>
@@ -143,7 +140,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
             </div>
           <?php endforeach ?>
         </div>
-        <label class="field">
+        <label class="field" data-card-field hidden>
           <span>Текст открытки</span>
           <textarea class="input" rows="2" maxlength="500" placeholder="Мама, с днём рождения! Люблю тебя" data-card-text></textarea>
         </label>
@@ -205,7 +202,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
 
   <div class="perks" style="padding: 28px">
     <div><b style="font-size: 20px">Фото букета перед отправкой</b><span class="muted">Пришлём в Viber или Telegram</span></div>
-    <div><b style="font-size: 20px">Открытка бесплатно</b><span class="muted">Напишем ваш текст от руки</span></div>
+    <div><b style="font-size: 20px">Открытка бесплатно</b><span class="muted">По желанию, напишем ваш текст от руки</span></div>
     <div><b style="font-size: 20px">Сегодня до 21:00</b><span class="muted">Доставка рядом с магазином</span></div>
     <div><b style="font-size: 20px">Самовывоз −<?= e($pickupPct) ?>%</b><span class="muted"><?= e(implode(' и ', $shopNames)) ?></span></div>
   </div>

@@ -875,7 +875,7 @@ Http::post('/admin/addons/save', function () {
         if (mb_strlen($name) > 80 || !is_string($a['code'] ?? null) || !preg_match('/^[a-z0-9-]{1,40}$/', $a['code'])
             || !admin_is_int($a['priceKop'] ?? null, 0) || $a['priceKop'] > 10000000 || !is_bool($a['included'] ?? null) || !is_bool($a['active'] ?? null)
             || !(($a['id'] ?? null) === null || admin_is_int($a['id']))) admin_fail('Проверьте дополнительные товары');
-        if ($a['active'] && !$a['included'] && $a['priceKop'] === 0) admin_fail("Укажите цену у «{$name}» или отметьте «В подарок»");
+        // цена 0 без «В подарок» — бесплатно, но по желанию покупателя (открытка, решение 2026-11-06)
     }
 
     try {

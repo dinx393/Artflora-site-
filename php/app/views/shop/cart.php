@@ -13,7 +13,7 @@ $byn = fn (int $kop) => e(preg_replace('/ BYN$/', '', Money::format($kop))) . '<
 $config = [
     'shops' => $shops, 'pickupPct' => $pickupPct, 'freeFromKop' => $freeFromKop, 'districts' => $districts, 'leadHours' => $leadHours,
     'today' => Slots::minskNow()['date'], 'slots' => Slots::ALL, 'sundayFrom' => Slots::SUNDAY_FROM, 'zones' => $delivery['zones'],
-    'addons' => array_map(fn ($a) => ['id' => $a['id'], 'name' => $a['name'], 'priceKop' => $a['priceKop']], $addons ?? []),
+    'addons' => array_map(fn ($a) => ['id' => $a['id'], 'code' => $a['code'], 'name' => $a['name'], 'priceKop' => $a['priceKop']], $addons ?? []),
 ];
 ?>
 <script type="application/json" id="checkout-config"><?= json_encode($config, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
@@ -52,8 +52,9 @@ $config = [
         <p class="muted" data-co-loading>Считаем…</p>
         <p class="error" data-co-removed hidden></p>
         <div data-co-lines></div>
-        <div class="zone" style="font-weight: 700">В подарок к заказу: открытка и 2 пакетика подкормки</div>
-        <label class="field">
+        <div class="zone" style="font-weight: 700">В подарок к заказу: 2 пакетика подкормки для цветов</div>
+        <?php /* Поле видно, только когда в корзине есть открытка (бесплатный доп по желанию, решение 2026-11-06) */ ?>
+        <label class="field" data-co-card-field hidden>
           <span>Текст открытки</span>
           <textarea class="input" rows="2" maxlength="500" data-co-card placeholder="Мама, с днём рождения! Люблю тебя"></textarea>
         </label>
@@ -213,7 +214,7 @@ $config = [
       <h3 style="font-size: 28px">Ваш заказ</h3>
       <div class="sum-row"><span data-co-count>Букеты × 0</span><span data-co-bouquets>0 BYN</span></div>
       <div data-co-addons-sum></div>
-      <div class="sum-row"><span>Открытка и подкормка</span><span class="gift">в подарок</span></div>
+      <div class="sum-row"><span>Подкормка для цветов</span><span class="gift">в подарок</span></div>
       <div class="sum-row" data-co-show="pickup" hidden><span>Скидка за самовывоз</span><span data-co-discount></span></div>
       <div class="sum-row" data-co-show="delivery"><span>Доставка</span><span data-co-delivery>выберите, куда</span></div>
       <div class="sum-row" style="align-items: baseline; border-top: 1px solid var(--line); padding-top: 12px">

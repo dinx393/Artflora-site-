@@ -137,7 +137,7 @@ Http::get('/bouquet/{slug}', function (string $slug) {
         'shop' => Settings::get('shop'),
         'delivery' => $delivery,
         'districts' => Delivery::districtOptions(Settings::get('districts'), $delivery, $def['priceKop']),
-        'addons' => ShopView::addons(false),
+        'addons' => ShopView::addons(),
         'scripts' => '<script src="' . View::asset('js/shop.js') . '"></script>',
     ]);
 });

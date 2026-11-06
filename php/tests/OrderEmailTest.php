@@ -18,8 +18,16 @@ test('тема и главное в тексте', function () use ($base) {
     contains($m['text'], 'не говорить, от кого букет');
     contains($m['html'], 'https://artflora.by/a.jpg');
     contains($m['html'], 'бесплатно');
-    contains($m['text'], 'В подарок положить: Открытка и 2 пакетика подкормки (кризал)');
-    contains($m['html'], 'В подарок: открытка и 2 пакетика подкормки (кризал)');
+    contains($m['text'], 'В подарок положить: 2 пакетика подкормки (кризал)');
+    contains($m['html'], 'В подарок: 2 пакетика подкормки (кризал)');
+});
+test('открытка по желанию: без неё нет строки «Текст открытки», с ней — текст', function () use ($base) {
+    $m = OrderEmail::render($base);
+    ok(!str_contains($m['text'], 'ткрытк'));
+    $card = ['cardText' => 'С днём рождения!', 'items' => array_merge($base['items'], [['name' => 'Открытка', 'size' => null, 'qty' => 1, 'priceKop' => 0, 'photo' => null, 'url' => null]])];
+    $m = OrderEmail::render($card + $base);
+    contains($m['text'], 'Текст открытки: «С днём рождения!»');
+    contains($m['html'], 'Открытка');
 });
 test('фото и название букета — ссылки на его страницу', function () use ($base) {
     $m = OrderEmail::render($base);

@@ -94,6 +94,7 @@
     });
 
     var addons = box.querySelectorAll("[data-addon]");
+    var cardField = box.querySelector("[data-card-field]");
     function showAddons(c) {
       addons.forEach(function (btn) {
         var id = Number(btn.dataset.addon);
@@ -103,6 +104,8 @@
         btn.setAttribute("aria-pressed", String(on));
         note.className = on ? "in-cart" : "note";
         note.textContent = on ? "✓ В корзине · " + btn.dataset.priceText : "+ Добавить · " + btn.dataset.priceText;
+        // Текст открытки спрашиваем, только когда открытку добавили
+        if (btn.dataset.addonCode === "card" && cardField) cardField.hidden = !on;
       });
     }
     addons.forEach(function (btn) {

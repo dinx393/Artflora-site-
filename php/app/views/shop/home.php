@@ -22,7 +22,7 @@ $cards = [
     ['shield', str_replace('Гарантия свежести', 'Гарантия', ShopView::GUARANTEE_TITLE), e(ShopView::GUARANTEE_TEXT), true],
     ['clock', 'В день заказа', e('Везём из ближайшего магазина, доставка от ' . Money::format(Delivery::minKop($delivery)) . '. Самовывоз −' . $delivery['pickupDiscountPct'] . '%.'), false],
     ['camera', 'Фото до отправки', 'Согласуем букет с вами, прежде чем курьер выедет.', false],
-    ['card', 'Открытка и подкормка', 'Кладём <span class="gift">в подарок</span> к каждому букету.', false],
+    ['card', 'Подкормка и открытка', 'Подкормку кладём <span class="gift">в подарок</span> к каждому букету, открытку подпишем бесплатно, если нужна.', false],
 ];
 ?>
 <section class="wrap hero-wrap">

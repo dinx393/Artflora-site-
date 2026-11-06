@@ -68,10 +68,10 @@ $o = $order;
     <?php foreach ($o['items'] as $i): ?>
       <div class="sum-row">
         <span><?= e($i['name'] . ($i['size'] ? ", {$i['size']}" : '') . ($i['qty'] > 1 ? " × {$i['qty']}" : '')) ?></span>
-        <span><?= e(Money::format($i['priceKop'] * $i['qty'])) ?></span>
+        <span><?= $i['priceKop'] > 0 ? e(Money::format($i['priceKop'] * $i['qty'])) : '<span style="color: var(--olive); font-weight: 700">бесплатно</span>' ?></span>
       </div>
     <?php endforeach ?>
-    <div class="sum-row"><span>Открытка и подкормка</span><span style="color: var(--olive); font-weight: 700">в подарок</span></div>
+    <div class="sum-row"><span>Подкормка для цветов</span><span style="color: var(--olive); font-weight: 700">в подарок</span></div>
     <?php if ($o['discountKop'] > 0): ?>
       <div class="sum-row"><span>Скидка за самовывоз</span><span><?= e(Money::format(-$o['discountKop'])) ?></span></div>
     <?php endif ?>

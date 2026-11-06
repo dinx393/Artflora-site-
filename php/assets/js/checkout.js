@@ -202,14 +202,14 @@
           html +=
             '<div class="cart-addon"><span class="cart-addon-ok" aria-hidden="true">✓</span>' +
             '<span class="cart-addon-name">' + esc(a.name) + (a.qty > 1 ? " × " + a.qty : "") + "</span>" +
-            '<span class="price" style="font-size: 18px">' + byn(a.priceKop * a.qty) + "</span>" +
+            (a.priceKop ? '<span class="price" style="font-size: 18px">' + byn(a.priceKop * a.qty) + "</span>" : '<span class="gift">бесплатно</span>') +
             '<button type="button" class="btn-ghost small muted" data-remove-addon="' + a.addonId + '">Убрать</button></div>';
         });
       }
       if (more.length) {
         html += '<div class="cart-addon-more"><span class="small muted">' + (added.length ? "Ещё к букету:" : "Добавить к букету:") + "</span>";
         more.forEach(function (a) {
-          html += '<button type="button" class="chip" data-add-addon="' + a.id + '">+ ' + esc(a.name) + " · " + esc(formatByn(a.priceKop)) + "</button>";
+          html += '<button type="button" class="chip" data-add-addon="' + a.id + '">+ ' + esc(a.name) + " · " + esc(a.priceKop ? formatByn(a.priceKop) : "бесплатно") + "</button>";
         });
         html += "</div>";
       }
@@ -290,6 +290,8 @@
     removed.hidden = !(st.removedNote && st.removedNote.length);
     if (!removed.hidden) removed.textContent = "Закончились и убраны из корзины: " + st.removedNote.join(", ");
     renderLines();
+    // Поле «Текст открытки» — только когда открытку добавили (она бесплатная, но по желанию)
+    $("[data-co-card-field]").hidden = !(cfg.addons || []).some(function (a) { return a.code === "card" && Cart.hasAddon(a.id); });
     if (document.activeElement !== inputs.card) inputs.card.value = cart.cardText;
 
     // Доставка / самовывоз
@@ -358,7 +360,7 @@
     setText("[data-co-bouquets]", formatByn(t ? t.priced.bouquetsKop : 0));
     // В итоге каждый доп своей строкой с названием, а не безликие «Дополнения»
     setHtml("[data-co-addons-sum]", (t ? t.priced.addons : []).map(function (a) {
-      return '<div class="sum-row"><span>' + esc(a.name) + (a.qty > 1 ? " × " + a.qty : "") + "</span><span>" + esc(formatByn(a.priceKop * a.qty)) + "</span></div>";
+      return '<div class="sum-row"><span>' + esc(a.name) + (a.qty > 1 ? " × " + a.qty : "") + "</span><span>" + (a.priceKop ? esc(formatByn(a.priceKop * a.qty)) : '<span class="gift">бесплатно</span>') + "</span></div>";
     }).join(""));
     setText("[data-co-discount]", formatByn(-(t ? t.discountKop : 0)));
     setText("[data-co-m-discount]", formatByn(-(t ? t.discountKop : 0)));

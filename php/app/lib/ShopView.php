@@ -44,11 +44,18 @@ final class ShopView
             . implode('', array_map(fn ($t) => '<span class="badge">' . e($t) . '</span>', $list)) . '</span>';
     }
 
-    // Активные допы (ваза, шары…) по порядку. $withCard = false — без открытки (она и так бесплатно).
-    public static function addons(bool $withCard = true): array
+    // Активные допы (открытка, конфеты, переноска…) по порядку.
+    // included — в подарок к каждому заказу (подкормка); priceKop = 0 без included — бесплатно, но по желанию (открытка).
+    public static function addons(): array
     {
-        $rows = Db::all('SELECT id, code, name, priceKop, included FROM addons WHERE active = 1' . ($withCard ? '' : " AND code <> 'card'") . ' ORDER BY sortOrder, id');
+        $rows = Db::all('SELECT id, code, name, priceKop, included FROM addons WHERE active = 1 ORDER BY sortOrder, id');
         return array_map(fn ($a) => ['id' => (int) $a['id'], 'code' => $a['code'], 'name' => $a['name'], 'priceKop' => (int) $a['priceKop'], 'included' => (bool) $a['included']], $rows);
+    }
+
+    // Цена допа на кнопке: «бесплатно» вместо «0 BYN»
+    public static function addonPrice(int $kop): string
+    {
+        return $kop > 0 ? Money::format($kop) : 'бесплатно';
     }
 
     // Карта зон доставки (partials/zones-map.php): расчёт зон и сама карта
