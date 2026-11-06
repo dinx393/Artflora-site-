@@ -77,8 +77,10 @@ function catalog_page(?string $landingSlug = null): string
     $seoText = $isLanding ? ($landing['text'] ?? []) : ($canonical === '/catalog' && !$userKeys ? Seo::CATALOG_TEXT : []);
     return View::page('shop/catalog', [
         'title' => $isLanding ? $landing['title'] : ($occ ? "Букеты {$occ['title']} с доставкой по Минску" : 'Каталог букетов с доставкой по Минску'),
-        'description' => $isLanding ? $landing['description']
-            : 'Букеты, композиции в коробках и корзинах с доставкой по Минску в день заказа. Фото букета до отправки, самовывоз −10%.',
+        // суммы и скидка — из админки («Доставка»), а не вписаны в текст
+        'description' => strtr($isLanding ? $landing['description']
+            : 'Букеты, композиции в коробках и корзинах с доставкой по Минску в день заказа. Фото букета до отправки, самовывоз −{{pickupPct}}%.',
+            ['{{freeFrom}}' => Money::format(Settings::get('delivery')['freeFromKop']), '{{pickupPct}}' => (string) Settings::get('delivery')['pickupDiscountPct']]),
         'canonical' => $canonical,
         'noindex' => $canonical === null,
         'landing' => $isLanding ? $landing : null,
