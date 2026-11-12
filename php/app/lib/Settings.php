@@ -13,6 +13,7 @@ final class Settings
             'districts' => Defaults::DISTRICTS,
             'colors' => Occasions::COLORS,
             'catalog' => Defaults::CATALOG,
+            'season' => Defaults::SEASON,
             default => throw new InvalidArgumentException("Нет настройки $key"),
         };
     }

@@ -1,0 +1,100 @@
+/* Новогоднее оформление «Морозная вишня» (макет одобрен владельцем 2026-10-25, внедрено 2026-11-12).
+   Подключается поверх site.css, только когда в админке → «Новый год» включено оформление или раздел (Season).
+   Выключили — файл не подключается, сайт снова в основном дизайне. Вишня остаётся, розовые подложки → иней-лаванда. */
+
+/* ---------- Сезонный раздел: кнопка над каталогом, пункт меню (нужны и без оформления) ---------- */
+.nav a.nav-season {
+  display: inline-flex; align-items: center; gap: 6px; margin: -7px 0; min-height: 34px; padding: 0 14px;
+  border: 0; border-radius: 999px; background: #f6f3fa; font-weight: 800;
+}
+.nav a.nav-season svg { color: #6b4e8c; }
+.nav a.nav-season:hover { background: #e7e0ef; border-bottom-color: transparent; }
+.mmenu-nav > a.mmenu-season { color: var(--cherry); }
+.mmenu-nav > a.mmenu-season svg { color: #6b4e8c; flex: none; }
+.chip.chip-season { background: #f6f3fa; border-color: #d6cbe3; font-weight: 800; }
+.chip.chip-season svg { color: #6b4e8c; }
+.chip.chip-season:hover { background: #e7e0ef; }
+.chip.chip-season.on { background: var(--cherry); border-color: var(--cherry); color: var(--white); }
+.chip.chip-season.on svg { color: var(--pink); }
+
+/* ---------- Оформление: всё ниже — только при body.ny ---------- */
+body.ny {
+  --blush: #f6f3fa; /* пудровые подложки → иней */
+  --line: #e7e0ef;
+  --line-soft: #efeaf5;
+}
+
+/* Снег: три слоя точек, плавно падает. Без скриптов; при «уменьшить движение» стоит на месте. */
+.ny-snow {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.95) 0 1.6px, transparent 2.3px),
+    radial-gradient(circle, rgba(255,255,255,.65) 0 1.1px, transparent 1.7px),
+    radial-gradient(circle, rgba(255,255,255,.45) 0 2.6px, transparent 3.3px);
+  background-size: 120px 120px, 80px 80px, 210px 210px;
+  background-position: 0 0, 40px 55px, 130px 20px;
+  animation: nysnow 24s linear infinite;
+}
+@keyframes nysnow { to { background-position: 120px 360px, -80px 240px, 210px 630px; } }
+.ny-tw { animation: nytw 2.6s ease-in-out infinite; }
+.ny-d1 { animation-delay: -.5s; } .ny-d2 { animation-delay: -1s; } .ny-d3 { animation-delay: -1.5s; } .ny-d4 { animation-delay: -2s; } .ny-d5 { animation-delay: -2.5s; }
+@keyframes nytw { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .ny-snow, .ny-tw { animation: none; } }
+
+/* Вишнёвая полоска со снегом */
+body.ny .ribbon { position: relative; overflow: hidden; }
+body.ny .ribbon .wrap { position: relative; }
+
+/* Гирлянда под шапкой: дуги с лампочками. Не липнет к экрану вместе с шапкой — уезжает при прокрутке. */
+.ny-garland { height: 52px; display: flex; justify-content: center; overflow: hidden; pointer-events: none; margin-bottom: -26px; position: relative; z-index: 2; }
+.ny-garland svg { flex: none; display: block; width: 180px; height: 64px; margin-top: -6px; }
+body.ny .header { border-bottom-color: transparent; }
+
+/* Ёлочки силуэтом */
+.ny-trees { position: absolute; display: block; pointer-events: none; }
+.ny-trees-hero { left: 0; bottom: 0; width: 75%; height: 170px; z-index: 0; }
+.ny-snow-hero { border-radius: var(--radius); }
+.hero-main .hero-text, .hero-main .hero-actions { z-index: 1; }
+
+/* Счётчик «N дней до Нового года» рядом с подписью первого экрана */
+.ny-eyebrow { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px 12px; }
+.ny-countdown {
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(242,201,212,.4); color: var(--white);
+  font-size: 13px; font-weight: 700; white-space: nowrap;
+}
+.ny-countdown svg { color: var(--pink); }
+
+/* «Успеть к празднику» */
+.ny-rush { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 28px; padding: 44px 48px; border-radius: var(--radius); background: #f6f3fa; }
+.ny-trees-rush { right: 0; bottom: 0; width: 520px; height: 130px; }
+.ny-rush-grid { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 20px; }
+.ny-rush-card { display: flex; flex-direction: column; gap: 10px; padding: 22px; border-radius: 20px; background: var(--white); font-size: 14px; line-height: 1.5; }
+.ny-rush-card .eyebrow { font-size: 12px; font-weight: 800; color: #6b4e8c; }
+.ny-rush-card b { font-family: var(--serif); font-size: 24px; font-weight: 500; line-height: 1.1; }
+.ny-rush-card.on { background: var(--cherry); color: var(--white); }
+.ny-rush-card.on .eyebrow { color: var(--pink); }
+.ny-rush-card.on span:last-child { color: var(--blush); }
+
+/* Вишнёвая плашка «Для организаций» со снегом и ёлками */
+.ny-band { position: relative; overflow: hidden; }
+.ny-trees-band { right: 0; bottom: 0; width: 460px; height: 120px; }
+
+/* Подвал: сугроб сверху, снег, заснеженные ёлки */
+body.ny .footer { position: relative; overflow: hidden; margin-top: 96px; padding-bottom: 96px; } /* внизу полоса с ёлками, под текстом */
+body.ny .footer > .wrap { position: relative; z-index: 1; }
+.ny-drift { position: relative; display: block; width: 100%; height: 34px; z-index: 1; }
+.ny-trees-footer { right: 0; bottom: 0; width: 100%; height: 104px; z-index: 0; }
+
+@media (max-width: 860px) {
+  .ny-garland { height: 40px; margin-bottom: -20px; }
+  .ny-garland svg { width: 135px; height: 48px; margin-top: -4px; }
+  .ny-trees-hero { width: 100%; height: 120px; }
+  .ny-countdown { font-size: 12px; padding: 6px 12px; }
+  .ny-rush { padding: 28px 22px; gap: 20px; }
+  .ny-rush-card b { font-size: 21px; }
+  .ny-trees-rush { width: 320px; height: 90px; }
+  .ny-trees-band { width: 300px; height: 90px; }
+  body.ny .footer { padding-bottom: 72px; }
+  .ny-trees-footer { height: 78px; }
+}

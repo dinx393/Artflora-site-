@@ -3,11 +3,14 @@
 $menuOccasions = array_filter(Occasions::LIST, fn ($o) => in_array($o['slug'], ['love', 'birthday', 'mom', 'colleague', 'nothing', 'wedding'], true));
 $call = array_values(array_filter($contacts, fn ($c) => $c['code'] === 'call'))[0] ?? null;
 $msg = array_filter($contacts, fn ($c) => in_array($c['code'], ['viber', 'telegram'], true));
+// Сезонный раздел «Зимнее настроение» / «Новый год» — первым пунктом меню, пока включён в админке (Season)
+$season = Season::sectionOn() ? Season::current() : null;
 $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_blank" rel="noopener"' : '';
 ?>
 <?php /* Вишнёвая полоска — над логотипом (решение владельца 2026-10-19) */ ?>
 <?php /* На телефоне справа в полоске — номер магазина, нажал и звонишь (вариант Б, решение владельца 2026-10-23) */ ?>
 <div class="ribbon">
+  <?php if (Season::snowOn()): ?><div class="ny-snow" aria-hidden="true"></div><?php endif ?>
   <div class="wrap">
     <?php /* Сегодня или завтра — по минскому времени: если на сегодня интервалов уже нет, пишем «завтра с 9:00» */ ?>
     <?php $next = Slots::nextDelivery($shop['leadHours']) ?>
@@ -53,6 +56,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
       <?= View::render('partials/cart-link') ?>
     </div>
     <nav class="nav" aria-label="Разделы">
+      <?php if ($season): ?><a href="/catalog/<?= e($season['slug']) ?>" class="nav-season"><?= Icons::get('snowflake', 14) ?><?= e($season['label']) ?></a><?php endif ?>
       <a href="/catalog">Букеты</a>
       <a href="/catalog/avtorskie-bukety">Авторские</a>
       <a href="/catalog/monobukety">Монобукеты</a>
@@ -65,6 +69,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
     </nav>
   </div>
 </header>
+<?php if (Season::garlandOn()) echo Season::garland() ?>
 
 <?php /* Меню на телефоне: «бургер» в шапке открывает экран со всеми разделами и контактами */ ?>
 <div class="mmenu" role="dialog" aria-modal="true" aria-label="Меню" data-mmenu hidden>
@@ -80,6 +85,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
       <input id="mq" name="q" type="search" placeholder="Розы, хризантемы, маме…">
     </form>
     <nav class="mmenu-nav" aria-label="Разделы">
+      <?php if ($season): ?><a href="/catalog/<?= e($season['slug']) ?>" class="mmenu-season"><span class="row" style="gap: 10px; font-family: inherit; font-size: inherit"><?= Icons::get('snowflake', 20) ?><?= e($season['label']) ?></span><span aria-hidden="true">→</span></a><?php endif ?>
       <a href="/catalog">Букеты<span aria-hidden="true">→</span></a>
       <div class="mmenu-group">
         <span>По поводу</span>

@@ -39,10 +39,12 @@ $ogImageUrl = Seo::absUrl($ogImage ?? '/assets/img/og.jpg');
 <?php foreach ($jsonLd ?? [] as $ld) echo Seo::jsonLd($ld) ?>
 <link rel="stylesheet" href="<?= View::asset('css/fonts.css') ?>">
 <link rel="stylesheet" href="<?= View::asset('css/site.css') ?>">
+<?php /* Новогоднее оформление «Морозная вишня» — отдельный файл поверх site.css, включается в админке (Season) */ ?>
+<?php if (Season::themeOn() || Season::sectionOn()): ?><link rel="stylesheet" href="<?= View::asset('css/newyear.css') ?>"><?php endif ?>
 <?= $head ?? '' ?>
 <?= View::render('partials/counters', ['part' => 'head']) ?>
 </head>
-<body>
+<body<?= Season::themeOn() ? ' class="ny"' : '' ?>>
 <?= View::render('partials/header', ['shop' => $shop, 'delivery' => $delivery, 'contacts' => $contacts]) ?>
 <main><?= $content ?></main>
 <?= View::render('partials/footer', ['shop' => $shop, 'delivery' => $delivery]) ?>

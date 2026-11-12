@@ -1,13 +1,19 @@
 <?php
 // Подвал магазина. Переменные: $shop, $delivery
 $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
+$ny = Season::themeOn() ? Season::cfg() : null;
 ?>
 <footer class="footer">
+  <?php if ($ny): /* Новогоднее оформление: сугроб сверху, снег, заснеженные ёлки справа внизу */ ?>
+    <svg class="ny-drift" viewBox="0 0 1280 34" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0h1280v12c-58 14-104 18-162 8s-118-16-184-2-136 16-204 4-128-14-196 0-126 12-186 2S172 8 104 20 24 24 0 16z" fill="#fff"/></svg>
+    <?php if (Season::snowOn()): ?><div class="ny-snow" aria-hidden="true"></div><?php endif ?>
+    <?= Season::trees('ny-trees ny-trees-footer', '#6E1A35', true) ?>
+  <?php endif ?>
   <div class="wrap">
     <div class="footer-grid">
       <div class="stack" style="gap: 10px">
         <span class="footer-logo">Artflora.by</span>
-        <span class="soft">Цветочный магазин в Минске</span>
+        <span class="soft">Цветочный магазин в Минске<?= $ny ? '. С наступающим!' : '' ?></span>
       </div>
       <div class="stack" style="gap: 6px">
         <?php foreach ($delivery['shops'] as $i => $s): ?>
@@ -24,6 +30,9 @@ $tel = 'tel:+' . preg_replace('/\D/', '', $shop['phone']);
           <a href="<?= e($shop['telegram']) ?>">Telegram</a>
           <a href="<?= e($shop['instagram']) ?>">Instagram</a>
         </div>
+        <?php if ($ny && ($ny['hours31'] !== '' || $ny['hours1'] !== '')): ?>
+          <span class="soft" style="margin-top: 10px"><?= e(implode(' · ', array_filter([$ny['hours31'] !== '' ? '31 декабря: ' . $ny['hours31'] : '', $ny['hours1'] !== '' ? '1 января: ' . $ny['hours1'] : '']))) ?></span>
+        <?php endif ?>
       </div>
       <div class="stack" style="gap: 6px">
         <b>Оплата</b>

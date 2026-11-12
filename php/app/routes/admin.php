@@ -989,3 +989,24 @@ Http::post('/admin/settings/test-email', function () {
     if (!class_exists('Notify') || !method_exists('Notify', 'sendTestEmail')) admin_fail('Отправка писем ещё не подключена');
     Http::json(Notify::sendTestEmail(implode(', ', $list)));
 });
+
+// Новый год (решение владельца 2026-11-12): новогоднее оформление и сезонный раздел включаются здесь, основной дизайн не меняется (Season)
+Http::get('/admin/season', function () {
+    Auth::requireAdmin('settings');
+    $marked = array_values(array_filter(Db::all("SELECT id, name, enabled, sections FROM bouquets ORDER BY sortOrder, name"),
+        fn ($b) => in_array(Season::SECTION, Db::fromJson($b['sections']) ?: [], true)));
+    return admin_page('season', ['title' => 'Новый год', 'cfg' => Season::cfg(), 'marked' => $marked, 'saved' => isset($_GET['saved'])]);
+});
+
+Http::post('/admin/season', function () {
+    Auth::requireAdmin('settings');
+    Auth::checkCsrf();
+    $cfg = Season::cfg();
+    foreach (['theme', 'snow', 'garland', 'section'] as $k) $cfg[$k] = !empty($_POST[$k]);
+    // Дата смены «Зимнее настроение» → «Новый год»: из поля даты (2026-12-25) берём месяц и день
+    $d = (string) ($_POST['switchDate'] ?? '');
+    if (preg_match('/^\d{4}-(\d\d-\d\d)$/', $d, $m)) $cfg['switchDate'] = $m[1];
+    foreach (['hours31', 'hours1'] as $k) $cfg[$k] = mb_substr(trim((string) ($_POST[$k] ?? '')), 0, 40);
+    Settings::save('season', $cfg);
+    Http::redirect('/admin/season?saved=1');
+});

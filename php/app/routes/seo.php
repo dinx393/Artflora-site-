@@ -25,6 +25,7 @@ Http::get('/sitemap.xml', function () {
     $urls = [['/', 'daily', '1.0'], ['/catalog', 'daily', '0.9']];
     // Разделы каталога — только непустые, пустой раздел поисковику не нужен
     foreach (Seo::LANDINGS as $slug => $l) {
+        if (Seo::seasonRedirect($slug)) continue; // из «Зимнего настроения» / «Нового года» — только тот, что сейчас
         $f = $l['filter'];
         $range = isset($f['price']) ? array_values(array_filter(Occasions::PRICE_RANGES, fn ($r) => $r['slug'] === $f['price']))[0] : null;
         $list = Catalog::filter($all, ['price' => $range ? ['min' => $range['min'], 'max' => $range['max']] : null] + $f);
@@ -46,6 +47,7 @@ Http::get('/sitemap.xml', function () {
 
 // Разделы: /catalog/svadebnye-bukety и т. п. Старые разделы без пары — 301 на похожий раздел или в каталог.
 Http::get('/catalog/{slug}', function (string $slug) {
+    if ($to = Seo::seasonRedirect($slug)) Http::redirect($to, 302);
     if (isset(Seo::LANDINGS[$slug])) return catalog_page($slug);
     Http::redirect(Seo::oldCatalogTarget($slug), 301);
 });
