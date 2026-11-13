@@ -133,8 +133,9 @@ final class Season
                 . '<path d="M' . $bx . ' 6l-5 10M' . $bx . ' 6l5 10" stroke="#7E1F3C" stroke-width="2.4" stroke-linecap="round"/>'
                 . '<circle cx="' . $bx . '" cy="5" r="3" fill="#5C1029"/>';
         }
-        // 12 дуг: на широком экране видны все, на телефоне лишние обрезаются по краям
-        $one = '<svg width="180" height="64" viewBox="0 0 180 64">' . $arc . '</svg>';
-        return '<div class="ny-garland" aria-hidden="true">' . str_repeat($one, 12) . '</div>';
+        // Гирлянда в границах сайта (как шапка и блоки, просьба dinx 2026-11-13): в ряд встают только целые дуги и чуть растягиваются, чтобы ровно занять ширину от края до края.
+        // viewBox шире дуги на 12 с каждой стороны — крайние бантики видны целиком, соседние дуги заходят друг на друга.
+        $one = '<svg viewBox="-12 0 204 64" preserveAspectRatio="none">' . $arc . '</svg>';
+        return '<div class="wrap"><div class="ny-garland" aria-hidden="true">' . str_repeat($one, 12) . '</div></div>';
     }
 }

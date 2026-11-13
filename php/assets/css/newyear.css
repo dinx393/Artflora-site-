@@ -46,8 +46,11 @@ body.ny .ribbon { position: relative; overflow: hidden; }
 body.ny .ribbon .wrap { position: relative; }
 
 /* Гирлянда под шапкой: дуги с лампочками. Не липнет к экрану вместе с шапкой — уезжает при прокрутке. */
-.ny-garland { height: 52px; display: flex; justify-content: center; overflow: hidden; pointer-events: none; margin-bottom: -26px; position: relative; z-index: 2; }
-.ny-garland svg { flex: none; display: block; width: 180px; height: 64px; margin-top: -6px; }
+.ny-garland {
+  height: 52px; display: flex; flex-wrap: wrap; overflow: hidden; padding: 0 12px;
+  pointer-events: none; margin-bottom: -26px; position: relative; z-index: 2;
+}
+.ny-garland svg { flex: 1 0 204px; display: block; width: 204px; height: 64px; margin: -6px -12px 0; }
 body.ny .header { border-bottom-color: transparent; }
 
 /* Ёлочки силуэтом */
@@ -88,7 +91,8 @@ body.ny .footer > .wrap { position: relative; z-index: 1; }
 
 @media (max-width: 860px) {
   .ny-garland { height: 40px; margin-bottom: -20px; }
-  .ny-garland svg { width: 135px; height: 48px; margin-top: -4px; }
+  .ny-garland { padding: 0 9px; }
+  .ny-garland svg { flex-basis: 153px; width: 153px; height: 48px; margin: -4px -9px 0; }
   .ny-trees-hero { width: 100%; height: 120px; }
   .ny-countdown { font-size: 12px; padding: 6px 12px; }
   .ny-rush { padding: 28px 22px; gap: 20px; }
