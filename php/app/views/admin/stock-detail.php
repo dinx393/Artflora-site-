@@ -38,6 +38,28 @@ if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((S
   <?php endforeach ?>
 </div>
 
+<?php if (!empty($_GET['merged'])): ?><p class="pill ok" style="align-self: flex-start">Связано. Теперь у позиции есть розничная цена из «Цветов».</p><?php endif ?>
+<?php if ($m === 'item' && ($cur = $items[$f['item']] ?? null) && $cur['flowerId'] === null): ?>
+  <form id="link" class="card stack" style="gap: 10px; background: #fff6e5; border-color: #f1d9a8" method="post" action="/admin/stock/item/<?= (int) $cur['id'] ?>/merge">
+    <?= Auth::csrfField() ?>
+    <input type="hidden" name="back" value="<?= e(http_build_query(array_filter($period + ['shop' => $shop]))) ?>">
+    <b><?= $cur['kind'] === 'FLOWER' ? 'Какой это цветок в справочнике «Цветы»?' : 'Это то же самое, что другая позиция?' ?></b>
+    <span class="small">«<?= e($cur['name']) ?>» станет этим цветком: все накладные и списания перейдут к нему, «Продано на» посчитается по его розничной цене. Следующие накладные с таким названием сайт свяжет сам.</span>
+    <div class="row" style="gap: 8px">
+      <select class="input" name="to" required style="flex: 1; min-width: 220px">
+        <option value="">— выберите —</option>
+        <optgroup label="Цветы из справочника">
+          <?php foreach ($items as $i): if ($i['flowerId'] === null) continue; ?><option value="<?= (int) $i['id'] ?>"><?= e($i['name']) ?><?= $i['retailKop'] !== null ? ' — ' . e(Money::format($i['retailKop'])) . '/шт.' : '' ?></option><?php endforeach ?>
+        </optgroup>
+        <optgroup label="Другие позиции (если это дубль)">
+          <?php foreach ($items as $i): if ($i['flowerId'] !== null || $i['id'] === $cur['id']) continue; ?><option value="<?= (int) $i['id'] ?>"><?= e($i['name']) ?></option><?php endforeach ?>
+        </optgroup>
+      </select>
+      <button class="btn">Связать</button>
+    </div>
+  </form>
+<?php endif ?>
+
 <?php if ($m === 'site'): $sum = array_sum(array_column($orders, 'totalKop')); ?>
   <div class="card stack" style="gap: 10px">
     <div class="row between"><span class="stk-sum"><?= admin_byn($sum) ?></span><span class="muted"><?= count($orders) ?> заказ(ов), кроме отменённых, по дате доставки</span></div>
@@ -132,10 +154,10 @@ if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((S
 <?php if ($m === 'sold'): $flowers = array_filter($report['items'], fn ($i) => $i['kind'] === 'FLOWER'); $t = $report['total']; ?>
   <div class="card stack" style="gap: 10px">
     <div class="row between"><h3>По каждому цветку</h3><span class="stk-sum" style="color: var(--olive)">≈ <?= admin_byn($t['earnedKop']) ?></span></div>
-    <span class="small muted">Продали = пришло − списали. «Продано на» = продали × розничная цена из «Цветов». «Заработали» = продано на − закупка этого цветка.</span>
+    <span class="small muted">Продали = пришло − списали. «Продано на» = продали × розничная цена из «Цветов» на день накладной (меняли цену — сайт помнит старую с 15.11.2026). «Заработали» = продано на − закупка этого цветка.</span>
     <?php if (!$flowers): ?><p class="muted">Нет.</p><?php else: ?>
       <div class="table-wrap"><table class="table stk-table">
-        <thead><tr><th>Цветок</th><th class="r">Пришло</th><th class="r">Списали</th><th class="r">Продали</th><th class="r">Розница за шт.</th><th class="r">Продано на</th><th class="r">Закупка</th><th class="r">Заработали</th></tr></thead>
+        <thead><tr><th>Цветок</th><th class="r">Пришло</th><th class="r">Списали</th><th class="r">Продали</th><th class="r">Розница сейчас</th><th class="r">Продано на</th><th class="r">Закупка</th><th class="r">Заработали</th></tr></thead>
         <tbody>
           <?php foreach ($flowers as $i): $earn = $i['soldKop'] - $i['inKop']; ?>
             <tr>

@@ -637,6 +637,10 @@ Http::post('/admin/flowers/save', function () {
                 } else {
                     $id = Db::insert('flowers', $row);
                 }
+                // история розничных цен — для «Финансов» (Stock::retailAt)
+                if (!$old || (int) $old['priceKop'] !== $r['priceKop']) {
+                    Db::exec('INSERT INTO flower_prices (flowerId, fromDate, priceKop) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE priceKop = VALUES(priceKop)', [$id, $old ? date('Y-m-d') : '2000-01-01', $r['priceKop']]);
+                }
                 foreach (array_unique($r['substitutes']) as $sub) {
                     if ($sub !== $id && isset($existing[$sub])) Db::insert('flower_substitutes', ['flowerId' => $id, 'substituteId' => $sub]);
                 }

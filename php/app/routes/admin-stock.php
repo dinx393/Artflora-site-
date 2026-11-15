@@ -111,6 +111,7 @@ function stock_editor(string $mode): string
             'shops' => stock_shops(),
             'today' => stock_today(),
             'recognize' => Recognize::ready(),
+            'aliases' => (object) Stock::aliases(),
         ],
         'scripts' => admin_scripts('admin-stock.js'),
     ]);
@@ -184,6 +185,9 @@ function stock_item_id(array $r, array $known): int
     $kind = $r['newKind'] ?? 'PACK';
     if ($name === '' || mb_strlen($name) > 120 || !array_key_exists($kind, Stock::KINDS)) throw new AdminError('У каждой строки выберите позицию или впишите название новой');
     foreach ($known as $k => $i) if (Stock::norm($i['name']) === Stock::norm($name)) return $k;
+    // название раньше связали с другой позицией («Роза 60 см» → цветок из справочника)
+    $alias = Db::value('SELECT itemId FROM stock_aliases WHERE alias = ?', [Stock::norm($name)]);
+    if ($alias && isset($known[(int) $alias])) return (int) $alias;
     $existing = Db::value('SELECT id FROM stock_items WHERE name = ?', [$name]);
     return $existing ? (int) $existing : Db::insert('stock_items', ['name' => $name, 'kind' => $kind]);
 }
@@ -416,4 +420,19 @@ Http::get('/admin/stock/detail', function () {
         'preset' => $preset, 'from' => $from, 'to' => $to, 'shop' => $shop,
         'shops' => stock_shops(), 'items' => $items,
     ] + $data);
+});
+
+// «Это тот же цветок, что в справочнике»: позиция из накладной сливается с цветком и получает его розничную цену
+Http::post('/admin/stock/item/{id}/merge', function (string $id) {
+    Auth::requireAdmin('stock');
+    Auth::checkCsrf();
+    $items = [];
+    foreach (Stock::items() as $i) $items[$i['id']] = $i;
+    $from = (int) $id;
+    $to = (int) Http::str('to');
+    if (!isset($items[$from], $items[$to]) || $from === $to) Http::abort(404);
+    if ($items[$from]['flowerId'] !== null) Http::abort(403); // цветок из справочника не сливаем, только в него
+    Stock::merge($from, $to);
+    $back = Http::str('back');
+    Http::redirect('/admin/stock/detail?' . http_build_query(['m' => 'item', 'item' => $to]) . (preg_match('/^[\w=&%.-]*$/', $back) && $back !== '' ? '&' . $back : '') . '&merged=1');
 });

@@ -102,7 +102,7 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
     <a class="btn btn-outline" href="/admin/stock/export?<?= e($back) ?>">Скачать для Excel</a>
   </div>
 </div>
-<span class="muted">Видит только старший администратор. «Доход» и «Расход» — цифры из банкинга (эквайринг, оплата поставщикам, зарплата…). Продажи не вносим: пришло по накладным − списали = продали. Цена списания — из последней накладной, «продано на» — по розничной цене из «Цветов».</span>
+<span class="muted">Видит только старший администратор. «Доход» и «Расход» — цифры из банкинга (эквайринг, оплата поставщикам, зарплата…). Продажи не вносим: пришло по накладным − списали = продали. Цена списания — из последней накладной, «продано на» — по розничной цене из «Цветов» на день накладной.</span>
 <?php if ($msg && isset($msgs[$msg])): ?><p class="pill ok" style="align-self: flex-start"><?= e($msgs[$msg]) ?></p><?php endif ?>
 
 <div class="stack" style="gap: 10px">
@@ -128,6 +128,14 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
   <b><?= e($periodText) ?><?= $shop ? ' · ' . e($shopName[$shop]) : '' ?></b>
 </div>
 
+<?php $unlinked = array_filter($report['items'], fn ($i) => $i['kind'] === 'FLOWER' && $i['retailKop'] === null && $i['in'] > 0); ?>
+<?php if ($unlinked): ?>
+  <div class="card stack" style="gap: 6px; background: #fff6e5; border-color: #f1d9a8">
+    <b>«Продано на» и «Заработали» пока неполные: <?= count($unlinked) ?> позиц. не связаны с цветами из справочника, и сайт не знает их розничную цену.</b>
+    <span class="small">Нажмите на позицию и выберите, какой это цветок в «Цветах». Один раз — и сайт запомнит для всех следующих накладных.</span>
+    <div class="tabs"><?php foreach ($unlinked as $i): ?><a class="chip chip-sm" href="<?= $dl('item', ['item' => $i['id']]) ?>#link"><?= e($i['name']) ?></a><?php endforeach ?></div>
+  </div>
+<?php endif ?>
 <div class="stk-tiles">
   <a class="stk-tile" href="<?= $dl('buy') ?>"><span class="k">Закупили</span><span class="v"><?= $byn($t['buyKop']) ?></span><span class="small muted">цветы <?= $money($t['buyFlowersKop']) ?> · упаковка и др. <?= $money($t['buyOtherKop']) ?></span></a>
   <a class="stk-tile wo" href="<?= $dl('wo') ?>"><span class="k">Списали</span><span class="v"><?= $byn($t['woKop']) ?></span><span class="small muted"><?= $t['woPct'] === null ? '—' : $t['woPct'] . '% от закупки' ?></span></a>
@@ -248,7 +256,7 @@ $cat = function (array $by, array $labels, string $color, string $dir) use ($dl,
       <tbody>
         <?php foreach ($report['items'] as $i): ?>
           <tr>
-            <td><a href="<?= $dl('item', ['item' => $i['id']]) ?>"><?= e($i['name']) ?></a><?= $i['kind'] !== 'FLOWER' ? ' <span class="pill">' . e(Stock::KINDS[$i['kind']]) . '</span>' : '' ?><?= $i['noCost'] ? ' <span class="pill warn" title="Нет накладной с этой позицией — не знаем цену закупки">нет цены</span>' : '' ?></td>
+            <td><a href="<?= $dl('item', ['item' => $i['id']]) ?>"><?= e($i['name']) ?></a><?= $i['kind'] !== 'FLOWER' ? ' <span class="pill">' . e(Stock::KINDS[$i['kind']]) . '</span>' : '' ?><?= $i['noCost'] ? ' <span class="pill warn" title="Нет накладной с этой позицией — не знаем цену закупки">нет цены</span>' : '' ?><?= $i['kind'] === 'FLOWER' && $i['retailKop'] === null ? ' <a class="pill warn" href="' . $dl('item', ['item' => $i['id']]) . '#link" title="Не связана с цветком из справочника — не знаем розничную цену">нет цены продажи → связать</a>' : '' ?></td>
             <td class="r"><?= e(Stock::qty($i['in'])) ?></td>
             <td class="r stk-out"><?= e(Stock::qty($i['wo'])) ?></td>
             <td class="r"><?= e(Stock::qty($i['sold'])) ?></td>

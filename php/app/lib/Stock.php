@@ -103,6 +103,26 @@ final class Stock
         return $qty > 0 ? $sum / $qty : null;
     }
 
+    // Розничная цена на дату: последняя запись истории не позже даты; раньше истории — первая; нет истории — $fallback
+    public static function retailAt(array $prices, int $id, ?string $date, ?int $fallback): ?int
+    {
+        $list = $prices[$id] ?? [];
+        if (!$list || $date === null) return $fallback;
+        $kop = $list[0][1];
+        foreach ($list as [$from, $p]) if ($from <= $date) $kop = $p;
+        return (int) $kop;
+    }
+
+    // История розничных цен по позициям: stockItemId → [[fromDate, kop], …]
+    public static function prices(): array
+    {
+        $out = [];
+        foreach (Db::all('SELECT s.id, p.fromDate, p.priceKop FROM flower_prices p JOIN stock_items s ON s.flowerId = p.flowerId ORDER BY s.id, p.fromDate') as $r) {
+            $out[(int) $r['id']][] = [(string) $r['fromDate'], (int) $r['priceKop']];
+        }
+        return $out;
+    }
+
     // Итоги за период.
     //   $lines     — строки накладных: itemId, shop, qty, sumKop
     //   $writeoffs — списания: itemId, shop, qty, woDate, reason
@@ -110,9 +130,11 @@ final class Stock
     //   $history   — для unitCost
     //   $shops     — коды магазинов по порядку
     // → items: по позициям (с учётом $shop: null — все магазины), shops: по магазинам, reasons, total
-    public static function report(array $lines, array $writeoffs, array $items, array $history, array $shops, ?string $shop = null): array
+    //   $prices    — история розничных цен: id → [[fromDate, kop], …] по возрастанию даты (необязательно)
+    public static function report(array $lines, array $writeoffs, array $items, array $history, array $shops, ?string $shop = null, array $prices = []): array
     {
-        $blank = fn () => ['in' => 0.0, 'inKop' => 0, 'wo' => 0.0, 'woKop' => 0, 'noCost' => false];
+        $blank = fn () => ['in' => 0.0, 'inKop' => 0, 'wo' => 0.0, 'woKop' => 0, 'noCost' => false, 'inRetail' => 0.0, 'woRetail' => 0.0];
+        $retail = fn (int $id, ?string $date) => self::retailAt($prices, $id, $date, $items[$id][2] ?? null);
         $byItem = [];
         $byShop = [];
         foreach ($shops as $code) $byShop[$code] = ['buyFlowersKop' => 0, 'buyOtherKop' => 0, 'woKop' => 0, 'soldKop' => 0, 'items' => []];
@@ -123,6 +145,7 @@ final class Stock
             $byShop[$code]['items'][$id] ??= $blank();
             $byShop[$code]['items'][$id]['in'] += (float) $l['qty'];
             $byShop[$code]['items'][$id]['inKop'] += (int) $l['sumKop'];
+            $byShop[$code]['items'][$id]['inRetail'] += (float) $l['qty'] * ($retail($id, $l['docDate'] ?? null) ?? 0);
         }
         $reasons = array_fill_keys(array_keys(self::REASONS), 0);
         foreach ($writeoffs as $w) {
@@ -134,6 +157,7 @@ final class Stock
             $byShop[$code]['items'][$id] ??= $blank();
             $byShop[$code]['items'][$id]['wo'] += (float) $w['qty'];
             $byShop[$code]['items'][$id]['woKop'] += $kop;
+            $byShop[$code]['items'][$id]['woRetail'] += (float) $w['qty'] * ($retail($id, (string) $w['woDate']) ?? 0);
             if ($cost === null) $byShop[$code]['items'][$id]['noCost'] = true;
             if ($shop === null || $shop === $code) {
                 $r = array_key_exists($w['reason'], $reasons) ? $w['reason'] : 'other';
@@ -145,7 +169,8 @@ final class Stock
             foreach ($s['items'] as $id => &$r) {
                 [$name, $kind, $retail] = $items[$id] ?? ['?', 'OTHER', null];
                 $r['sold'] = round($r['in'] - $r['wo'], 2);
-                $r['soldKop'] = $kind === 'FLOWER' && $retail !== null ? (int) round(max(0, $r['sold']) * $retail) : 0;
+                // по цене, которая действовала в день накладной / списания
+                $r['soldKop'] = $kind === 'FLOWER' && $retail !== null ? (int) round(max(0, $r['inRetail'] - $r['woRetail'])) : 0;
                 if ($kind === 'FLOWER') $s['buyFlowersKop'] += $r['inKop'];
                 else $s['buyOtherKop'] += $r['inKop'];
                 $s['woKop'] += $r['woKop'];
@@ -284,10 +309,10 @@ final class Stock
     {
         $items = [];
         foreach (self::items() as $i) $items[$i['id']] = [$i['name'], $i['kind'], $i['retailKop']];
-        $lines = Db::all('SELECT l.itemId, l.shop, l.qty, l.sumKop FROM stock_purchase_lines l JOIN stock_purchases p ON p.id = l.purchaseId WHERE p.docDate BETWEEN ? AND ?', [$from, $to]);
+        $lines = Db::all('SELECT l.itemId, l.shop, l.qty, l.sumKop, p.docDate FROM stock_purchase_lines l JOIN stock_purchases p ON p.id = l.purchaseId WHERE p.docDate BETWEEN ? AND ?', [$from, $to]);
         $wo = Db::all('SELECT itemId, shop, qty, woDate, reason FROM stock_writeoffs WHERE woDate BETWEEN ? AND ?', [$from, $to]);
         $history = self::history();
-        $r = self::report($lines, $wo, $items, $history, self::shopCodes(), $shop);
+        $r = self::report($lines, $wo, $items, $history, self::shopCodes(), $shop, self::prices());
         foreach (Db::all("SELECT shop, SUM(totalKop) AS kop, COUNT(*) AS n FROM orders WHERE status <> 'CANCELLED' AND deliveryDate BETWEEN ? AND ? GROUP BY shop", [$from, $to]) as $o) {
             if (isset($r['shops'][$o['shop']])) {
                 $r['shops'][$o['shop']]['siteKop'] = (int) $o['kop'];
@@ -352,6 +377,22 @@ final class Stock
             foreach ($items as $i) if (self::norm($i['name']) === $try) return $i['id'];
         }
         return null;
+    }
+
+    // «Это тот же цветок»: позиция $from целиком переходит в $to (строки накладных, списания, запомненные названия), $from удаляется.
+    // Так позиция из накладной связывается с цветком из справочника и получает его розничную цену.
+    public static function merge(int $from, int $to): void
+    {
+        if ($from === $to) return;
+        Db::tx(function () use ($from, $to) {
+            $name = (string) Db::value('SELECT name FROM stock_items WHERE id = ?', [$from]);
+            Db::exec('UPDATE stock_purchase_lines SET itemId = ? WHERE itemId = ?', [$to, $from]);
+            Db::exec('UPDATE stock_writeoffs SET itemId = ? WHERE itemId = ?', [$to, $from]);
+            Db::exec('UPDATE stock_aliases SET itemId = ? WHERE itemId = ?', [$to, $from]);
+            $alias = self::norm($name);
+            if ($alias !== '') Db::exec('INSERT INTO stock_aliases (alias, itemId) VALUES (?, ?) ON DUPLICATE KEY UPDATE itemId = VALUES(itemId)', [$alias, $to]);
+            Db::exec('DELETE FROM stock_items WHERE id = ?', [$from]);
+        });
     }
 
     public static function aliases(): array

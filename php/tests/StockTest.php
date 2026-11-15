@@ -56,6 +56,22 @@ test('списали больше, чем пришло за период: про
     ok($r['items'][0]['noCost'], 'нет цены закупки — отмечено');
 });
 
+test('продано на — по розничной цене на день накладной и списания', function () {
+    $prices = [1 => [['2000-01-01', 800], ['2026-11-10', 1000]]];
+    eq(Stock::retailAt($prices, 1, '2026-11-09', 5), 800);
+    eq(Stock::retailAt($prices, 1, '2026-11-10', 5), 1000);
+    eq(Stock::retailAt($prices, 2, '2026-11-10', 5), 5);
+    $items = [1 => ['Роза', 'FLOWER', 1000]];
+    $lines = [
+        ['itemId' => 1, 'shop' => 'u', 'qty' => 10, 'sumKop' => 4000, 'docDate' => '2026-11-03'],
+        ['itemId' => 1, 'shop' => 'u', 'qty' => 10, 'sumKop' => 4000, 'docDate' => '2026-11-10'],
+    ];
+    $wo = [['itemId' => 1, 'shop' => 'u', 'qty' => 2, 'woDate' => '2026-11-05', 'reason' => 'wilted']];
+    $r = Stock::report($lines, $wo, $items, [], ['u'], null, $prices);
+    eq($r['shops']['u']['soldKop'], 8 * 800 + 10 * 1000);
+    eq(Stock::report($lines, $wo, $items, [], ['u'])['shops']['u']['soldKop'], 18 * 1000); // без истории — текущая
+});
+
 test('периоды кнопками', function () {
     eq(Stock::period('month', null, null, '2026-11-15'), ['2026-11-01', '2026-11-30']);
     eq(Stock::period('prev', null, null, '2026-03-31'), ['2026-02-01', '2026-02-28']);

@@ -217,7 +217,8 @@
     state.head = { docDate: d.docDate || state.head.docDate, supplier: d.supplier || "", docNumber: d.docNumber || "", total: d.totalKop ? U.kopToInput(d.totalKop) : "", comment: d.comment || "" };
     var keyOf = {};
     state.lines = d.lines.map(function (l) {
-      var id = byName[norm(l.item)];
+      var al = data.aliases || {};
+      var id = [al[norm(l.name)], byName[norm(l.item)], al[norm(l.item)]].filter(function (x) { return x && itemById(x); })[0];
       var row = newLine({ name: l.name || "", itemSel: id || "new", newName: id ? "" : String(l.item || ""), newKind: data.kinds[l.kind] ? l.kind : "FLOWER", qty: l.qty ? U.qtyText(l.qty) : "", sum: l.sumKop != null ? U.kopToInput(l.sumKop) : "" });
       keyOf[norm(l.item)] = rowKey(row);
       return row;
