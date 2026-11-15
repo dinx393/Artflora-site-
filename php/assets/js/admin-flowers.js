@@ -7,6 +7,10 @@
   var stamp = data.stamp; // отпечаток данных: сервер не даст молча затереть правки с другого устройства
   var bouquets = data.bouquets;
   var initial = data.initial;
+  var shops = data.shops || [];
+  function shopLabel(code) {
+    return (shops.filter(function (x) { return x.code === code; })[0] || {}).label || "";
+  }
 
   function toRow(f) {
     return {
@@ -19,6 +23,7 @@
       prevPriceKop: f.prevPriceKop,
       inStock: f.inStock,
       inFilter: f.inFilter,
+      onlyShop: f.onlyShop || "",
       substitutes: f.substitutes.slice(),
       isNew: !!f.isNew,
     };
@@ -41,6 +46,24 @@
       .filter(function (s) { return s.items.length > 0 && missingFlowers(s).length === 0; })
       .sort(function (a, c) { return SIZE_ORDER.indexOf(a.code) - SIZE_ORDER.indexOf(c.code); });
   }
+  // Где можно собрать размер (как Pricing::itemShops / sizeShops): null — везде, [] — нигде
+  function itemShops(f) {
+    var opts = [];
+    if (f.inStock) opts.push(f.onlyShop || "");
+    f.substitutes.forEach(function (x) { if (x.inStock) opts.push(x.onlyShop || ""); });
+    if (!opts.length) return [];
+    if (opts.indexOf("") >= 0) return null;
+    return opts.filter(function (x, i) { return opts.indexOf(x) === i; });
+  }
+  function sizeOnly(s) {
+    var set = null;
+    s.items.forEach(function (i) {
+      var x = itemShops(i.flower);
+      if (x !== null) set = set === null ? x : set.filter(function (c) { return x.indexOf(c) >= 0; });
+    });
+    if (set === null || set.length === shops.length) return "";
+    return set.length === 1 ? set[0] : "";
+  }
   function sizePriceKop(s) {
     return U.roundPriceKop(s.items.reduce(function (sum, i) { return sum + Math.round(i.flower.priceKop * i.qty); }, 0) + s.packagingKop);
   }
@@ -60,6 +83,7 @@
   function toPriced(b, flowers) {
     return {
       enabled: b.enabled,
+      onlyShop: b.onlyShop || "",
       sizes: b.sizes.map(function (s) {
         return {
           code: s.code,
@@ -68,8 +92,8 @@
             var f = flowers[i.flowerId] || { name: "?", priceKop: 0, inStock: false, substitutes: [] };
             // замены — свои в каждом букете (задаются в карточке букета)
             var subs = [];
-            ((b.swaps || {})[i.flowerId] || []).forEach(function (id) { if (flowers[id]) subs.push({ name: flowers[id].name, inStock: flowers[id].inStock }); });
-            return { qty: i.qty, flower: { name: f.name, priceKop: f.priceKop, inStock: f.inStock, substitutes: subs } };
+            ((b.swaps || {})[i.flowerId] || []).forEach(function (id) { if (flowers[id]) subs.push({ name: flowers[id].name, inStock: flowers[id].inStock, onlyShop: flowers[id].onlyShop }); });
+            return { qty: i.qty, flower: { name: f.name, priceKop: f.priceKop, inStock: f.inStock, onlyShop: f.onlyShop, substitutes: subs } };
           }),
         };
       }),
@@ -90,13 +114,13 @@
   function summary(b) {
     var s = defaultSize(b);
     var vis = visibility(b);
-    return { vis: vis, price: s ? sizePriceKop(s) : null, swaps: vis.visible ? swapList(b) : [] };
+    return { vis: vis, price: s ? sizePriceKop(s) : null, swaps: vis.visible ? swapList(b) : [], only: vis.visible && s && !b.onlyShop ? sizeOnly(s) : "" };
   }
 
   var before = {};
   function setBefore(list) {
     before = {};
-    list.forEach(function (f) { before[f.id] = { name: f.name, priceKop: f.priceKop, inStock: f.inStock, substitutes: f.substitutes }; });
+    list.forEach(function (f) { before[f.id] = { name: f.name, priceKop: f.priceKop, inStock: f.inStock, onlyShop: f.onlyShop || "", substitutes: f.substitutes }; });
   }
   setBefore(initial);
 
@@ -129,7 +153,7 @@
     state.pending = true;
     ui.render();
     var body = state.rows.map(function (x) {
-      return { id: x.id, name: x.name, kind: x.kind, unit: x.unit, priceKop: U.parseByn(x.priceText), inStock: x.inStock, inFilter: x.inFilter, substitutes: x.substitutes };
+      return { id: x.id, name: x.name, kind: x.kind, unit: x.unit, priceKop: U.parseByn(x.priceText), inStock: x.inStock, inFilter: x.inFilter, onlyShop: x.onlyShop, substitutes: x.substitutes };
     });
     U.post("/admin/flowers/save", { rows: body, stamp: stamp }).then(function (r) {
       state.pending = false;
@@ -188,15 +212,15 @@
   function view(on) {
     var after = {};
     state.rows.forEach(function (r) {
-      if (r.id) after[r.id] = { name: r.name, priceKop: U.parseByn(r.priceText) || 0, inStock: r.inStock, substitutes: r.substitutes };
+      if (r.id) after[r.id] = { name: r.name, priceKop: U.parseByn(r.priceText) || 0, inStock: r.inStock, onlyShop: r.onlyShop, substitutes: r.substitutes };
     });
     var changes = bouquets
       .map(function (b) { return { b: b, was: summary(toPriced(b, before)), now: summary(toPriced(b, after)) }; })
       .filter(function (c) {
-        return c.was.price !== c.now.price || c.was.vis.visible !== c.now.vis.visible || (!c.now.vis.visible && c.now.vis.reason === "no-flowers") || c.now.swaps.length > 0;
+        return c.was.price !== c.now.price || c.was.vis.visible !== c.now.vis.visible || (!c.now.vis.visible && c.now.vis.reason === "no-flowers") || c.now.swaps.length > 0 || c.was.only !== c.now.only;
       });
     var real = changes.filter(function (c) {
-      return c.was.price !== c.now.price || c.was.vis.visible !== c.now.vis.visible || c.was.swaps.join("|") !== c.now.swaps.join("|");
+      return c.was.price !== c.now.price || c.was.vis.visible !== c.now.vis.visible || c.was.swaps.join("|") !== c.now.swaps.join("|") || c.was.only !== c.now.only;
     });
 
     var h = "";
@@ -206,7 +230,7 @@
     h += '<button type="button" class="btn"' + on("click", function () {
       // новый цветок — сразу вверху списка, чтобы не листать; поле названия получает фокус
       var key = "new-" + Date.now();
-      state.rows.unshift({ key: key, name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, inFilter: false, substitutes: [], isNew: true });
+      state.rows.unshift({ key: key, name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, inFilter: false, onlyShop: "", substitutes: [], isNew: true });
       if (state.filter === "GREEN") state.filter = "all";
       ui.render();
       var input = document.querySelector('[data-k="name-' + key + '"]');
@@ -255,7 +279,13 @@
       h += '<div class="row small muted" style="gap: 6px; margin-top: 4px">' + (r.isNew ? '<span class="pill" title="Добавлен на этой неделе: стоит вверху списка, потом уйдёт в конец">новый</span> ' : "") + '<select style="border: 0; background: none"' + on("change", function (e) { patch(k, { kind: e.target.value }); }) + ">" +
         '<option value="FLOWER"' + U.attr("selected", r.kind === "FLOWER") + ">Цветы</option><option value=\"GREEN\"" + U.attr("selected", r.kind === "GREEN") + ">Зелень</option></select> · " +
         '<select style="border: 0; background: none"' + on("change", function (e) { patch(k, { unit: e.target.value }); }) + ">" +
-        '<option value="STEM"' + U.attr("selected", r.unit === "STEM") + ">за ветку</option><option value=\"PIECE\"" + U.attr("selected", r.unit === "PIECE") + ">за штуку</option></select></div>";
+        '<option value="STEM"' + U.attr("selected", r.unit === "STEM") + ">за ветку</option><option value=\"PIECE\"" + U.attr("selected", r.unit === "PIECE") + ">за штуку</option></select>" +
+        // Цветок остался только в одном филиале (решение владельца 2026-11-15): букеты с ним без замены — только оттуда
+        (shops.length > 1 ? " · " + '<select style="border: 0; background: none' + (r.onlyShop ? "; color: var(--cherry); font-weight: 800" : "") + '" title="Где есть этот цветок. «Только из …» — букеты с ним, где нет замены, на сайте можно заказать только из этого филиала"' +
+          on("change", function (e) { patch(k, { onlyShop: e.target.value }); }) + ">" +
+          '<option value=""' + U.attr("selected", !r.onlyShop) + ">есть везде</option>" +
+          shops.map(function (x) { return '<option value="' + esc(x.code) + '"' + U.attr("selected", r.onlyShop === x.code) + ">📍 " + esc(x.label.replace("Только", "только")) + "</option>"; }).join("") +
+          "</select>" : "") + "</div>";
       h += '<div class="subs small" title="Подсказка: в карточке букета эти замены добавляются одним нажатием. Сама замена задаётся в каждом букете"><span class="muted">Обычно меняем на:</span>';
       r.substitutes.forEach(function (id) {
         var x = state.rows.filter(function (y) { return y.id === id; })[0];
@@ -302,6 +332,8 @@
         h += '<span class="pill warn">' + (was.vis.visible ? "Скроется" : "Скрыт") + ": нет " + esc(now.vis.missing.join(", ").toLowerCase()) + "</span>";
       } else if (!was.vis.visible && now.vis.visible) {
         h += '<span class="pill ok">Вернётся на сайт</span>';
+      } else if (was.price === now.price && was.only !== now.only) {
+        h += now.only ? '<span class="pill onlyshop">📍 Станет: ' + esc(shopLabel(now.only).replace("Только", "только")) + "</span>" : '<span class="pill ok">Снова из любого филиала</span>';
       } else if (was.price === now.price && now.swaps.length) {
         h += '<span class="pill swap">🔁 Будет замена: ' + esc(now.swaps.join(", ")) + "</span>";
       } else {

@@ -170,18 +170,22 @@ final class Delivery
                 $free = $subtotalKop >= $cfg['freeFromKop'];
                 return [
                     'ok' => true, 'shop' => null, 'km' => null, 'zone' => $place['zone'], 'outsideMkadKm' => 0,
-                    'baseKop' => $base, 'priceKop' => $free ? 0 : $base, 'free' => $free, 'leftToFreeKop' => max(0, $cfg['freeFromKop'] - $subtotalKop),
+                    // карта «из филиала»: в дальней зоне при бесплатной доставке платят разницу (freeKop)
+                    'baseKop' => $base, 'priceKop' => $free ? (int) ($z['freeKop'] ?? 0) : $base, 'free' => $free, 'leftToFreeKop' => max(0, $cfg['freeFromKop'] - $subtotalKop),
                 ];
             case 'outside':
-                return self::outsideQuote(null, null, 0, $cfg);
+                // far — кнопка «За МКАД со стороны другого филиала» на карте «из филиала»
+                return self::outsideQuote(null, null, 0, $cfg, !empty($place['far']) && isset($cfg['otherShops']));
             case 'area':
                 foreach ($cfg['areas'] ?? [] as $a) {
                     if ($a['name'] !== $place['name'] || count($a['points']) < 3) continue;
                     $tag = ['name' => $a['name'], 'color' => $a['color']];
                     if (!empty($a['noDelivery'])) return $far + ['area' => $tag];
+                    $farSide = !empty($place['far']) && !empty($a['farExtraKop']);
+                    $kop = (int) $a['priceKop'] + ($farSide ? (int) $a['farExtraKop'] : 0);
                     return [
                         'ok' => true, 'shop' => null, 'km' => null, 'zone' => 0, 'outsideMkadKm' => 0,
-                        'baseKop' => (int) $a['priceKop'], 'priceKop' => (int) $a['priceKop'], 'free' => false, 'leftToFreeKop' => 0, 'area' => $tag,
+                        'baseKop' => $kop, 'priceKop' => $kop, 'free' => false, 'leftToFreeKop' => 0, 'area' => $tag + ($farSide ? ['farSide' => true] : []),
                     ];
                 }
                 return $far;
@@ -193,7 +197,8 @@ final class Delivery
     public static function zoneTitle(int $zone, array $cfg): string
     {
         $last = count($cfg['zones']);
-        return $zone === $last ? 'дальше, до МКАД' : 'до ' . $cfg['zones'][$zone - 1]['maxKm'] . ' км от магазина';
+        if ($zone === $last) return isset($cfg['otherShops']) ? 'дальше по Минску' : 'дальше, до МКАД';
+        return 'до ' . $cfg['zones'][$zone - 1]['maxKm'] . ' км от магазина';
     }
 
     // Как выбор покупателя видят флорист и курьер в адресе заказа
@@ -201,8 +206,9 @@ final class Delivery
     {
         if (!empty($place['district'])) return $place['district'];
         if ($place['type'] === 'zone') return 'Зона ' . $place['zone'] . ' (' . self::zoneTitle($place['zone'], $cfg) . ')';
-        if ($place['type'] === 'area') return $place['name'];
-        if ($place['type'] === 'outside') return 'За МКАД';
+        $farText = ', со стороны другого филиала';
+        if ($place['type'] === 'area') return $place['name'] . (!empty($quote['area']['farSide']) ? $farText : '');
+        if ($place['type'] === 'outside') return 'За МКАД' . (!empty($quote['farSide']) ? $farText : '');
         $at = sprintf('точка на карте %.5f, %.5f', $place['lat'], $place['lng']);
         if (isset($quote['area'])) return $quote['area']['name'] . ', ' . $at;
         if (!empty($quote['outside'])) return "За МКАД ({$quote['outsideMkadKm']} км), $at";

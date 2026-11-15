@@ -8,6 +8,9 @@
   document.querySelectorAll("[data-zmap]").forEach(function (box) {
     var data = JSON.parse(box.querySelector("[data-zmap-config]").textContent);
     var cfg = data.delivery;
+    // Корзина с букетом «Только из Уручья»: карта «доставка только из этого филиала» (checkout.js шлёт «zmap:variant»)
+    var variants = data.variants || {};
+    var dyn = null; // слой с зонами, участками и магазинами: перерисовываем при смене карты
     var pickMode = box.hasAttribute("data-zmap-pick-mode");
     var toggle = box.querySelector("[data-zmap-toggle]");
     var body = box.querySelector("[data-zmap-body]");
@@ -37,7 +40,7 @@
         // Карта «доставка из филиала»: за МКАД цена зависит от того, к какому филиалу ближе
         if (cfg.zones.length) list[list.length - 1].title = "Дальше по Минску";
         list.push({ key: "outside", place: { type: "outside" }, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД рядом с этим филиалом", price: byn(cfg.outsideMkadKop) });
-        list.push({ key: "outside-far", place: { type: "outside" }, color: cfg.shopOrder.farOutsideColor, title: "За МКАД со стороны другого филиала", price: byn(cfg.outsideMkadKop + cfg.shopOrder.outsideExtraKop) });
+        list.push({ key: "outside-far", place: { type: "outside", far: true }, color: cfg.shopOrder.farOutsideColor, title: "За МКАД со стороны другого филиала", price: byn(cfg.outsideMkadKop + cfg.shopOrder.outsideExtraKop) });
       } else {
         list.push({ key: "outside", place: { type: "outside" }, color: cfg.outsideColor || Z.OUTSIDE_COLOR, title: "За МКАД", price: byn(cfg.outsideMkadKop) });
       }
@@ -46,15 +49,15 @@
         if (!a.sides) return list.push({ key: "area:" + a.name, place: { type: "area", name: a.name }, color: a.color, title: a.name, price: byn(a.priceKop) });
         // Карта «из филиала»: участок может лежать по обе стороны города
         if (a.sides[0]) list.push({ key: "area:" + a.name, place: { type: "area", name: a.name }, color: a.color, title: a.name + " рядом с этим филиалом", price: byn(a.priceKop) });
-        if (a.sides[1]) list.push({ key: "area-far:" + a.name, place: { type: "area", name: a.name }, color: cfg.shopOrder.farAreaColor, title: a.name + " со стороны другого филиала", price: byn(a.priceKop + a.farExtraKop) });
+        if (a.sides[1]) list.push({ key: "area-far:" + a.name, place: { type: "area", name: a.name, far: true }, color: cfg.shopOrder.farAreaColor, title: a.name + " со стороны другого филиала", price: byn(a.priceKop + a.farExtraKop) });
       });
       return list;
     }
     // Какая кнопка соответствует точке на карте
     function keyOf(q) {
       if (!q.ok) return null;
-      if (q.area) return "area:" + q.area.name;
-      if (q.outside) return "outside";
+      if (q.area) return (q.area.farSide ? "area-far:" : "area:") + q.area.name;
+      if (q.outside) return q.farSide ? "outside-far" : "outside";
       return "zone:" + q.zone;
     }
 
@@ -106,6 +109,20 @@
     }
     if (pickMode) {
       renderPlaces();
+      document.addEventListener("zmap:variant", function (e) {
+        var next = (e.detail && variants[e.detail]) || data.delivery;
+        if (next === cfg) return;
+        cfg = next;
+        selected = null;
+        dropPin();
+        say("");
+        if (map) {
+          map.closePopup();
+          dyn.clearLayers();
+          drawZones();
+        }
+        renderPlaces();
+      });
       document.addEventListener("zmap:subtotal", function (e) {
         if (e.detail === subtotalKop) return;
         subtotalKop = e.detail;
@@ -136,6 +153,26 @@
       document.head.appendChild(js);
     }
 
+    // Зоны, МКАД, участки и магазины по текущим настройкам (cfg)
+    function drawZones() {
+      var L = window.L;
+      var c = cfg.mkadCenter;
+      Z.zonesLayer(L, map, cfg).addTo(dyn);
+      L.circle([c.lat, c.lng], { radius: cfg.mkadRadiusKm * 1000, color: "#7E1F3C", weight: 1.5, dashArray: "6 6", fill: false, interactive: false }).addTo(dyn);
+      cfg.areas.forEach(function (a) {
+        if (a.points.length < 3) return;
+        L.polygon(a.points.map(function (p) { return [p.lat, p.lng]; }), {
+          color: a.color, weight: 2, dashArray: a.noDelivery ? "6 4" : undefined, fillOpacity: 0, interactive: false,
+        }).addTo(dyn);
+      });
+      cfg.shops.forEach(function (s) {
+        L.marker([s.location.lat, s.location.lng], {
+          icon: L.divIcon({ className: "map-shop", html: "<span>⌂</span><b>" + esc(s.name) + "</b>", iconSize: [34, 34], iconAnchor: [17, 17] }),
+          interactive: false, zIndexOffset: 1000,
+        }).addTo(dyn);
+      });
+    }
+
     function draw() {
       var L = window.L;
       var el = box.querySelector("[data-zmap-map]");
@@ -153,21 +190,8 @@
         if (!a.noDelivery) a.points.forEach(function (p) { bounds.extend([p.lat, p.lng]); });
       });
       map.fitBounds(bounds, { padding: [8, 8] });
-      Z.zonesLayer(L, map, cfg).addTo(map);
-
-      L.circle([c.lat, c.lng], { radius: cfg.mkadRadiusKm * 1000, color: "#7E1F3C", weight: 1.5, dashArray: "6 6", fill: false, interactive: false }).addTo(map);
-      cfg.areas.forEach(function (a) {
-        if (a.points.length < 3) return;
-        L.polygon(a.points.map(function (p) { return [p.lat, p.lng]; }), {
-          color: a.color, weight: 2, dashArray: a.noDelivery ? "6 4" : undefined, fillOpacity: 0, interactive: false,
-        }).addTo(map);
-      });
-      cfg.shops.forEach(function (s) {
-        L.marker([s.location.lat, s.location.lng], {
-          icon: L.divIcon({ className: "map-shop", html: "<span>⌂</span><b>" + esc(s.name) + "</b>", iconSize: [34, 34], iconAnchor: [17, 17] }),
-          interactive: false, zIndexOffset: 1000,
-        }).addTo(map);
-      });
+      dyn = L.layerGroup().addTo(map);
+      drawZones();
       // Названия районов — только чтобы легче найти себя; нажатие проходит сквозь них на карту
       data.districts.forEach(function (d) {
         if (d.isArea) return;

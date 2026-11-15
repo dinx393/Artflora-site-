@@ -141,14 +141,14 @@ final class Catalog
         $ids = array_column($rows, 'id');
         $sizes = Db::all('SELECT * FROM bouquet_sizes WHERE bouquetId ' . Db::in($ids) . ' ORDER BY id', $ids);
         $sizeIds = array_column($sizes, 'id');
-        $items = $sizeIds ? Db::all('SELECT i.sizeId, i.qty, f.id, f.name, f.kind, f.unit, f.priceKop, f.inStock
+        $items = $sizeIds ? Db::all('SELECT i.sizeId, i.qty, f.id, f.name, f.kind, f.unit, f.priceKop, f.inStock, f.onlyShop
             FROM bouquet_items i JOIN flowers f ON f.id = i.flowerId
             WHERE i.sizeId ' . Db::in($sizeIds) . ' ORDER BY i.id', $sizeIds) : [];
         // Замены — свои в каждом букете (bouquet_swaps), по порядку, который задали в карточке букета
         $subs = [];
-        foreach (Db::all('SELECT w.bouquetId, w.flowerId, f.name, f.inStock FROM bouquet_swaps w JOIN flowers f ON f.id = w.substituteId
+        foreach (Db::all('SELECT w.bouquetId, w.flowerId, f.name, f.inStock, f.onlyShop FROM bouquet_swaps w JOIN flowers f ON f.id = w.substituteId
             WHERE w.bouquetId ' . Db::in($ids) . ' ORDER BY w.sortOrder, f.sortOrder, f.id', $ids) as $s) {
-            $subs[$s['bouquetId']][$s['flowerId']][] = ['name' => $s['name'], 'inStock' => (bool) $s['inStock']];
+            $subs[$s['bouquetId']][$s['flowerId']][] = ['name' => $s['name'], 'inStock' => (bool) $s['inStock'], 'onlyShop' => (string) ($s['onlyShop'] ?? '')];
         }
         $sizeBouquet = array_column($sizes, 'bouquetId', 'id');
         $bySize = [];
@@ -157,7 +157,7 @@ final class Catalog
                 'qty' => (float) $i['qty'],
                 'flower' => [
                     'id' => (int) $i['id'], 'name' => $i['name'], 'kind' => $i['kind'], 'unit' => $i['unit'],
-                    'priceKop' => (int) $i['priceKop'], 'inStock' => (bool) $i['inStock'], 'substitutes' => $subs[$sizeBouquet[$i['sizeId']]][$i['id']] ?? [],
+                    'priceKop' => (int) $i['priceKop'], 'inStock' => (bool) $i['inStock'], 'onlyShop' => (string) ($i['onlyShop'] ?? ''), 'substitutes' => $subs[$sizeBouquet[$i['sizeId']]][$i['id']] ?? [],
                 ],
             ];
         }
@@ -172,7 +172,7 @@ final class Catalog
         return array_map(fn ($b) => [
             'id' => (int) $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'enabled' => (bool) $b['enabled'], 'hideAt' => $b['hideAt'], 'hiddenByTimerAt' => $b['hiddenByTimerAt'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'],
-            'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'],
+            'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'], 'onlyShop' => (string) ($b['onlyShop'] ?? ''),
             'photoSize' => $b['photoSize'], 'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']),
             'sections' => Db::fromJson($b['sections']), 'photos' => Db::fromJson($b['photos']), 'sortOrder' => (int) $b['sortOrder'],
             'photoFocus' => self::focusMap($b['photoFocus'] ?? null),
@@ -209,12 +209,17 @@ final class Catalog
     public static function toView(array $b): ?array
     {
         if (!Pricing::visibility($b)['visible']) return null;
+        $shops = Settings::get('delivery')['shops'];
+        $only = fn (array $s) => self::onlyShop($b, $s, $shops);
         $sizes = array_map(fn ($s) => [
             'code' => $s['code'],
             'note' => $s['note'],
             'priceKop' => Pricing::sizePriceKop($s),
             'composition' => Pricing::compositionText($s['items']),
             'flowers' => Pricing::flowerCount($s['items']),
+            // «Только из Уручья»: код филиала и подпись; '' — из любого
+            'onlyShop' => $only($s),
+            'onlyShopLabel' => Text::onlyShop($only($s), $shops),
         ], Pricing::availableSizes($b));
         $def = Pricing::defaultSize($b);
         $names = [];
@@ -234,7 +239,19 @@ final class Catalog
             'sizes' => $sizes,
             'defaultSize' => $def['code'],
             'priceKop' => Pricing::sizePriceKop($def),
+            // пометка на карточке — по размеру, который там продаётся (по умолчанию)
+            'onlyShop' => $only($def),
+            'onlyShopLabel' => Text::onlyShop($only($def), $shops),
         ];
+    }
+
+    // Из какого одного филиала можно заказать этот размер букета: галочка у букета или цветы только оттуда без замены.
+    // '' — из любого. Код несуществующего магазина (удалили в настройках) не считается.
+    public static function onlyShop(array $b, array $size, array $shops): string
+    {
+        $codes = array_column($shops, 'code');
+        $code = Pricing::sizeOnlyShop($size, (string) ($b['onlyShop'] ?? ''), $codes);
+        return in_array($code, $codes, true) ? $code : '';
     }
 
     // Монобукет — во всех размерах один вид цветов (зелень не считается). Вид = первое слово названия:

@@ -90,6 +90,11 @@
         box.querySelectorAll("[data-size-opt]").forEach(function (o) { o.classList.toggle("on", o === opt); });
         price.innerHTML = opt.dataset.priceHtml;
         pickup.textContent = opt.dataset.pickupText;
+        var only = box.querySelector("[data-only-shop]");
+        if (only) {
+          only.hidden = !opt.dataset.onlyShopLabel;
+          only.querySelector("[data-only-shop-label]").textContent = opt.dataset.onlyShopLabel || "";
+        }
       });
     });
 

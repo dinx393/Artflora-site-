@@ -100,6 +100,7 @@ final class OrderEmail
             if ($url !== '') $name = "<a href=\"$url\" style=\"color:{$C['cherry']};text-decoration:underline\">$name</a>";
             $size = $i['size'] ? "<div style=\"color:{$C['muted']};font-size:14px\">Размер " . self::esc($i['size']) . '</div>' : '';
             // замена цветка в этом букете — флорист видит сразу (решение владельца 2026-10-31)
+            if (!empty($i['onlyShop'])) $size .= "<div style=\"color:{$C['cherry']};font-size:14px;font-weight:800\">📍 " . self::esc($i['onlyShop']) . '</div>';
             if (!empty($i['swaps'])) $size .= "<div style=\"color:{$C['cherry']};font-size:14px;font-weight:700\">🔁 Будет замена: " . self::esc($i['swaps']) . '</div>';
             $items .= "<tr>
         <td style=\"$td;width:64px;padding-right:0\">$img</td>
@@ -158,7 +159,7 @@ final class OrderEmail
             ...array_map(fn ($r) => "{$r[0]}: {$r[1]}", self::rows($o)),
             '',
             'Покупатель заказал:',
-            ...array_map(fn ($i) => "• {$i['name']}" . ($i['size'] ? ", размер {$i['size']}" : '') . " — {$i['qty']} шт × " . Money::format($i['priceKop']) . (!empty($i['swaps']) ? "\n  Будет замена: {$i['swaps']}" : '') . (!empty($i['url']) ? "\n  {$i['url']}" : ''), $o['items']),
+            ...array_map(fn ($i) => "• {$i['name']}" . ($i['size'] ? ", размер {$i['size']}" : '') . " — {$i['qty']} шт × " . Money::format($i['priceKop']) . (!empty($i['onlyShop']) ? "\n  {$i['onlyShop']}" : '') . (!empty($i['swaps']) ? "\n  Будет замена: {$i['swaps']}" : '') . (!empty($i['url']) ? "\n  {$i['url']}" : ''), $o['items']),
             $o['discountKop'] ? 'Скидка: −' . Money::format($o['discountKop']) : '',
             'Доставка: ' . strip_tags($deliveryText),
             "Итого: $total",

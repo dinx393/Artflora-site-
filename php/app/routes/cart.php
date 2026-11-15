@@ -14,6 +14,8 @@ Http::get('/cart', function () {
         'districts' => Delivery::districtOptions(Settings::get('districts'), $delivery),
         'leadHours' => $shop['leadHours'],
         'delivery' => $delivery,
+        // Букеты «Только из Уручья» (решение 2026-11-15): доставка считается от этого филиала — карта для каждого
+        'variants' => array_combine(array_column($delivery['shops'], 'code'), array_map(fn ($s) => Delivery::fromShop($delivery, $s['code']), $delivery['shops'])),
         // Допы по желанию (платные и бесплатная открытка): в корзине их можно добавить одним нажатием
         'addons' => array_values(array_filter(ShopView::addons(), fn ($a) => !$a['included'])),
         'scripts' => '<script src="' . View::asset('js/checkout.js') . '"></script>' . ShopView::zonesMapScripts(),

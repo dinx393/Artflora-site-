@@ -19,12 +19,12 @@ function admin_stamp(string $what, int $id = 0): string
     $setting = fn (string $k) => Db::value('SELECT value FROM settings WHERE `key` = ?', [$k]);
     $data = match ($what) {
         'bouquet' => [
-            Db::one('SELECT name, slug, description, format, enabled, hideAt, isHit, isExclusive, photoSize, packagingKop, colors, occasions, sections, photos, photoFocus, collectionId FROM bouquets WHERE id = ?', [$id]),
+            Db::one('SELECT name, slug, description, format, enabled, hideAt, isHit, isExclusive, onlyShop, photoSize, packagingKop, colors, occasions, sections, photos, photoFocus, collectionId FROM bouquets WHERE id = ?', [$id]),
             Db::all('SELECT s.code, s.note, s.packagingKop, i.flowerId, i.qty FROM bouquet_sizes s LEFT JOIN bouquet_items i ON i.sizeId = s.id WHERE s.bouquetId = ? ORDER BY s.code, i.id', [$id]),
             Db::all('SELECT flowerId, substituteId, sortOrder FROM bouquet_swaps WHERE bouquetId = ? ORDER BY flowerId, sortOrder, substituteId', [$id]),
         ],
         'flowers' => [
-            Db::all('SELECT id, name, kind, unit, priceKop, inStock, inFilter, sortOrder FROM flowers ORDER BY id'),
+            Db::all('SELECT id, name, kind, unit, priceKop, inStock, inFilter, onlyShop, sortOrder FROM flowers ORDER BY id'),
             Db::all('SELECT flowerId, substituteId FROM flower_substitutes ORDER BY flowerId, substituteId'),
         ],
         'settings' => [$setting('shop'), $setting('colors')],
@@ -173,8 +173,9 @@ function admin_bouquet_swaps(?int $bouquetId = null): array
 
 Http::get('/admin/bouquets', function () {
     Auth::requireAdmin('catalog');
-    $tab = in_array($_GET['tab'] ?? '', ['all', 'on', 'off', 'missing', 'swap', 'timer'], true) ? $_GET['tab'] : 'all';
-    $list = array_map(function ($b) {
+    $tab = in_array($_GET['tab'] ?? '', ['all', 'on', 'off', 'missing', 'swap', 'shop', 'timer'], true) ? $_GET['tab'] : 'all';
+    $shops = Settings::get('delivery')['shops'];
+    $list = array_map(function ($b) use ($shops) {
         $vis = Pricing::visibility($b);
         $main = Pricing::defaultSize($b);
         if (!$main) {
@@ -183,7 +184,15 @@ Http::get('/admin/bouquets', function () {
         }
         // «будет замена»: цветка нет, но в этом букете для него указана замена в наличии — букет на сайте
         $swaps = $vis['visible'] ? Pricing::bouquetSwaps($b) : [];
-        return ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $main ? Pricing::sizePriceKop($main) : 0, 'swaps' => $swaps];
+        // «Только из Уручья»: размеры, которые можно заказать только из одного филиала (галочка букета или цветы без замены)
+        $only = [];
+        if ($vis['visible']) {
+            foreach (Pricing::availableSizes($b) as $s) {
+                $label = Text::onlyShop(Catalog::onlyShop($b, $s, $shops), $shops);
+                if ($label !== '') $only[$label][] = $s['code'];
+            }
+        }
+        return ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $main ? Pricing::sizePriceKop($main) : 0, 'swaps' => $swaps, 'only' => $only];
     }, Catalog::load());
     $is = [
         'all' => fn ($x) => true,
@@ -191,6 +200,7 @@ Http::get('/admin/bouquets', function () {
         'off' => fn ($x) => !$x['vis']['visible'] && $x['vis']['reason'] === 'disabled',
         'missing' => fn ($x) => !$x['vis']['visible'] && $x['vis']['reason'] === 'no-flowers',
         'swap' => fn ($x) => (bool) $x['swaps'],
+        'shop' => fn ($x) => (bool) $x['only'],
         // таймер «собран сегодня»: идёт или уже сработал и букет так и не включили обратно
         'timer' => fn ($x) => $x['b']['hideAt'] !== null || ($x['b']['hiddenByTimerAt'] !== null && !$x['b']['enabled']),
     ];
@@ -311,7 +321,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
     $initial = [
         'id' => (int) $b['id'], 'name' => $b['name'], 'slug' => $b['slug'], 'description' => $b['description'], 'format' => $b['format'],
         'enabled' => (bool) $b['enabled'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'], 'photoSize' => $b['photoSize'],
-        'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'],
+        'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'], 'onlyShop' => (string) $b['onlyShop'],
         'isDayBouquet' => Settings::get('shop')['dayBouquet'] === $b['slug'],
         'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']), 'photos' => Db::fromJson($b['photos']),
         'photoFocus' => (object) Catalog::focusMap($b['photoFocus'] ?? null),
@@ -333,7 +343,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
     foreach (Db::all('SELECT flowerId, substituteId FROM flower_substitutes ORDER BY substituteId') as $s) $subs[$s['flowerId']][] = (int) $s['substituteId'];
     $flowers = array_map(fn ($f) => [
         'id' => (int) $f['id'], 'name' => $f['name'], 'kind' => $f['kind'], 'unit' => $f['unit'], 'priceKop' => (int) $f['priceKop'],
-        'inStock' => (bool) $f['inStock'], 'substitutes' => $subs[$f['id']] ?? [],
+        'inStock' => (bool) $f['inStock'], 'onlyShop' => (string) $f['onlyShop'], 'substitutes' => $subs[$f['id']] ?? [],
     ], Db::all('SELECT * FROM flowers ORDER BY kind, sortOrder, name'));
     $collections = array_map(fn ($c) => ['id' => (int) $c['id'], 'name' => $c['name']], Db::all('SELECT id, name FROM collections ORDER BY name'));
     $siblings = $b['collectionId'] === null ? [] : array_map(
@@ -346,6 +356,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
             'stamp' => admin_stamp('bouquet', (int) $b['id']),
             'initial' => $initial, 'flowers' => $flowers, 'collections' => $collections, 'siblings' => $siblings,
             'colors' => Settings::get('colors'), 'occasions' => Occasions::LIST, 'formats' => Occasions::FORMATS, 'sections' => Occasions::SECTIONS,
+            'shops' => admin_shops(),
             'timerHours' => Catalog::TIMER_HOURS, 'now' => date('Y-m-d H:i:s'), 'today' => ($_GET['today'] ?? '') === '1',
         ],
         'scripts' => admin_scripts('admin-bouquet.js'),
@@ -369,6 +380,7 @@ Http::post('/admin/bouquets/save', function () {
     if (!admin_is_int($id) || admin_str($in['description'] ?? null, 2000) === null
         || !array_key_exists($in['format'] ?? '', Occasions::FORMATS) || !in_array($photoSize, Pricing::SIZE_ORDER, true)
         || !is_bool($in['enabled'] ?? null) || !is_bool($in['isHit'] ?? null) || !is_bool($in['isExclusive'] ?? null) || !is_bool($in['weddingOnly'] ?? true) || !is_bool($in['isPinned'] ?? false)
+        || !admin_shop_code($in['onlyShop'] ?? '')
         || !(($in['collectionId'] ?? null) === null || admin_is_int($in['collectionId']))
         || !is_array($in['sizes'] ?? null) || count($in['sizes']) > count(Pricing::SIZE_ORDER)) admin_fail($bad);
     // таймер «собран сегодня»: keep — не трогать, off — снять, число — скрыть через столько часов от сохранения
@@ -425,7 +437,7 @@ Http::post('/admin/bouquets/save', function () {
             Db::update('bouquets', $id, [
                 'name' => $name, 'slug' => $slug, 'description' => $in['description'], 'format' => $in['format'],
                 'packagingKop' => $photo['packagingKop'], 'enabled' => (int) $in['enabled'], 'isHit' => (int) $in['isHit'],
-                'isExclusive' => (int) $in['isExclusive'], 'isPinned' => (int) ($in['isPinned'] ?? false), 'weddingOnly' => (int) ($in['weddingOnly'] ?? true), 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
+                'isExclusive' => (int) $in['isExclusive'], 'isPinned' => (int) ($in['isPinned'] ?? false), 'weddingOnly' => (int) ($in['weddingOnly'] ?? true), 'onlyShop' => $in['onlyShop'] ?? '', 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
                 'occasions' => Db::json($in['occasions']), 'sections' => Db::json(array_values(array_unique($sections))),
                 'photos' => Db::json($in['photos']), 'collectionId' => $in['collectionId'],
                 'photoFocus' => $focus ? Db::json($focus) : null,
@@ -511,6 +523,19 @@ Http::post('/admin/upload', function () {
 
 // ---------- Цветы ----------
 
+// Филиалы для выбора «Только из филиала» (у цветка и букета): [['code','name','label' => 'Только из Уручья']]
+function admin_shops(): array
+{
+    $shops = Settings::get('delivery')['shops'];
+    return array_map(fn ($s) => ['code' => $s['code'], 'name' => $s['name'], 'label' => Text::onlyShop($s['code'], $shops)], $shops);
+}
+
+// '' (везде) или код магазина из настроек
+function admin_shop_code(mixed $v): bool
+{
+    return $v === '' || (is_string($v) && in_array($v, array_column(Settings::get('delivery')['shops'], 'code'), true));
+}
+
 // Справочник в порядке, который задаёт владелец перетаскиванием; новые цветки (за Catalog::NEW_FLOWER_DAYS дней) — сверху
 function admin_flowers(): array
 {
@@ -519,7 +544,7 @@ function admin_flowers(): array
     return array_map(fn ($f) => [
         'id' => (int) $f['id'], 'name' => $f['name'], 'kind' => $f['kind'], 'unit' => $f['unit'], 'priceKop' => (int) $f['priceKop'],
         'prevPriceKop' => $f['prevPriceKop'] === null ? null : (int) $f['prevPriceKop'], 'inStock' => (bool) $f['inStock'],
-        'inFilter' => (bool) $f['inFilter'], 'substitutes' => $subs[$f['id']] ?? [], 'isNew' => (bool) $f['fresh'],
+        'inFilter' => (bool) $f['inFilter'], 'onlyShop' => (string) $f['onlyShop'], 'substitutes' => $subs[$f['id']] ?? [], 'isNew' => (bool) $f['fresh'],
     ], Catalog::adminFlowerOrder(admin_flowers_rows()));
 }
 
@@ -535,7 +560,7 @@ Http::get('/admin/flowers', function () {
     $items = Db::all('SELECT sizeId, flowerId, qty FROM bouquet_items ORDER BY id');
     $swaps = admin_bouquet_swaps();
     $bouquets = array_map(fn ($b) => [
-        'id' => (int) $b['id'], 'name' => $b['name'], 'enabled' => (bool) $b['enabled'], 'swaps' => (object) ($swaps[$b['id']] ?? []),
+        'id' => (int) $b['id'], 'name' => $b['name'], 'enabled' => (bool) $b['enabled'], 'onlyShop' => (string) $b['onlyShop'], 'swaps' => (object) ($swaps[$b['id']] ?? []),
         'sizes' => array_values(array_map(fn ($s) => [
             'code' => $s['code'], 'packagingKop' => (int) $s['packagingKop'],
             'items' => array_values(array_map(
@@ -543,10 +568,10 @@ Http::get('/admin/flowers', function () {
                 array_filter($items, fn ($i) => $i['sizeId'] === $s['id']),
             )),
         ], array_filter($sizes, fn ($s) => $s['bouquetId'] === $b['id']))),
-    ], Db::all('SELECT id, name, enabled FROM bouquets ORDER BY id'));
+    ], Db::all('SELECT id, name, enabled, onlyShop FROM bouquets ORDER BY id'));
     return admin_page('flowers', [
         'title' => 'Цветы',
-        'editor' => ['initial' => admin_flowers(), 'bouquets' => $bouquets, 'stamp' => admin_stamp('flowers')],
+        'editor' => ['initial' => admin_flowers(), 'bouquets' => $bouquets, 'shops' => admin_shops(), 'stamp' => admin_stamp('flowers')],
         'scripts' => admin_scripts('admin-flowers.js'),
     ]);
 });
@@ -565,8 +590,8 @@ Http::post('/admin/flowers/save', function () {
         if ($name === '' || mb_strlen($name) > 80 || !in_array($r['kind'] ?? '', ['FLOWER', 'GREEN'], true)
             || !in_array($r['unit'] ?? '', ['STEM', 'PIECE'], true) || !admin_is_int($r['priceKop'] ?? null, 0, 1_000_000)
             || !is_bool($r['inStock'] ?? null) || !is_bool($r['inFilter'] ?? true) || !(($r['id'] ?? null) === null || admin_is_int($r['id']))
-            || !is_array($subs) || count($subs) > 20 || array_filter($subs, fn ($s) => !is_int($s))) admin_fail($bad);
-        $clean[] = ['id' => $r['id'] ?? null, 'name' => $name, 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => $r['inStock'], 'inFilter' => $r['inFilter'] ?? true, 'substitutes' => array_values($subs)];
+            || !is_array($subs) || count($subs) > 20 || array_filter($subs, fn ($s) => !is_int($s)) || !admin_shop_code($r['onlyShop'] ?? '')) admin_fail($bad);
+        $clean[] = ['id' => $r['id'] ?? null, 'name' => $name, 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => $r['inStock'], 'inFilter' => $r['inFilter'] ?? true, 'onlyShop' => $r['onlyShop'] ?? '', 'substitutes' => array_values($subs)];
     }
     $names = array_map(fn ($r) => admin_norm($r['name']), $clean);
     foreach ($names as $i => $n) {
@@ -601,7 +626,7 @@ Http::post('/admin/flowers/save', function () {
             // Сначала временные названия: так можно поменять двум цветкам названия местами.
             foreach ($plan as [, , $old]) if ($old) Db::update('flowers', (int) $old['id'], ['name' => "__tmp_{$old['id']}"]);
             foreach ($plan as [$r, $i, $old]) {
-                $row = ['name' => $r['name'], 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => (int) $r['inStock'], 'inFilter' => (int) $r['inFilter'], 'sortOrder' => $orders[$i]];
+                $row = ['name' => $r['name'], 'kind' => $r['kind'], 'unit' => $r['unit'], 'priceKop' => $r['priceKop'], 'inStock' => (int) $r['inStock'], 'inFilter' => (int) $r['inFilter'], 'onlyShop' => $r['onlyShop'], 'sortOrder' => $orders[$i]];
                 if ($old) {
                     $id = (int) $old['id'];
                     $row['prevPriceKop'] = (int) $old['priceKop'] !== $r['priceKop'] ? (int) $old['priceKop'] : $old['prevPriceKop'];

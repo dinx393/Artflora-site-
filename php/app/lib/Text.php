@@ -49,4 +49,22 @@ final class Text
             ['code' => 'call', 'label' => 'Позвонить', 'href' => "tel:+$digits"],
         ];
     }
+
+    // «Уручье» → «Уручья», «Малиновка» → «Малиновки»: для «Только из Уручья», «из Малиновки».
+    // Незнакомое окончание — в кавычках: «из магазина «Немига»».
+    public static function fromShop(string $name): string
+    {
+        $name = trim($name);
+        if (preg_match('/ье$/u', $name)) return 'из ' . mb_substr($name, 0, -1) . 'я';
+        if (preg_match('/[кгх]а$/u', $name)) return 'из ' . mb_substr($name, 0, -1) . 'и';
+        if (preg_match('/а$/u', $name)) return 'из ' . mb_substr($name, 0, -1) . 'ы';
+        return "из магазина «{$name}»";
+    }
+
+    // «Только из Уручья» по коду магазина (настройки доставки). Нет такого магазина — пусто.
+    public static function onlyShop(string $code, array $shops): string
+    {
+        foreach ($shops as $s) if ($s['code'] === $code && $code !== '') return 'Только ' . self::fromShop($s['name']);
+        return '';
+    }
 }

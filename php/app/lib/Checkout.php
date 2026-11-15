@@ -33,8 +33,10 @@ final class Checkout
     // Пересчитываем корзину по текущим ценам из базы.
     // → ['lines' => [['bouquetId','slug','name','photo','size','sizes' => [['code','priceKop']],'qty','priceKop','composition','swaps']],
     //    'addons' => [['addonId','name','qty','priceKop']], 'removed' => [что пропало из наличия], 'bouquetsKop', 'addonsKop']
-    public static function priceCart(array $cart): array
+    // $shop — филиал, который собирает заказ: для флориста замены считаем с учётом цветов «только из другого филиала».
+    public static function priceCart(array $cart, string $shop = ''): array
     {
+        $shops = Settings::get('delivery')['shops'];
         $ids = array_values(array_unique(array_column($cart['lines'], 'bouquetId')));
         $rows = [];
         foreach ($ids ? Catalog::load('b.id ' . Db::in($ids), $ids) : [] as $b) $rows[$b['id']] = $b;
@@ -64,7 +66,10 @@ final class Checkout
                 'qty' => max(1, min(20, (int) $l['qty'])),
                 'priceKop' => Pricing::sizePriceKop($size),
                 'composition' => Pricing::compositionText($size['items']),
-                'swaps' => Pricing::swapsText($size['items']), // для флориста: что заменяем в этом заказе
+                'swaps' => Pricing::swapsText($size['items'], $shop), // для флориста: что заменяем в этом заказе
+                // «Только из Уручья» (решение 2026-11-15): код филиала, '' — из любого
+                'onlyShop' => $only = Catalog::onlyShop($b, $size, $shops),
+                'onlyShopLabel' => Text::onlyShop($only, $shops),
             ];
         }
 
@@ -81,10 +86,16 @@ final class Checkout
             if ($r) $addons[] = ['addonId' => (int) $r['id'], 'code' => $r['code'], 'name' => $r['name'], 'qty' => max(1, min(10, $a['qty'])), 'priceKop' => (int) $r['priceKop']];
         }
 
+        // Букеты, которые есть только в одном филиале: весь заказ едет оттуда. Если такие букеты из разных
+        // филиалов — одним заказом не собрать (conflict).
+        $need = array_values(array_unique(array_filter(array_column($lines, 'onlyShop'))));
         return [
             'lines' => $lines,
             'addons' => $addons,
             'removed' => $removed,
+            'onlyShop' => count($need) === 1 ? $need[0] : '',
+            'onlyShopFrom' => count($need) === 1 ? Text::onlyShop($need[0], $shops) : '',
+            'conflict' => count($need) > 1 ? array_values(array_filter(array_map(fn ($c) => Text::onlyShop($c, $shops), $need))) : [],
             'bouquetsKop' => array_sum(array_map(fn ($l) => $l['priceKop'] * $l['qty'], $lines)),
             'addonsKop' => array_sum(array_map(fn ($a) => $a['priceKop'] * $a['qty'], $addons)),
         ];
@@ -92,10 +103,12 @@ final class Checkout
 
     // Итог корзины: ['priced', 'quote' (null при самовывозе или без выбора места), 'discountKop', 'deliveryKop', 'totalKop']
     // $place — см. Delivery::quotePlace (Checkout::parsePlace)
+    // Есть букеты «только из Уручья» — доставка считается от этого филиала (Delivery::fromShop, как заказ, оформленный
+    // в магазине: в дальний конец города дороже), самовывоз — только оттуда.
     public static function totals(array $cart, string $method, ?array $place): array
     {
-        $cfg = Settings::get('delivery');
         $priced = self::priceCart($cart);
+        $cfg = self::deliveryConfig($priced['onlyShop']);
         $goods = $priced['bouquetsKop'] + $priced['addonsKop'];
         $quote = null;
         $discountKop = 0;
@@ -111,6 +124,18 @@ final class Checkout
         return ['priced' => $priced, 'quote' => $quote, 'discountKop' => $discountKop, 'deliveryKop' => $deliveryKop, 'totalKop' => $goods - $discountKop + $deliveryKop];
     }
 
+    // Настройки доставки для корзины: обычные или «доставка из одного филиала»
+    public static function deliveryConfig(string $onlyShop): array
+    {
+        $cfg = Settings::get('delivery');
+        if ($onlyShop === '') return $cfg;
+        try {
+            return Delivery::fromShop($cfg, $onlyShop);
+        } catch (InvalidArgumentException) {
+            return $cfg; // магазин убрали из настроек — считаем как обычно
+        }
+    }
+
     // Куда везти — из браузера: место на карте, кнопка зоны или участка. Старые страницы присылают
     // район по названию — его тоже понимаем. Цену всё равно считает сервер. Не понятно — null.
     public static function parsePlace(mixed $raw, mixed $district = ''): ?array
@@ -123,8 +148,10 @@ final class Checkout
                 return ['type' => 'point', 'lat' => round((float) $raw['lat'], 5), 'lng' => round((float) $raw['lng'], 5)];
             }
             if ($type === 'zone' && is_int($raw['zone'] ?? null) && $raw['zone'] >= 1 && $raw['zone'] <= 50) return ['type' => 'zone', 'zone' => $raw['zone']];
-            if ($type === 'outside') return ['type' => 'outside'];
-            if ($type === 'area' && is_string($raw['name'] ?? null) && $raw['name'] !== '' && mb_strlen($raw['name']) <= 80) return ['type' => 'area', 'name' => $raw['name']];
+            // far — кнопки «со стороны другого филиала» на карте доставки из одного филиала (букеты «только из Уручья»)
+            $far = ($raw['far'] ?? false) === true ? ['far' => true] : [];
+            if ($type === 'outside') return ['type' => 'outside'] + $far;
+            if ($type === 'area' && is_string($raw['name'] ?? null) && $raw['name'] !== '' && mb_strlen($raw['name']) <= 80) return ['type' => 'area', 'name' => $raw['name']] + $far;
             return null;
         }
         if (is_string($district) && $district !== '' && ($p = self::districtPoint($district))) return ['type' => 'point', 'district' => $district] + $p;
@@ -251,16 +278,22 @@ final class Checkout
         }
 
         $t = self::totals($o['cart'], $o['method'], $place);
-        if ($place && ($t['quote']['ok'] ?? false)) $o['district'] = Delivery::placeLabel($place, $t['quote'], $cfg);
+        if ($place && ($t['quote']['ok'] ?? false)) $o['district'] = Delivery::placeLabel($place, $t['quote'], self::deliveryConfig($t['priced']['onlyShop']));
         if ($t['priced']['removed']) {
             return ['ok' => false, 'error' => 'Часть букетов закончилась, корзина обновлена. Проверьте заказ ещё раз', 'removed' => $t['priced']['removed']];
         }
         if (!$t['priced']['lines']) return ['ok' => false, 'error' => 'Корзина пуста'];
+        if ($t['priced']['conflict']) {
+            return ['ok' => false, 'error' => 'В корзине букеты из разных магазинов (' . mb_strtolower(implode(' и ', $t['priced']['conflict'])) . '). Оформите их отдельными заказами или позвоните нам', 'field' => 'cart'];
+        }
         if ($o['method'] === 'DELIVERY' && !$unknown && !($t['quote']['ok'] ?? false)) {
             return ['ok' => false, 'error' => 'Сюда мы не возим. Позвоните нам, что-нибудь придумаем', 'field' => 'address'];
         }
 
-        if ($o['method'] === 'PICKUP') {
+        $only = $t['priced']['onlyShop'];
+        if ($only !== '' && in_array($only, array_column($cfg['shops'], 'code'), true)) {
+            $shopCode = $only; // букет «только из Уручья»: и самовывоз, и доставка — оттуда
+        } elseif ($o['method'] === 'PICKUP') {
             $shopCode = $cfg['shops'][0]['code'];
             foreach ($cfg['shops'] as $s) if ($s['code'] === $o['shop']) $shopCode = $s['code'];
         } else {
@@ -268,9 +301,11 @@ final class Checkout
             $shopCode = !empty($t['quote']['shop']) ? $t['quote']['shop']['code'] : $cfg['shops'][0]['code'];
         }
         $q = $t['quote'];
+        // замены для флориста — уже зная, какой филиал собирает (цветок «только из Уручья» в Малиновке заменяют)
+        $swaps = array_column(self::priceCart($o['cart'], $shopCode)['lines'], 'swaps');
 
         try {
-            $id = Db::tx(function () use ($o, $t, $q, $unknown, $shopCode) {
+            $id = Db::tx(function () use ($o, $t, $q, $unknown, $shopCode, $swaps) {
                 $id = Db::insert('orders', [
                     'customerName' => $o['customerName'],
                     'customerPhone' => $o['customerPhone'],
@@ -300,9 +335,9 @@ final class Checkout
                     'idempotencyKey' => $o['idempotencyKey'],
                 ]);
                 Db::exec('UPDATE orders SET number = 10000 + id WHERE id = ?', [$id]);
-                foreach ($t['priced']['lines'] as $l) {
+                foreach ($t['priced']['lines'] as $n => $l) {
                     Db::insert('order_items', ['orderId' => $id, 'bouquetId' => $l['bouquetId'], 'name' => $l['name'], 'size' => $l['size'],
-                        'composition' => $l['composition'], 'swaps' => mb_substr($l['swaps'], 0, 500), 'qty' => $l['qty'], 'priceKop' => $l['priceKop']]);
+                        'composition' => $l['composition'], 'swaps' => mb_substr($swaps[$n] ?? $l['swaps'], 0, 500), 'onlyShop' => mb_substr($l['onlyShopLabel'], 0, 80), 'qty' => $l['qty'], 'priceKop' => $l['priceKop']]);
                 }
                 foreach ($t['priced']['addons'] as $a) {
                     Db::insert('order_items', ['orderId' => $id, 'addonId' => $a['addonId'], 'name' => $a['name'], 'composition' => '',
@@ -336,7 +371,7 @@ final class Checkout
         $o['deliveryZone'] = $o['deliveryZone'] === null ? null : (int) $o['deliveryZone'];
         $o['items'] = array_map(fn ($i) => [
             'id' => (int) $i['id'], 'bouquetId' => $i['bouquetId'] === null ? null : (int) $i['bouquetId'], 'name' => $i['name'],
-            'size' => $i['size'], 'composition' => $i['composition'], 'swaps' => $i['swaps'] ?? '', 'qty' => (int) $i['qty'], 'priceKop' => (int) $i['priceKop'],
+            'size' => $i['size'], 'composition' => $i['composition'], 'swaps' => $i['swaps'] ?? '', 'onlyShop' => $i['onlyShop'] ?? '', 'qty' => (int) $i['qty'], 'priceKop' => (int) $i['priceKop'],
         ], Db::all('SELECT * FROM order_items WHERE orderId = ? ORDER BY id', [$o['id']]));
         return $o;
     }

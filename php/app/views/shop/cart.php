@@ -2,7 +2,7 @@
 // Корзина и оформление (повторяет src/components/Checkout.tsx). Разметка здесь, оживляет её assets/js/checkout.js:
 // строки корзины и суммы приходят с сервера (/api/cart), заказ уходит на /api/orders.
 // На телефоне два шага: «Корзина и доставка» → «Получатель и оплата» (нижняя панель «Далее»).
-// Переменные: $shops, $pickupPct, $freeFromKop, $districts, $leadHours, $delivery, $addons
+// Переменные: $shops, $pickupPct, $freeFromKop, $districts, $leadHours, $delivery, $variants, $addons
 $payments = [
     ['code' => 'ERIP', 'title' => 'ЕРИП', 'note' => 'Покажем, как оплатить, сразу после оформления'],
     ['code' => 'CARD', 'title' => 'Картой Visa, MasterCard, МИР', 'note' => 'Онлайн через WebPay: администратор пришлёт ссылку для оплаты'],
@@ -13,6 +13,8 @@ $byn = fn (int $kop) => e(preg_replace('/ BYN$/', '', Money::format($kop))) . '<
 $config = [
     'shops' => $shops, 'pickupPct' => $pickupPct, 'freeFromKop' => $freeFromKop, 'districts' => $districts, 'leadHours' => $leadHours,
     'today' => Slots::minskNow()['date'], 'slots' => Slots::ALL, 'sundayFrom' => Slots::SUNDAY_FROM, 'zones' => $delivery['zones'],
+    // зоны карты «доставка только из этого филиала» (букеты «Только из Уручья»)
+    'variantZones' => (object) array_map(fn ($v) => $v['zones'], $variants),
     'addons' => array_map(fn ($a) => ['id' => $a['id'], 'code' => $a['code'], 'name' => $a['name'], 'priceKop' => $a['priceKop']], $addons ?? []),
 ];
 ?>
@@ -52,6 +54,11 @@ $config = [
         <p class="muted" data-co-loading>Считаем…</p>
         <p class="error" data-co-removed hidden></p>
         <div data-co-lines></div>
+        <?php /* В корзине букет «Только из Уручья»: весь заказ из этого магазина (checkout.js) */ ?>
+        <div class="only-shop-note" data-co-only hidden>
+          <b data-co-only-label></b>
+          <span data-co-only-text></span>
+        </div>
         <div class="zone" style="font-weight: 700">В подарок к заказу: 2 пакетика подкормки для цветов</div>
         <?php /* Поле видно, только когда в корзине есть открытка (бесплатный доп по желанию, решение 2026-11-06) */ ?>
         <label class="field" data-co-card-field hidden>
@@ -89,7 +96,7 @@ $config = [
               Найдите своё место на карте и нажмите на него, или нажмите кнопку зоны нужного цвета.
               Не нашли? Отметьте «Не знаю адрес» выше или напишите нам.
             </span>
-            <?= View::render('partials/zones-map', ['delivery' => $delivery, 'districts' => $districts, 'open' => true, 'pick' => true]) ?>
+            <?= View::render('partials/zones-map', ['delivery' => $delivery, 'variants' => $variants, 'districts' => $districts, 'open' => true, 'pick' => true]) ?>
           </div>
           <div class="zone" data-co-zone hidden>
             <div class="row between">
@@ -121,6 +128,7 @@ $config = [
 
         <div class="stack" data-co-show="pickup" hidden>
           <p class="muted">Соберём к выбранному времени и пришлём фото. Скидка <?= e($pickupPct) ?>% на букет.</p>
+          <p class="small" style="font-weight: 700; color: var(--cherry)" data-co-pickup-only hidden></p>
           <div class="row" style="gap: 8px">
             <?php foreach ($shops as $i => $s): ?>
               <button type="button" class="opt<?= $i === 0 ? ' on' : '' ?>" data-co-shop="<?= e($s['code']) ?>">

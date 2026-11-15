@@ -62,6 +62,11 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
         <span class="price" style="font-size: 40px" data-price><?= ShopView::byn($def['priceKop']) ?></span>
         <span class="small muted" data-pickup>Самовывоз: <?= e($pickup($def['priceKop'])) ?></span>
       </div>
+      <?php /* «Только из Уручья» (решение 2026-11-15): у выбранного размера; меняется при выборе размера (shop.js) */ ?>
+      <div class="only-shop-note" data-only-shop<?= $def['onlyShopLabel'] === '' ? ' hidden' : '' ?>>
+        <b data-only-shop-label><?= e($def['onlyShopLabel']) ?></b>
+        <span>Этот букет собираем только в одном магазине: самовывоз оттуда, доставка считается от него — в дальние районы дороже.</span>
+      </div>
 
       <?php if (count($b['sizes']) > 1): ?>
         <div class="stack" style="gap: 8px">
@@ -69,7 +74,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
           <div class="size-grid">
             <?php foreach ($b['sizes'] as $s): ?>
               <button type="button" class="opt <?= $s['code'] === $b['defaultSize'] ? 'on' : '' ?>" data-size-opt="<?= e($s['code']) ?>"
-                data-price-html="<?= e(ShopView::byn($s['priceKop'])) ?>" data-pickup-text="<?= e('Самовывоз: ' . $pickup($s['priceKop'])) ?>">
+                data-price-html="<?= e(ShopView::byn($s['priceKop'])) ?>" data-pickup-text="<?= e('Самовывоз: ' . $pickup($s['priceKop'])) ?>" data-only-shop-label="<?= e($s['onlyShopLabel']) ?>">
                 <b><?= e($s['code']) ?> · <?= e(Money::format($s['priceKop'])) ?></b>
                 <?php if ($s['note'] !== ''): ?><span class="note"><?= e($s['note']) ?></span><?php endif ?>
               </button>

@@ -6,6 +6,7 @@ $tabs = [
     'off' => "Выключены · {$counts['off']}",
     'missing' => "Нет цветов · {$counts['missing']}",
     'swap' => "🔁 Будет замена · {$counts['swap']}",
+    'shop' => "📍 Только из филиала · {$counts['shop']}",
     'timer' => "⏱ Собран сегодня · {$counts['timer']}",
 ];
 // Что ищет поиск по списку: название, адрес, коллекция, вид и цветы всех размеров
@@ -99,7 +100,7 @@ $filterFlowers = $sortNames($filterFlowers);
       <tr><th aria-label="Порядок"></th><th>Букет</th><th>Состав (M)</th><th>Упаковка</th><th>На сайте</th><th>Статус</th><th>Показывать</th></tr>
     </thead>
     <tbody>
-      <?php $lastRank = null; foreach ($shown as ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $price, 'swaps' => $swaps]):
+      <?php $lastRank = null; foreach ($shown as ['b' => $b, 'vis' => $vis, 'main' => $main, 'price' => $price, 'swaps' => $swaps, 'only' => $only]):
         $rank = Catalog::rank($b, $daySlug); ?>
         <?php if ($rank !== $lastRank): $lastRank = $rank; ?>
           <tr class="rank-head" data-rank-head="<?= $rank ?>"><td colspan="7" class="small muted" style="font-weight: 800; padding-top: 14px"><?= e(Catalog::RANK_NAMES[$rank]) ?></td></tr>
@@ -132,6 +133,9 @@ $filterFlowers = $sortNames($filterFlowers);
               <span class="pill ok">На сайте</span>
               <?php foreach ($swaps as $x): ?>
                 <span class="pill swap" title="Этого цветка нет, в букете указана замена. Флорист увидит её в заказе">🔁 Будет замена: <?= e(mb_strtolower($x['flower'])) ?> → <?= e(mb_strtolower($x['to'])) ?></span>
+              <?php endforeach ?>
+              <?php foreach ($only as $label => $codes): ?>
+                <span class="pill onlyshop" title="Галочка в карточке букета или в составе цветок, который есть только в одном филиале, а замены для него в букете нет. Самовывоз и доставка — только оттуда">📍 <?= e($label) ?><?= count($codes) < count(Pricing::availableSizes($b)) ? ' (' . e(implode(', ', $codes)) . ')' : '' ?></span>
               <?php endforeach ?>
             <?php elseif ($vis['reason'] === 'disabled' && $b['hiddenByTimerAt'] !== null): ?>
               <span class="pill" title="Таймер «собран сегодня» сработал <?= e(Catalog::timerDate($b['hiddenByTimerAt'])) ?>. Вернуть на сайт — переключателем справа">⏱ Скрыт по таймеру <?= e(Catalog::timerDate($b['hiddenByTimerAt'])) ?></span>

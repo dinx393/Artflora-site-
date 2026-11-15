@@ -7,7 +7,8 @@
 // Букет показываем, если он включён и у него остался хотя бы один доступный размер.
 //
 // Формы данных (массивы):
-//   цветок  ['id','name','priceKop','inStock', 'kind'?, 'substitutes' => [['name','inStock'], ...]?]  — замены в этом букете
+//   цветок  ['id','name','priceKop','inStock', 'kind'?, 'onlyShop'?, 'substitutes' => [['name','inStock','onlyShop'?], ...]?]  — замены в этом букете
+//   onlyShop — код филиала, где только и есть этот цветок ('' или нет — есть везде; решение владельца 2026-11-15)
 //   позиция ['qty' => 1.5, 'flower' => цветок]
 //   размер  ['code' => 'M', 'note' => '', 'packagingKop' => 0, 'items' => [позиция, ...]]
 //   букет   ['enabled' => true, 'photoSize'? => 'M', 'sizes' => [размер, ...]]
@@ -28,11 +29,13 @@ final class Pricing
 
     // Чем собираем: сам цветок, если есть (false); иначе первая замена в наличии (её название); null — собрать нечем.
     // Цена при замене остаётся ценой исходного цветка, чтобы цена букета не прыгала.
-    public static function replacementFor(array $f): string|null|false
+    // $shop — филиал, который собирает заказ (для флориста): цветок, который есть только в другом филиале, там не взять.
+    public static function replacementFor(array $f, string $shop = ''): string|null|false
     {
-        if (!empty($f['inStock'])) return false;
+        $here = fn (array $x) => !empty($x['inStock']) && ($shop === '' || ($x['onlyShop'] ?? '') === '' || $x['onlyShop'] === $shop);
+        if ($here($f)) return false;
         foreach ($f['substitutes'] ?? [] as $x) {
-            if (!empty($x['inStock'])) return $x['name'];
+            if ($here($x)) return $x['name'];
         }
         return null;
     }
@@ -56,6 +59,44 @@ final class Pricing
         return self::roundUpKop(self::rawSizeKop($size));
     }
 
+    // Где можно собрать позицию (решение владельца 2026-11-15): null — в любом филиале; ['uruchye'] — только там;
+    // [] — нигде (нет ни цветка, ни замены). Цветок только в одном филиале, но в букете есть замена в наличии,
+    // которая есть везде, — позицию соберут где угодно (в другом филиале с заменой).
+    public static function itemShops(array $f): ?array
+    {
+        $opts = [];
+        if (!empty($f['inStock'])) $opts[] = (string) ($f['onlyShop'] ?? '');
+        foreach ($f['substitutes'] ?? [] as $x) if (!empty($x['inStock'])) $opts[] = (string) ($x['onlyShop'] ?? '');
+        if (!$opts) return [];
+        if (in_array('', $opts, true)) return null;
+        return array_values(array_unique($opts));
+    }
+
+    // Где можно собрать размер: пересечение по всем позициям. null — везде, [] — нигде (цветы в разных филиалах).
+    public static function sizeShops(array $size): ?array
+    {
+        $set = null;
+        foreach ($size['items'] as $i) {
+            $s = self::itemShops($i['flower']);
+            if ($s !== null) $set = $set === null ? $s : array_values(array_intersect($set, $s));
+        }
+        return $set;
+    }
+
+    // Из какого одного филиала только и можно заказать размер: '' — из любого. $bouquetOnly — галочка у самого букета
+    // (важнее цветов), $shopCodes — все магазины из настроек: если размер собирают во всех, ограничения нет.
+    public static function sizeOnlyShop(array $size, string $bouquetOnly = '', array $shopCodes = []): string
+    {
+        if ($bouquetOnly !== '') return $bouquetOnly;
+        $set = self::sizeShops($size);
+        if ($set === null || !$set) return '';
+        if ($shopCodes) {
+            $set = array_values(array_intersect($set, $shopCodes));
+            if (count($set) === count($shopCodes)) return '';
+        }
+        return count($set) === 1 ? $set[0] : '';
+    }
+
     public static function missingFlowers(array $size): array
     {
         $out = [];
@@ -67,7 +108,8 @@ final class Pricing
 
     public static function sizeAvailable(array $size): bool
     {
-        return count($size['items']) > 0 && !self::missingFlowers($size);
+        // цветы есть, но в разных филиалах (один только в Уручье, другой только в Малиновке) — не собрать
+        return count($size['items']) > 0 && !self::missingFlowers($size) && self::sizeShops($size) !== [];
     }
 
     public static function sortSizes(array $sizes): array
@@ -120,20 +162,20 @@ final class Pricing
     }
 
     // Какие цветы сейчас заменяем: [['flower' => 'Альстромерия белая', 'to' => 'Альстромерия розовая'], ...]
-    public static function swaps(array $items): array
+    public static function swaps(array $items, string $shop = ''): array
     {
         $out = [];
         foreach ($items as $i) {
-            $to = self::replacementFor($i['flower']);
+            $to = self::replacementFor($i['flower'], $shop);
             if (is_string($to)) $out[] = ['flower' => $i['flower']['name'], 'to' => $to];
         }
         return $out;
     }
 
     // Для флориста в заказе: «Альстромерия розовая вместо: альстромерия белая; …» (пусто — замен нет)
-    public static function swapsText(array $items): string
+    public static function swapsText(array $items, string $shop = ''): string
     {
-        return implode('; ', array_map(fn ($x) => $x['to'] . ' вместо: ' . mb_strtolower($x['flower']), self::swaps($items)));
+        return implode('; ', array_map(fn ($x) => $x['to'] . ' вместо: ' . mb_strtolower($x['flower']), self::swaps($items, $shop)));
     }
 
     // Замены по всему букету (все размеры, что можно собрать) — для пометки «будет замена» в админке

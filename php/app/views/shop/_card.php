@@ -10,6 +10,7 @@ $href = '/bouquet/' . rawurlencode($b['slug']);
   </a>
   <div class="pcard-body">
     <a href="<?= e($href) ?>" class="pcard-title" title="<?= e($b['name']) ?>"><?= e($b['name']) ?></a>
+    <?php if (!empty($b['onlyShopLabel'])): /* букет есть только в одном филиале (решение 2026-11-15) */ ?><span class="only-shop"><?= e($b['onlyShopLabel']) ?></span><?php endif ?>
     <?php if (!empty($note)): ?><span class="small muted"><?= e($note) ?></span><?php endif ?>
     <div class="pcard-buy">
       <span class="price"><?= ShopView::byn($b['priceKop']) ?></span>

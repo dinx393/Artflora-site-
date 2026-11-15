@@ -20,6 +20,11 @@
   var initial = clone(data.initial);
   if (!initial.sections) initial.sections = [];
   if (initial.weddingOnly === undefined) initial.weddingOnly = true;
+  if (!initial.onlyShop) initial.onlyShop = ""; // «Только из Уручья»: код филиала, "" — из любого
+  var shops = data.shops || [];
+  function shopLabel(code) {
+    return (shops.filter(function (x) { return x.code === code; })[0] || {}).label || "";
+  }
   if (!initial.swaps || Array.isArray(initial.swaps)) initial.swaps = {}; // замены в этом букете: {цветок: [замена, …]}
   if (!initial.photoFocus || Array.isArray(initial.photoFocus)) initial.photoFocus = {}; // кадр фото: {путь: [x, y]} в %
   // упаковка у каждого размера своя; текст поля храним отдельно, чтобы можно было стереть и набрать
@@ -79,6 +84,16 @@
   function replacement(f) {
     if (!f || f.inStock) return undefined;
     return swapsOf(f.id).map(function (id) { return byId[id]; }).filter(function (x) { return x && x.inStock; })[0];
+  }
+  // Цветок только в одном филиале (справочник «Цветы») и в этом букете нет замены, которая есть везде, —
+  // букет можно заказать только из этого филиала (как Pricing::itemShops). Код филиала или "".
+  function flowerOnly(f) {
+    if (!f) return "";
+    var opts = [];
+    if (f.inStock) opts.push(f.onlyShop || "");
+    swapsOf(f.id).forEach(function (id) { var x = byId[id]; if (x && x.inStock) opts.push(x.onlyShop || ""); });
+    if (!opts.length || opts.indexOf("") >= 0) return "";
+    return opts[0];
   }
   function setSwaps(flowerId, list) {
     var w = Object.assign({}, state.b.swaps);
@@ -317,6 +332,24 @@
     }
     h += "</div>";
 
+    // Где собираем (решение владельца 2026-11-15): весь букет только из одного филиала. Ещё так бывает само —
+    // если в составе цветок, который есть только в одном филиале, и замены для него в этом букете нет.
+    if (shops.length > 1) {
+      var auto = [];
+      bouquetFlowers().forEach(function (f) {
+        var code = flowerOnly(f);
+        if (code) auto.push(f.name.toLowerCase() + " — " + shopLabel(code).replace("Только", "только"));
+      });
+      h += '<div class="stack" style="gap: 8px"><span class="label">📍 Где можно заказать</span><div class="row" style="gap: 6px">';
+      [{ code: "", label: "В любом филиале" }].concat(shops).forEach(function (x) {
+        h += '<button type="button" class="chip ' + (b.onlyShop === x.code ? "on" : "") + '"' + on("click", function () { set({ onlyShop: x.code }); }) + ">" + esc(x.label) + "</button>";
+      });
+      h += "</div>";
+      h += '<span class="small muted">«Только из …» — на сайте жирная пометка, самовывоз только из этого магазина, доставка считается от него (в дальний конец города дороже).</span>';
+      if (auto.length && !b.onlyShop) h += '<span class="pill onlyshop" style="align-self: flex-start">📍 Сейчас и так: ' + esc(auto.join("; ")) + " — замены в букете нет</span>";
+      h += "</div>";
+    }
+
     // Разделы над каталогом: можно несколько. Некоторые включаются сами (формат, розы в составе) — их не выключить.
     var hasRoses = b.sizes.some(function (s) {
       return s.items.some(function (i) { var f = byId[i.flowerId]; return f && f.name.toLowerCase().indexOf("роза") >= 0; });
@@ -501,7 +534,10 @@
       var ids = swapsOf(f.id);
       var rep = replacement(f);
       var status;
-      if (f.inStock) status = ids.length ? '<span class="small muted">Есть в наличии</span>' : '<span class="small muted">Есть в наличии · без замены</span>';
+      var fOnly = flowerOnly(f);
+      if (f.inStock && fOnly) status = '<span class="pill onlyshop">📍 ' + esc(shopLabel(fOnly)) + " · замены нет, букет тоже</span>";
+      else if (f.inStock && f.onlyShop) status = '<span class="small muted">📍 ' + esc(shopLabel(f.onlyShop)) + " · в другом филиале будет замена</span>";
+      else if (f.inStock) status = ids.length ? '<span class="small muted">Есть в наличии</span>' : '<span class="small muted">Есть в наличии · без замены</span>';
       else if (rep) status = '<span class="pill swap">Нет · 🔁 будет замена: ' + esc(rep.name.toLowerCase()) + "</span>";
       else status = '<span class="pill warn">Нет · ' + (ids.length ? "замен тоже нет" : "без замены") + ", букет скрыт</span>";
       h += '<div class="stack" style="gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line-soft)">';

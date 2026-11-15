@@ -68,6 +68,7 @@
     unknown: false,
     place: null, // куда везти: выбирают на карте или кнопкой зоны (delivery-map.js)
     shop: cfg.shops[0] ? cfg.shops[0].code : "",
+    variant: "", // букеты «Только из Уручья» в корзине: код филиала, доставка считается от него
     dayMode: "today",
     otherDate: addDays(today, 2),
     slot: "",
@@ -114,11 +115,18 @@
   }
   // Как назвать выбор в блоке с ценой
   function placeTitle(q) {
-    if (q.area) return q.area.name;
-    if (q.outside) return "За МКАД";
-    var z = cfg.zones[q.zone - 1];
+    var far = ", со стороны другого филиала";
+    if (q.area) return q.area.name + (q.area.farSide ? far : "");
+    if (q.outside) return "За МКАД" + (q.farSide ? far : "");
+    var zones = (st.variant && cfg.variantZones[st.variant]) || cfg.zones;
+    var z = zones[q.zone - 1];
     if (!z) return "Доставка";
-    return q.zone === cfg.zones.length ? "Минск, дальше от магазина (до МКАД)" : "Минск, до " + z.maxKm + " км от магазина";
+    if (q.zone < zones.length) return "Минск, до " + z.maxKm + " км от магазина";
+    // карта «из одного филиала»: последняя зона — дальний конец города
+    return st.variant && zones.length > 1 ? "Минск, дальше " + zones[zones.length - 2].maxKm + " км от магазина" : "Минск, дальше от магазина (до МКАД)";
+  }
+  function shopName(code) {
+    return (cfg.shops.filter(function (x) { return x.code === code; })[0] || {}).name || "";
   }
   function date() {
     return st.dayMode === "today" ? today : st.dayMode === "tomorrow" ? addDays(today, 1) : st.otherDate;
@@ -147,6 +155,17 @@
       .then(function (t) {
         if (!t || !t.priced) return;
         st.totals = t;
+        // Появился или пропал букет «Только из Уручья»: карта и цены зон другие, выбранное место сбрасываем
+        var only = t.priced.onlyShop || "";
+        if (only !== st.variant) {
+          st.variant = only;
+          document.dispatchEvent(new CustomEvent("zmap:variant", { detail: only }));
+          if (st.place) {
+            st.place = null;
+            refresh();
+          }
+        }
+        if (only) st.shop = only;
         // Убираем из корзины то, что закончилось
         if (t.priced.removed.length) {
           var keep = {};
@@ -184,6 +203,7 @@
         '<a href="' + href + '"><img src="' + esc(l.photo) + '" alt="' + esc(l.name) + '"' + (l.photoPos ? ' style="object-position: ' + esc(l.photoPos) + '" data-focus="' + esc(l.photoPos.replace(/%/g, "")) + '"' : "") + '></a>' +
         '<div class="stack" style="gap: 8px">' +
         '<a href="' + href + '" class="pcard-title" style="font-size: 22px">' + esc(l.name) + "</a>" +
+        (l.onlyShopLabel ? '<span class="only-shop">' + esc(l.onlyShopLabel) + "</span>" : "") +
         '<div class="row" style="gap: 10px">' + sizes +
         '<div class="qty"><button type="button" aria-label="Меньше" data-qty="-1">−</button><span>' + l.qty +
         '</span><button type="button" aria-label="Больше" data-qty="1">+</button></div>' +
@@ -302,6 +322,24 @@
     show("address", st.method === "DELIVERY" && !unknown);
     show("slots", !unknown);
     setOn("[data-co-shop]", "data-co-shop", st.shop);
+    // Букет «Только из Уручья»: весь заказ из этого магазина. Букеты из разных магазинов одним заказом не оформить.
+    var only = t ? t.priced.onlyShop : "";
+    var conflict = t ? t.priced.conflict : [];
+    $$("[data-co-shop]").forEach(function (b) { b.hidden = !!only && b.getAttribute("data-co-shop") !== only; });
+    var pickupOnly = $("[data-co-pickup-only]");
+    pickupOnly.hidden = !only;
+    pickupOnly.textContent = only ? "В заказе букет, который есть только в магазине " + shopName(only) + ": забрать его можно только там." : "";
+    var onlyBox = $("[data-co-only]");
+    onlyBox.hidden = !only && !conflict.length;
+    if (only) {
+      var names = lines.filter(function (l) { return l.onlyShop; }).map(function (l) { return "«" + l.name + "»"; });
+      setText("[data-co-only-label]", t.priced.onlyShopFrom);
+      setText("[data-co-only-text]", (names.length > 1 ? "Букеты " + names.join(", ") + " собираем" : "Букет " + names[0] + " собираем") +
+        " только в магазине " + shopName(only) + ", поэтому весь заказ поедет оттуда: доставка считается от этого магазина (в дальние районы дороже), самовывоз — тоже оттуда.");
+    } else if (conflict.length) {
+      setText("[data-co-only-label]", "Букеты из разных магазинов");
+      setText("[data-co-only-text]", "В корзине букеты, которые собираем в разных магазинах (" + conflict.join(", ").toLowerCase() + "). Оформите их отдельными заказами или позвоните нам.");
+    }
     var zone = $("[data-co-zone]");
     zone.hidden = !d;
     var deliveryKop = t ? t.deliveryKop : 0;
@@ -310,7 +348,7 @@
     if (d) {
       setText("[data-co-zone-name]", placeTitle(d));
       setHtml("[data-co-zone-price]", t.deliveryKop === 0 ? "Бесплатно" : byn(t.deliveryKop));
-      setText("[data-co-zone-shop]", d.shopName ? "из магазина " + d.shopName : "из ближайшего магазина");
+      setText("[data-co-zone-shop]", d.shopName ? "из магазина " + d.shopName : st.variant ? "из магазина " + shopName(st.variant) : "из ближайшего магазина");
       var left = Math.max(0, cfg.freeFromKop - t.priced.bouquetsKop - t.priced.addonsKop);
       var free = $("[data-co-zone-free]");
       free.hidden = !(left > 0 && !d.area && !d.outside);
@@ -373,7 +411,7 @@
     // Можно ли дальше / оформить
     var address = inputs.address.value.trim();
     var deliveryReady = st.method === "PICKUP" || unknown || !!d;
-    var canNext1 = lines.length > 0;
+    var canNext1 = lines.length > 0 && !conflict.length;
     var canNext2 = unknown ? slots.length > 0 : deliveryReady && !!st.slot && (st.method === "PICKUP" || address.length > 3);
     var canSubmit = canNext1 && canNext2 && recipientOk && inputs.customerName.value.trim().length > 0 && digits(inputs.customerPhone.value).length >= 9 && inputs.consent.checked && !companyErr;
 

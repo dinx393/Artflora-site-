@@ -5,9 +5,10 @@
 // $title (подпись кнопки, по умолчанию «Куда возим: карта»), $heading (вместо кнопки — крупный заголовок, карта всегда открыта,
 // подписи цен крупно: карты «из филиала», владелец 2026-10-27 — их легко было пропустить),
 // $pick (в корзине: карта всегда открыта, под ней крупные кнопки зон — ими и нажатием на карту выбирают, куда везти).
+// $variants (в корзине): ['uruchye' => настройки Delivery::fromShop, …] — карта «доставка только из этого филиала»
+// для букетов «Только из Уручья»; переключает checkout.js событием «zmap:variant».
 // Оживляет assets/js/delivery-map.js; Leaflet грузится только когда карту открыли.
-$zmap = [
-    'delivery' => [
+$zmapDelivery = fn (array $delivery) => [
         'shops' => array_map(fn ($s) => ['name' => $s['name'], 'location' => $s['location']], $delivery['shops']),
         'zones' => $delivery['zones'], 'mkadCenter' => $delivery['mkadCenter'], 'mkadRadiusKm' => $delivery['mkadRadiusKm'],
         'outsideMkadKop' => $delivery['outsideMkadKop'],
@@ -16,7 +17,10 @@ $zmap = [
         'otherShops' => $delivery['otherShops'] ?? null, 'shopOrder' => $delivery['shopOrder'] ?? null,
         'areas' => array_values(array_map(fn ($a) => ['name' => $a['name'], 'color' => $a['color'], 'priceKop' => $a['priceKop'], 'noDelivery' => !empty($a['noDelivery']), 'points' => $a['points']]
             + (isset($a['farExtraKop']) ? ['farExtraKop' => $a['farExtraKop'], 'sides' => $a['sides']] : []), $delivery['areas'] ?? [])),
-    ],
+];
+$zmap = [
+    'delivery' => $zmapDelivery($delivery),
+    'variants' => (object) array_map($zmapDelivery, $variants ?? []),
     'districts' => array_map(fn ($d) => ['name' => $d['name'], 'lat' => $d['lat'], 'lng' => $d['lng'], 'isArea' => !empty($d['isArea'])], $districts),
     'leaflet' => ['css' => View::asset('vendor/leaflet/leaflet.css'), 'js' => View::asset('vendor/leaflet/leaflet.js')],
 ];
