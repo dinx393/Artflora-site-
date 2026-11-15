@@ -716,7 +716,8 @@ Http::get('/admin/orders', function () {
     } else {
         [$where, $params] = ['status = ?', [$status]];
     }
-    $orders = Db::all("SELECT * FROM orders WHERE $where ORDER BY deliveryDate, LPAD(deliverySlot, 11, '0') LIMIT 200", $params);
+    // Самые новые заказы сверху, старые внизу (решение владельца 2026-11-15; раньше — по дате доставки)
+    $orders = Db::all("SELECT * FROM orders WHERE $where ORDER BY id DESC LIMIT 200", $params);
     $ids = array_column($orders, 'id');
     $items = $ids ? Db::all('SELECT * FROM order_items WHERE orderId ' . Db::in($ids) . ' ORDER BY id', $ids) : [];
     foreach ($orders as &$o) $o['items'] = array_values(array_filter($items, fn ($i) => $i['orderId'] === $o['id']));
