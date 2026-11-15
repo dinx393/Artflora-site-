@@ -423,6 +423,16 @@
       "> На фото размер " + code + ": его цена в каталоге, он выбран на странице букета</label>";
     h += '<label class="field"><span>Подпись размера на сайте</span><input class="input" data-k="note-' + code + '" value="' + esc(s.note) + '" placeholder="Как на фото, 11 цветков"' +
       on("input", function (e) { var v = e.target.value; patchSize(function (x) { return Object.assign({}, x, { note: v }); }); }) + "></label>";
+    // Размер в сантиметрах (решение владельца 2026-11-15): на сайте плашка «↔ 35 см ↕ 40 см» в углу фото
+    function cm(key, label) {
+      return '<label class="field" style="flex: 1 1 140px"><span>' + label + '</span><input class="input" inputmode="numeric" maxlength="3" data-k="' + key + "-" + code + '" value="' + (s[key] ? s[key] : "") + '" placeholder="—"' +
+        on("input", function (e) {
+          var v = Math.min(500, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0);
+          patchSize(function (x) { var o = {}; o[key] = v; return Object.assign({}, x, o); });
+        }) + "></label>";
+    }
+    h += '<div class="row" style="gap: 12px; align-items: flex-end">' + cm("widthCm", "↔ Ширина, см") + cm("heightCm", "↕ Высота, см") + "</div>";
+    h += '<span class="small muted">Размер ' + code + " в сантиметрах. На сайте — плашка в углу фото, меняется вместе с выбранным размером. Пусто — плашки нет.</span>";
     if (s.items.length === 0) {
       h += '<p class="small muted">В размере ' + code + " пока нет ни одного цветка, поэтому на сайте его не видно. Найдите цветы ниже и укажите количество. Размер можно оставить пустым, если он не нужен.</p>";
     } else {

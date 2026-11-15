@@ -90,6 +90,17 @@
         box.querySelectorAll("[data-size-opt]").forEach(function (o) { o.classList.toggle("on", o === opt); });
         price.innerHTML = opt.dataset.priceHtml;
         pickup.textContent = opt.dataset.pickupText;
+        // плашка «↔ 35 см ↕ 40 см» на фото — размеры выбранного размера
+        var dims = document.querySelector("[data-dims]");
+        if (dims) {
+          var w = Number(opt.dataset.width) || 0;
+          var hgt = Number(opt.dataset.height) || 0;
+          dims.hidden = !w && !hgt;
+          dims.querySelector("[data-dims-w]").hidden = !w;
+          dims.querySelector("[data-dims-h]").hidden = !hgt;
+          dims.querySelector("[data-dims-w] b").textContent = w + " см";
+          dims.querySelector("[data-dims-h] b").textContent = hgt + " см";
+        }
         var only = box.querySelector("[data-only-shop]");
         if (only) {
           only.hidden = !opt.dataset.onlyShopLabel;

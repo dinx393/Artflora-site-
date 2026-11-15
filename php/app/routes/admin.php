@@ -20,7 +20,7 @@ function admin_stamp(string $what, int $id = 0): string
     $data = match ($what) {
         'bouquet' => [
             Db::one('SELECT name, slug, description, format, enabled, hideAt, isHit, isExclusive, onlyShop, photoSize, packagingKop, colors, occasions, sections, photos, photoFocus, collectionId FROM bouquets WHERE id = ?', [$id]),
-            Db::all('SELECT s.code, s.note, s.packagingKop, i.flowerId, i.qty FROM bouquet_sizes s LEFT JOIN bouquet_items i ON i.sizeId = s.id WHERE s.bouquetId = ? ORDER BY s.code, i.id', [$id]),
+            Db::all('SELECT s.code, s.note, s.packagingKop, s.widthCm, s.heightCm, i.flowerId, i.qty FROM bouquet_sizes s LEFT JOIN bouquet_items i ON i.sizeId = s.id WHERE s.bouquetId = ? ORDER BY s.code, i.id', [$id]),
             Db::all('SELECT flowerId, substituteId, sortOrder FROM bouquet_swaps WHERE bouquetId = ? ORDER BY flowerId, sortOrder, substituteId', [$id]),
         ],
         'flowers' => [
@@ -334,6 +334,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
             $its = $s ? array_values(array_filter($items, fn ($i) => $i['sizeId'] === $s['id'])) : [];
             return [
                 'code' => $code, 'note' => $s['note'] ?? '', 'packagingKop' => (int) ($s['packagingKop'] ?? $b['packagingKop']),
+                'widthCm' => (int) ($s['widthCm'] ?? 0), 'heightCm' => (int) ($s['heightCm'] ?? 0),
                 'items' => array_map(fn ($i) => ['flowerId' => (int) $i['flowerId'], 'qty' => (float) $i['qty']], $its),
             ];
         }, Pricing::SIZE_ORDER),
@@ -399,7 +400,8 @@ Http::post('/admin/bouquets/save', function () {
     $sizes = [];
     foreach ($in['sizes'] as $s) {
         if (!is_array($s) || !in_array($s['code'] ?? '', Pricing::SIZE_ORDER, true) || admin_str($s['note'] ?? null, 120) === null
-            || !admin_is_int($s['packagingKop'] ?? null, 0, 1_000_000) || !is_array($s['items'] ?? null) || count($s['items']) > 40) admin_fail($bad);
+            || !admin_is_int($s['packagingKop'] ?? null, 0, 1_000_000) || !is_array($s['items'] ?? null) || count($s['items']) > 40
+            || !admin_is_int($s['widthCm'] ?? 0, 0, 500) || !admin_is_int($s['heightCm'] ?? 0, 0, 500)) admin_fail($bad);
         // одинаковые цветы в одном размере складываем
         $merged = [];
         foreach ($s['items'] as $i) {
@@ -407,7 +409,7 @@ Http::post('/admin/bouquets/save', function () {
             if (!admin_is_int($i['flowerId'] ?? null) || !admin_is_num($q) || $q <= 0 || $q > 500) admin_fail($bad);
             $merged[$i['flowerId']] = ($merged[$i['flowerId']] ?? 0) + round($q * 100) / 100;
         }
-        if ($merged) $sizes[] = ['code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop'], 'items' => $merged];
+        if ($merged) $sizes[] = ['code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop'], 'widthCm' => $s['widthCm'] ?? 0, 'heightCm' => $s['heightCm'] ?? 0, 'items' => $merged];
     }
     if (!$sizes) admin_fail('Добавьте цветы хотя бы в один размер');
     // Замены в этом букете: {цветок: [замена, …]} по порядку. Только для цветов из состава; пусто — без замены.
@@ -447,7 +449,7 @@ Http::post('/admin/bouquets/save', function () {
             elseif ($timer !== 'keep') Db::exec('UPDATE bouquets SET hideAt = DATE_ADD(NOW(), INTERVAL ? HOUR), hiddenByTimerAt = NULL WHERE id = ?', [$timer, $id]);
             Db::exec('DELETE FROM bouquet_sizes WHERE bouquetId = ?', [$id]);
             foreach ($sizes as $s) {
-                $sizeId = Db::insert('bouquet_sizes', ['bouquetId' => $id, 'code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop']]);
+                $sizeId = Db::insert('bouquet_sizes', ['bouquetId' => $id, 'code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop'], 'widthCm' => $s['widthCm'], 'heightCm' => $s['heightCm']]);
                 foreach ($s['items'] as $flowerId => $qty) Db::insert('bouquet_items', ['sizeId' => $sizeId, 'flowerId' => $flowerId, 'qty' => $qty]);
             }
             Db::exec('DELETE FROM bouquet_swaps WHERE bouquetId = ?', [$id]);

@@ -400,6 +400,11 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .gallery { flex: 1 1 520px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .gallery-main { position: relative; height: 620px; border-radius: var(--radius); overflow: hidden; background: var(--blush); }
 .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
+/* Размер букета в см на фото: «↔ 35 см ↕ 40 см» (решение владельца 2026-11-15) */
+.dims { position: absolute; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; border-radius: 14px; background: rgba(78, 18, 40, .78); color: #fff; font-size: 16px; line-height: 1.2; backdrop-filter: blur(4px); pointer-events: none; }
+.dims[hidden], .dims [hidden] { display: none; }
+.dims > span { display: flex; align-items: center; gap: 10px; }
+.dims b { font-weight: 700; }
 .thumbs { display: flex; gap: 10px; }
 .thumbs button { flex: 1; height: 96px; border-radius: 14px; overflow: hidden; cursor: pointer; padding: 0; background: var(--white); border: 1px solid var(--line); }
 .thumbs button.on { border: 2px solid var(--cherry); }

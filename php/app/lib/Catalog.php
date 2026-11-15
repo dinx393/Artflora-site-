@@ -165,6 +165,7 @@ final class Catalog
         foreach ($sizes as $s) {
             $byBouquet[$s['bouquetId']][] = [
                 'id' => (int) $s['id'], 'code' => $s['code'], 'note' => $s['note'], 'packagingKop' => (int) $s['packagingKop'],
+                'widthCm' => (int) ($s['widthCm'] ?? 0), 'heightCm' => (int) ($s['heightCm'] ?? 0),
                 'items' => $bySize[$s['id']] ?? [],
             ];
         }
@@ -217,6 +218,7 @@ final class Catalog
             'priceKop' => Pricing::sizePriceKop($s),
             'composition' => Pricing::compositionText($s['items']),
             'flowers' => Pricing::flowerCount($s['items']),
+            'widthCm' => $s['widthCm'] ?? 0, 'heightCm' => $s['heightCm'] ?? 0, // в см, 0 — не указано
             // «Только из Уручья»: код филиала и подпись; '' — из любого
             'onlyShop' => $only($s),
             'onlyShopLabel' => Text::onlyShop($only($s), $shops),
