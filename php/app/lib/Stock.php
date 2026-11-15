@@ -175,6 +175,11 @@ final class Stock
         foreach (Db::all('SELECT s.id, p.fromDate, p.priceKop FROM flower_prices p JOIN stock_items s ON s.flowerId = p.flowerId ORDER BY s.id, p.fromDate') as $r) {
             $out[(int) $r['id']][] = [(string) $r['fromDate'], (int) $r['priceKop']];
         }
+        $members = [];
+        foreach (Db::all('SELECT g.itemId, p.flowerId, p.fromDate, p.priceKop FROM stock_group_flowers g JOIN flower_prices p ON p.flowerId = g.flowerId ORDER BY p.fromDate') as $r) {
+            $members[(int) $r['itemId']][(int) $r['flowerId']][] = [(string) $r['fromDate'], (int) $r['priceKop']];
+        }
+        foreach ($members as $itemId => $m) $out[$itemId] = self::groupPrices($m);
         return $out;
     }
 
@@ -318,7 +323,7 @@ final class Stock
     // У каждого цветка из справочника есть позиция для закупки (создаётся сама)
     public static function syncFlowers(): void
     {
-        $missing = Db::all('SELECT f.id, f.name FROM flowers f LEFT JOIN stock_items s ON s.flowerId = f.id WHERE s.id IS NULL');
+        $missing = Db::all('SELECT f.id, f.name FROM flowers f LEFT JOIN stock_items s ON s.flowerId = f.id LEFT JOIN stock_group_flowers g ON g.flowerId = f.id WHERE s.id IS NULL AND g.flowerId IS NULL');
         foreach ($missing as $f) {
             $name = $f['name'];
             if (Db::value('SELECT 1 FROM stock_items WHERE name = ?', [$name])) $name .= ' (цветок)';
@@ -330,18 +335,66 @@ final class Stock
         }
     }
 
-    // Все позиции: [{id, name, kind, flowerId, retailKop}] — у цветов название и цена из справочника
+    // Все позиции: [{id, name, kind, flowerId, retailKop, group}] — у цветов название и цена из справочника,
+    // у группы group = [[flowerId, название, цена], …], цена — средняя по цветам группы
     public static function items(): array
     {
         self::syncFlowers();
         $rows = Db::all('SELECT s.id, COALESCE(f.name, s.name) AS name, s.kind, s.flowerId, f.priceKop FROM stock_items s LEFT JOIN flowers f ON f.id = s.flowerId');
+        $groups = [];
+        foreach (Db::all('SELECT g.itemId, f.id, f.name, f.priceKop FROM stock_group_flowers g JOIN flowers f ON f.id = g.flowerId ORDER BY f.sortOrder, f.name') as $g) {
+            $groups[(int) $g['itemId']][] = [(int) $g['id'], $g['name'], (int) $g['priceKop']];
+        }
         $order = array_flip(array_keys(self::KINDS));
         usort($rows, fn ($a, $b) => [$order[$a['kind']], mb_strtolower($a['name'])] <=> [$order[$b['kind']], mb_strtolower($b['name'])]);
-        return array_map(fn ($r) => [
-            'id' => (int) $r['id'], 'name' => $r['name'], 'kind' => $r['kind'],
-            'flowerId' => $r['flowerId'] === null ? null : (int) $r['flowerId'],
-            'retailKop' => $r['priceKop'] === null ? null : (int) $r['priceKop'],
-        ], $rows);
+        return array_map(function ($r) use ($groups) {
+            $group = $groups[(int) $r['id']] ?? [];
+            $retail = $r['priceKop'] === null ? null : (int) $r['priceKop'];
+            if ($group) $retail = self::avg(array_column($group, 2));
+            return [
+                'id' => (int) $r['id'], 'name' => $r['name'], 'kind' => $r['kind'],
+                'flowerId' => $r['flowerId'] === null ? null : (int) $r['flowerId'],
+                'retailKop' => $retail, 'group' => $group,
+            ];
+        }, $rows);
+    }
+
+    public static function avg(array $kops): ?int
+    {
+        return $kops ? (int) round(array_sum($kops) / count($kops)) : null;
+    }
+
+    // Цена группы на каждую дату, когда менялась цена любого её цветка: средняя по цветам на эту дату.
+    //   $members — flowerId → [[fromDate, kop], …]
+    public static function groupPrices(array $members): array
+    {
+        $dates = [];
+        foreach ($members as $list) foreach ($list as [$d]) $dates[$d] = true;
+        ksort($dates);
+        $out = [];
+        foreach (array_keys($dates) as $d) {
+            $kops = [];
+            foreach ($members as $id => $list) {
+                $p = self::retailAt($members, $id, $d, null);
+                if ($p !== null) $kops[] = $p;
+            }
+            $out[] = [(string) $d, self::avg($kops)];
+        }
+        return $out;
+    }
+
+    // Собрать группу: цветы справочника $flowerIds — это позиция $itemId. Их собственные позиции
+    // (накладные, списания, запомненные названия) переходят в группу; цветок, убранный из группы, снова получит свою позицию.
+    public static function setGroup(int $itemId, array $flowerIds): void
+    {
+        Db::tx(function () use ($itemId, $flowerIds) {
+            Db::exec('DELETE FROM stock_group_flowers WHERE itemId = ?', [$itemId]);
+            foreach (array_unique($flowerIds) as $fid) {
+                $own = Db::value('SELECT id FROM stock_items WHERE flowerId = ?', [$fid]);
+                if ($own && (int) $own !== $itemId) self::merge((int) $own, $itemId);
+                Db::exec('INSERT INTO stock_group_flowers (flowerId, itemId) VALUES (?, ?) ON DUPLICATE KEY UPDATE itemId = VALUES(itemId)', [$fid, $itemId]);
+            }
+        });
     }
 
     // История закупок для unitCost (все накладные: списание может быть раньше или позже)

@@ -352,7 +352,30 @@
 
   // ================= Списание =================
   function newRow(p) {
-    return Object.assign({ uid: ++uid, name: "", itemSel: "", newName: "", newKind: "FLOWER", shop: state.shop, qty: "", reason: "wilted", comment: "" }, p || {});
+    return Object.assign({ uid: ++uid, name: "", itemSel: "", newName: "", newKind: "FLOWER", shop: state.shop, qty: "", reason: "wilted", comment: "", date: "" }, p || {});
+  }
+  // Блок из чата: { date, shop, lines: [{ name, item, qty, shop, reason, date?, comment? }] }
+  // item — как называется позиция на сайте (группа «Альстромерия» или цветок); name — как в тетради.
+  function onWriteoffPaste(d) {
+    var byName = {};
+    var al = data.aliases || {};
+    state.items.forEach(function (i) { byName[norm(i.name)] = i.id; });
+    if (d.date) state.date = d.date;
+    var codes = shops.map(function (sh) { return sh.code; });
+    if (d.shop && codes.indexOf(d.shop) >= 0) state.shop = d.shop;
+    var rows = d.lines.map(function (l) {
+      var id = [al[norm(l.name)], byName[norm(l.item)], al[norm(l.item)], byName[norm(l.name)]].filter(function (x) { return x && itemById(x); })[0];
+      return newRow({
+        name: l.name || "", itemSel: id || "new", newName: id ? "" : String(l.item || l.name || ""), newKind: data.kinds[l.kind] ? l.kind : "FLOWER",
+        shop: codes.indexOf(l.shop) >= 0 ? l.shop : state.shop, qty: l.qty ? U.qtyText(l.qty) : "",
+        reason: data.reasons[l.reason] ? l.reason : "wilted", comment: l.comment || "",
+        date: l.date && l.date !== state.date ? l.date : "",
+      });
+    });
+    state.rows = state.rows.filter(function (r) { return r.qty || r.itemSel !== ""; }).concat(rows);
+    var fresh = rows.filter(function (r) { return r.itemSel === "new"; }).map(function (r) { return r.newName; });
+    fresh = fresh.filter(function (n, i) { return fresh.indexOf(n) === i; });
+    state.msg = { ok: true, text: "Заполнено строк: " + rows.length + "." + (fresh.length ? " Новые позиции: " + fresh.join(", ") + ". Если такая уже есть под другим названием — выберите её в строке." : "") + " Проверьте и нажмите «Сохранить списание»." };
   }
   function onWriteoff(d) {
     if (d.date) state.date = d.date;
@@ -375,14 +398,29 @@
     shops.forEach(function (sh) { h += '<option value="' + sh.code + '"' + (state.shop === sh.code ? " selected" : "") + ">" + esc(sh.name) + "</option>"; });
     h += "</select></label>";
     h += photoButton("Фото списания", "writeoff", on, onWriteoff);
+    h += '<button type="button" class="btn btn-outline"' + on("click", function () { state.pasteOpen = !state.pasteOpen; ui.render(); }) + ">Вставить из чата</button>";
     h += "</div>";
+    if (state.pasteOpen) {
+      h += '<div class="card stack" style="gap: 8px">';
+      h += '<span class="small muted">Пришлите в чат фото листа списания — Claude вернёт блок. Скопируйте его целиком и вставьте сюда.</span>';
+      h += '<textarea class="input" rows="4" data-k="paste" placeholder="Вставьте блок из чата" style="font-family: monospace; font-size: 12px"' + on("input", function (e) { state.paste = e.target.value; }) + ">" + esc(state.paste || "") + "</textarea>";
+      h += '<button type="button" class="btn" style="align-self: flex-start"' + on("click", function () {
+        var d;
+        try { d = JSON.parse(String(state.paste || "").trim().replace(/^```\w*\s*|\s*```$/g, "")); } catch (err) { d = null; }
+        if (!d || !Array.isArray(d.lines)) { state.msg = { ok: false, text: "Не получилось прочитать блок. Скопируйте его из чата целиком." }; ui.render(); return; }
+        onWriteoffPaste(d); state.pasteOpen = false; state.paste = ""; ui.render();
+      }) + ">Заполнить</button></div>";
+    }
 
     h += '<div class="card stack" style="gap: 10px">';
-    h += '<table class="table"><thead><tr><th>Что</th><th>Магазин</th><th>Сколько</th><th>Причина</th><th></th></tr></thead><tbody>';
+    var dated = state.rows.some(function (r) { return r.date && r.date !== state.date; });
+    h += '<div class="table-wrap"><table class="table"><thead><tr>' + (dated ? "<th>Дата</th>" : "") + "<th>Что</th><th>Магазин</th><th>Сколько</th><th>Причина</th><th></th></tr></thead><tbody>";
     state.rows.forEach(function (r, i) {
       function set(p) { state.rows = state.rows.map(function (x, j) { return j === i ? Object.assign({}, x, p) : x; }); ui.render(); }
       var k = "r" + r.uid;
-      h += "<tr><td>" + (r.name ? '<div class="small muted">в тетради: ' + esc(r.name) + "</div>" : "") + itemSelect(r, on, set, k + "-i") + "</td>";
+      h += "<tr>";
+      if (dated) h += '<td><input class="input" type="date" style="padding: 8px 10px; width: auto" data-k="' + k + '-d" value="' + esc(r.date || state.date) + '"' + on("input", function (e) { set({ date: e.target.value }); }) + "></td>";
+      h += "<td>" + (r.name ? '<div class="small muted">в тетради: ' + esc(r.name) + "</div>" : "") + itemSelect(r, on, set, k + "-i") + "</td>";
       h += '<td><select class="input" style="width: auto; padding: 8px 10px" data-k="' + k + '-sh"' + on("change", function (e) { set({ shop: e.target.value }); }) + ">";
       shops.forEach(function (sh) { h += '<option value="' + sh.code + '"' + (r.shop === sh.code ? " selected" : "") + ">" + esc(sh.name) + "</option>"; });
       h += "</select></td>";
@@ -392,7 +430,7 @@
       h += "</select></td>";
       h += '<td><button type="button" class="btn-ghost" aria-label="Убрать строку"' + on("click", function () { state.rows = state.rows.filter(function (_, j) { return j !== i; }); ui.render(); }) + ">×</button></td></tr>";
     });
-    h += "</tbody></table>";
+    h += "</tbody></table></div>";
     h += '<button type="button" class="btn-ghost small" style="align-self: flex-start"' + on("click", function () { state.rows = state.rows.concat([newRow()]); ui.render(); }) + ">+ Строка</button>";
     h += "</div>";
     h += '<div class="row"><button type="button" class="btn btn-lg"' + U.attr("disabled", !!state.busy) + on("click", saveWriteoff) + ">Сохранить списание</button></div>";
@@ -403,7 +441,7 @@
     var rows = state.rows.map(function (r, i) {
       if (!err && !rowKey(r)) err = "Строка " + (i + 1) + ": выберите, что списали";
       if (!err && !num(r.qty)) err = "Строка " + (i + 1) + ": укажите, сколько";
-      return { name: r.name, itemId: typeof r.itemSel === "number" ? r.itemSel : null, newName: r.itemSel === "new" ? r.newName : null, newKind: r.newKind, shop: r.shop, qty: num(r.qty), reason: r.reason, comment: r.comment };
+      return { name: r.name, itemId: typeof r.itemSel === "number" ? r.itemSel : null, newName: r.itemSel === "new" ? r.newName : null, newKind: r.newKind, shop: r.shop, qty: num(r.qty), reason: r.reason, comment: r.comment, date: r.date && r.date !== state.date ? r.date : "" };
     });
     if (err) { state.msg = { ok: false, text: err }; ui.render(); return; }
     save("/admin/stock/writeoff/save", { date: state.date, rows: rows });

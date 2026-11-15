@@ -267,8 +267,9 @@ Http::post('/admin/stock/writeoff/save', function () {
     $rows = $b['rows'] ?? null;
     if (!is_array($rows) || !array_is_list($rows) || !$rows || count($rows) > 300) admin_fail('Добавьте хотя бы одну строку');
     $codes = Stock::shopCodes();
+    $dates = [$date];
     try {
-        Db::tx(function () use ($date, $rows, $codes) {
+        Db::tx(function () use ($date, $rows, $codes, &$dates) {
             $known = [];
             foreach (Stock::items() as $i) $known[$i['id']] = $i;
             foreach ($rows as $n => $r) {
@@ -279,7 +280,9 @@ Http::post('/admin/stock/writeoff/save', function () {
                 $itemId = stock_item_id($r, $known);
                 $known[$itemId] ??= ['id' => $itemId, 'name' => trim((string) $r['newName']), 'kind' => $r['newKind'] ?? 'FLOWER'];
                 $comment = admin_str($r['comment'] ?? '', 300) ?? '';
-                Db::insert('stock_writeoffs', ['woDate' => $date, 'shop' => $r['shop'], 'itemId' => $itemId, 'qty' => $qty, 'reason' => $reason, 'comment' => trim($comment), 'createdBy' => stock_me()]);
+                $rowDate = isset($r['date']) && $r['date'] !== '' ? (stock_date($r['date']) ?? throw new AdminError('Строка ' . ($n + 1) . ': проверьте дату')) : $date;
+                $dates[] = $rowDate;
+                Db::insert('stock_writeoffs', ['woDate' => $rowDate, 'shop' => $r['shop'], 'itemId' => $itemId, 'qty' => $qty, 'reason' => $reason, 'comment' => trim($comment), 'createdBy' => stock_me()]);
                 if (is_string($r['name'] ?? null) && trim($r['name']) !== '') stock_remember($r['name'], $itemId);
             }
         });
@@ -289,7 +292,7 @@ Http::post('/admin/stock/writeoff/save', function () {
         app_log('stockWriteoff: ' . $e->getMessage());
         admin_fail('Не удалось сохранить, ничего не изменилось. Попробуйте ещё раз.');
     }
-    Http::json(['ok' => true, 'redirect' => '/admin/stock?p=custom&from=' . $date . '&to=' . $date . '&msg=writeoff']);
+    Http::json(['ok' => true, 'redirect' => '/admin/stock?p=custom&from=' . min($dates) . '&to=' . max($dates) . '&msg=writeoff']);
 });
 
 Http::post('/admin/stock/purchase/{id}/delete', function (string $id) {
@@ -474,14 +477,31 @@ Http::get('/admin/stock/detail', function () {
         $data['entries'] = array_values($rows);
     }
     if ($m === 'item') $title = $items[$f['item']]['name'] ?? Http::abort(404);
+    $flowers = $m === 'item' ? Db::all('SELECT f.id, f.name, f.priceKop, g.itemId FROM flowers f LEFT JOIN stock_group_flowers g ON g.flowerId = f.id ORDER BY f.name') : [];
 
     return admin_page('stock-detail', [
         'title' => $title . ' — Финансы',
         'heading' => $title,
         'm' => $m, 'f' => $f,
         'preset' => $preset, 'from' => $from, 'to' => $to, 'shop' => $shop,
-        'shops' => stock_shops(), 'items' => $items,
+        'shops' => stock_shops(), 'items' => $items, 'flowers' => $flowers,
     ] + $data);
+});
+
+// «Это группа»: позиция из накладной («Альстромерия») = несколько цветов справочника (розовая, белая…)
+Http::post('/admin/stock/item/{id}/group', function (string $id) {
+    Auth::requireAdmin('stock');
+    Auth::checkCsrf();
+    $item = Db::one('SELECT id, kind, flowerId FROM stock_items WHERE id = ?', [(int) $id]) ?? Http::abort(404);
+    if ($item['flowerId'] !== null) Http::abort(403);
+    $ids = array_values(array_filter(array_map('intval', is_array($_POST['flowers'] ?? null) ? $_POST['flowers'] : []), fn ($v) => $v > 0));
+    $ids = $ids ? array_map('intval', array_column(Db::all('SELECT id FROM flowers WHERE id ' . Db::in($ids), $ids), 'id')) : [];
+    Db::tx(function () use ($item, $ids) {
+        if ($ids && $item['kind'] !== 'FLOWER') Db::exec("UPDATE stock_items SET kind = 'FLOWER' WHERE id = ?", [(int) $item['id']]);
+        Stock::setGroup((int) $item['id'], $ids);
+    });
+    $back = Http::str('back');
+    Http::redirect('/admin/stock/detail?' . http_build_query(['m' => 'item', 'item' => (int) $item['id']]) . (preg_match('/^[\w=&%.-]*$/', $back) && $back !== '' ? '&' . $back : '') . '&grouped=' . count($ids));
 });
 
 // «Это тот же цветок, что в справочнике»: позиция из накладной сливается с цветком и получает его розничную цену
@@ -494,7 +514,12 @@ Http::post('/admin/stock/item/{id}/merge', function (string $id) {
     $to = (int) Http::str('to');
     if (!isset($items[$from], $items[$to]) || $from === $to) Http::abort(404);
     if ($items[$from]['flowerId'] !== null) Http::abort(403); // цветок из справочника не сливаем, только в него
-    Stock::merge($from, $to);
+    // группу сливаем в другую позицию вместе с её цветами
+    $members = array_column($items[$from]['group'], 0);
+    Db::tx(function () use ($from, $to, $members, $items) {
+        Stock::merge($from, $to);
+        if ($members && $items[$to]['flowerId'] === null) Stock::setGroup($to, array_merge(array_column($items[$to]['group'], 0), $members));
+    });
     $back = Http::str('back');
     Http::redirect('/admin/stock/detail?' . http_build_query(['m' => 'item', 'item' => $to]) . (preg_match('/^[\w=&%.-]*$/', $back) && $back !== '' ? '&' . $back : '') . '&merged=1');
 });

@@ -43,7 +43,15 @@ if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((S
 
 <?php if (in_array($_GET['msg'] ?? '', ['updated', 'deleted'], true)): ?><p class="pill ok" style="align-self: flex-start"><?= $_GET['msg'] === 'updated' ? 'Исправлено.' : 'Удалено.' ?></p><?php endif ?>
 <?php if (!empty($_GET['merged'])): ?><p class="pill ok" style="align-self: flex-start">Связано. Теперь у позиции есть розничная цена из «Цветов».</p><?php endif ?>
-<?php if ($m === 'item' && ($cur = $items[$f['item']] ?? null) && $cur['flowerId'] === null): ?>
+<?php if (isset($_GET['grouped'])): ?><p class="pill ok" style="align-self: flex-start"><?= (int) $_GET['grouped'] ? 'Группа сохранена. Цена продажи — средняя по её цветам.' : 'Группа убрана.' ?></p><?php endif ?>
+<?php if ($m === 'item' && ($cur = $items[$f['item']] ?? null) && $cur['flowerId'] === null && $cur['group']): ?>
+  <div class="card stack" style="gap: 6px; background: #f3effa; border-color: #d9cfee">
+    <b>Группа: <?= count($cur['group']) ?> цв. с сайта</b>
+    <span class="small"><?= e(implode(', ', array_map(fn ($g) => $g[1] . ' ' . Money::format($g[2]), $cur['group']))) ?></span>
+    <span class="small">Цена продажи — средняя: <b><?= e(Money::format((int) $cur['retailKop'])) ?></b>/шт. Приход и списание по всем этим цветам считаются здесь. <a href="#group">Изменить состав ↓</a></span>
+  </div>
+<?php endif ?>
+<?php if ($m === 'item' && ($cur = $items[$f['item']] ?? null) && $cur['flowerId'] === null && !$cur['group']): ?>
   <form id="link" class="card stack" style="gap: 10px; background: #fff6e5; border-color: #f1d9a8" method="post" action="/admin/stock/item/<?= (int) $cur['id'] ?>/merge">
     <?= Auth::csrfField() ?>
     <input type="hidden" name="back" value="<?= e(http_build_query(array_filter($period + ['shop' => $shop]))) ?>">
@@ -61,6 +69,24 @@ if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((S
       </select>
       <button class="btn">Связать</button>
     </div>
+  </form>
+<?php endif ?>
+<?php if ($m === 'item' && ($cur = $items[$f['item']] ?? null) && $cur['flowerId'] === null): $mine = array_column($cur['group'], 0); ?>
+  <form id="group" class="card stack" style="gap: 10px" method="post" action="/admin/stock/item/<?= (int) $cur['id'] ?>/group">
+    <?= Auth::csrfField() ?>
+    <input type="hidden" name="back" value="<?= e(http_build_query(array_filter($period + ['shop' => $shop]))) ?>">
+    <b><?= $mine ? 'Цветы сайта в этой группе' : 'Или это группа: несколько цветов сайта под одним названием' ?></b>
+    <span class="small">Например, «Альстромерия» в накладной и тетради = альстромерия розовая, белая, микс на сайте. Отметьте их — накладные и списания по ним будут считаться вместе, а цена продажи — средняя по отмеченным. Следующие строки «<?= e($cur['name']) ?>» сайт сам отнесёт сюда.</span>
+    <input class="input" type="search" placeholder="Найти цветок…" style="max-width: 320px" oninput="var q=this.value.toLowerCase();this.form.querySelectorAll('label[data-n]').forEach(function(l){l.style.display=!q||l.dataset.n.indexOf(q)>=0||l.querySelector('input').checked?'':'none'})">
+    <div class="stk-group-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 16px; max-height: 360px; overflow: auto">
+      <?php foreach ($flowers as $fl): $other = $fl['itemId'] !== null && (int) $fl['itemId'] !== $cur['id']; ?>
+        <label class="row small" style="gap: 6px; flex-wrap: nowrap" data-n="<?= e(mb_strtolower($fl['name'])) ?>">
+          <input type="checkbox" name="flowers[]" value="<?= (int) $fl['id'] ?>"<?= in_array((int) $fl['id'], $mine, true) ? ' checked' : '' ?>>
+          <span><?= e($fl['name']) ?> <span class="muted"><?= e(Money::format((int) $fl['priceKop'])) ?></span><?= $other ? ' <span class="pill" title="Сейчас в группе «' . e($items[(int) $fl['itemId']]['name'] ?? '') . '» — отметите, перейдёт сюда">в группе «' . e($items[(int) $fl['itemId']]['name'] ?? '') . '»</span>' : '' ?></span>
+        </label>
+      <?php endforeach ?>
+    </div>
+    <div class="row"><button class="btn"><?= $mine ? 'Сохранить группу' : 'Сделать группой' ?></button></div>
   </form>
 <?php endif ?>
 

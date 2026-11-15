@@ -82,6 +82,7 @@ final class Db
     public static function tx(callable $fn): mixed
     {
         $pdo = self::pdo();
+        if ($pdo->inTransaction()) return $fn(); // вложенный вызов — часть внешней транзакции
         $pdo->beginTransaction();
         try {
             $r = $fn();
