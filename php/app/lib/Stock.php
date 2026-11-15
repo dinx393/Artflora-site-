@@ -197,7 +197,7 @@ final class Stock
         $retail = fn (int $id, ?string $date) => self::retailAt($prices, $id, $date, $items[$id][2] ?? null);
         $byItem = [];
         $byShop = [];
-        foreach ($shops as $code) $byShop[$code] = ['buyFlowersKop' => 0, 'buyOtherKop' => 0, 'woKop' => 0, 'soldKop' => 0, 'items' => []];
+        foreach ($shops as $code) $byShop[$code] = ['buyFlowersKop' => 0, 'buyOtherKop' => 0, 'woKop' => 0, 'soldKop' => 0, 'inQty' => 0.0, 'woQty' => 0.0, 'items' => []];
         foreach ($lines as $l) {
             $id = (int) $l['itemId'];
             $code = (string) $l['shop'];
@@ -231,8 +231,13 @@ final class Stock
                 $r['sold'] = round($r['in'] - $r['wo'], 2);
                 // по цене, которая действовала в день накладной / списания
                 $r['soldKop'] = $kind === 'FLOWER' && $retail !== null ? (int) round(max(0, $r['inRetail'] - $r['woRetail'])) : 0;
-                if ($kind === 'FLOWER') $s['buyFlowersKop'] += $r['inKop'];
-                else $s['buyOtherKop'] += $r['inKop'];
+                if ($kind === 'FLOWER') {
+                    $s['buyFlowersKop'] += $r['inKop'];
+                    $s['inQty'] = round($s['inQty'] + $r['in'], 2); // стебли — только цветы
+                    $s['woQty'] = round($s['woQty'] + $r['wo'], 2);
+                } else {
+                    $s['buyOtherKop'] += $r['inKop'];
+                }
                 $s['woKop'] += $r['woKop'];
                 $s['soldKop'] += $r['soldKop'];
             }
@@ -270,6 +275,7 @@ final class Stock
             $total['sold'] += $r['sold'];
         }
         $total['woPct'] = self::pct($total['woKop'], $total['buyKop']);
+        $total['woQtyPct'] = self::pct($total['wo'], $total['in']);
         foreach ($byShop as &$s) unset($s['items']);
         unset($s);
         arsort($reasons);

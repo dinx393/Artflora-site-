@@ -139,7 +139,7 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
 <?php endif ?>
 <div class="stk-tiles">
   <a class="stk-tile" href="<?= $dl('buy') ?>"><span class="k">Закупили</span><span class="v"><?= $byn($t['buyKop']) ?></span><span class="small muted">цветы <?= $money($t['buyFlowersKop']) ?> · упаковка и др. <?= $money($t['buyOtherKop']) ?></span></a>
-  <a class="stk-tile wo" href="<?= $dl('wo') ?>"><span class="k">Списали</span><span class="v"><?= $byn($t['woKop']) ?></span><span class="small muted"><?= $t['woPct'] === null ? '—' : $t['woPct'] . '% от закупки' ?></span></a>
+  <a class="stk-tile wo" href="<?= $dl('wo') ?>"><span class="k">Списали</span><span class="v"><?= $byn($t['woKop']) ?></span><span class="small muted"><?= e(Stock::qty($t['wo'])) ?> стебл.<?= $t['woQtyPct'] === null ? '' : ' (' . $t['woQtyPct'] . '% пришедших)' ?> · <?= $t['woPct'] === null ? '—' : $t['woPct'] . '% от закупки' ?></span></a>
   <a class="stk-tile" href="<?= $dl('sold') ?>"><span class="k">Продали цветов</span><span class="v"><?= e(Stock::qty($t['sold'])) ?> <small class="cur">шт.</small></span><span class="small muted">из <?= e(Stock::qty($t['in'])) ?> пришедших</span></a>
   <a class="stk-tile ok" href="<?= $dl('sold') ?>"><span class="k">Заработали на цветах</span><span class="v">≈ <?= $byn($t['earnedKop']) ?></span><span class="small muted">продано на <?= $money($t['soldKop']) ?> − закупка цветов</span></a>
   <a class="stk-tile" href="<?= $dl('site') ?>"><span class="k">Заказы с сайта</span><span class="v"><?= $byn($t['siteKop']) ?></span><span class="small muted">кроме отменённых, по дате доставки</span></a>
@@ -213,7 +213,7 @@ $cat = function (array $by, array $labels, string $color, string $dir) use ($dl,
         <tr<?= $shop && $shop !== $s['code'] ? ' class="off"' : '' ?>>
           <td><b><?= e($s['name']) ?></b></td>
           <td class="r"><a href="<?= $dl('buy', ['shop' => $s['code']]) ?>"><?= $money($r['buyKop']) ?></a></td>
-          <td class="r stk-out"><a href="<?= $dl('wo', ['shop' => $s['code']]) ?>"><?= $money($r['woKop']) ?></a></td>
+          <td class="r stk-out"><a href="<?= $dl('wo', ['shop' => $s['code']]) ?>"><?= $money($r['woKop']) ?></a><div class="small muted"><?= e(Stock::qty($r['woQty'] ?? 0)) ?> стебл.</div></td>
           <td class="r <?= ($r['woPct'] ?? 0) >= 15 ? 'hi' : '' ?>"><?= $r['woPct'] === null ? '—' : $r['woPct'] . '%' ?></td>
           <td class="r stk-in"><a href="<?= $dl('sold', ['shop' => $s['code']]) ?>"><?= $money($r['soldKop']) ?></a></td>
           <td class="r"><a href="<?= $dl('site', ['shop' => $s['code']]) ?>"><?= $money($r['siteKop'] ?? 0) ?></a><?= !empty($r['siteOrders']) ? ' <span class="small muted">(' . $r['siteOrders'] . ')</span>' : '' ?></td>
@@ -270,7 +270,7 @@ $cat = function (array $by, array $labels, string $color, string $dir) use ($dl,
             <td class="r stk-in"><?= $i['kind'] === 'FLOWER' ? $money($i['soldKop']) : '—' ?></td>
           </tr>
         <?php endforeach ?>
-        <tr class="total"><td>Итого</td><td></td><td></td><td></td><td class="r"><?= $t['woPct'] === null ? '—' : $t['woPct'] . '%' ?></td><td class="r"><?= $money($t['buyKop']) ?></td><td class="r stk-out"><?= $money($t['woKop']) ?></td><td class="r stk-in"><?= $money($t['soldKop']) ?></td></tr>
+        <tr class="total"><td>Итого (цветы, стебли)</td><td class="r"><?= e(Stock::qty($t['in'])) ?></td><td class="r stk-out"><?= e(Stock::qty($t['wo'])) ?></td><td class="r"><?= e(Stock::qty($t['sold'])) ?></td><td class="r"><?= $t['woPct'] === null ? '—' : $t['woPct'] . '%' ?></td><td class="r"><?= $money($t['buyKop']) ?></td><td class="r stk-out"><?= $money($t['woKop']) ?></td><td class="r stk-in"><?= $money($t['soldKop']) ?></td></tr>
       </tbody>
     </table></div>
     <span class="small muted">Если на конец периода в вазах ещё стоят цветы, они попадут в «продали». Цветы закупаются каждую неделю, поэтому за месяц это почти не влияет.</span>
