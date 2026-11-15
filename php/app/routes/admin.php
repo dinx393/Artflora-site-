@@ -562,7 +562,7 @@ Http::get('/admin/flowers', function () {
     $items = Db::all('SELECT sizeId, flowerId, qty FROM bouquet_items ORDER BY id');
     $swaps = admin_bouquet_swaps();
     $bouquets = array_map(fn ($b) => [
-        'id' => (int) $b['id'], 'name' => $b['name'], 'enabled' => (bool) $b['enabled'], 'onlyShop' => (string) $b['onlyShop'], 'swaps' => (object) ($swaps[$b['id']] ?? []),
+        'id' => (int) $b['id'], 'name' => $b['name'], 'enabled' => (bool) $b['enabled'], 'onlyShop' => (string) $b['onlyShop'], 'preorder' => Catalog::isPreorder(['occasions' => Db::fromJson($b['occasions'])]), 'swaps' => (object) ($swaps[$b['id']] ?? []),
         'sizes' => array_values(array_map(fn ($s) => [
             'code' => $s['code'], 'packagingKop' => (int) $s['packagingKop'],
             'items' => array_values(array_map(
@@ -570,7 +570,7 @@ Http::get('/admin/flowers', function () {
                 array_filter($items, fn ($i) => $i['sizeId'] === $s['id']),
             )),
         ], array_filter($sizes, fn ($s) => $s['bouquetId'] === $b['id']))),
-    ], Db::all('SELECT id, name, enabled, onlyShop FROM bouquets ORDER BY id'));
+    ], Db::all('SELECT id, name, enabled, onlyShop, occasions FROM bouquets ORDER BY id'));
     return admin_page('flowers', [
         'title' => 'Цветы',
         'editor' => ['initial' => admin_flowers(), 'bouquets' => $bouquets, 'shops' => admin_shops(), 'stamp' => admin_stamp('flowers')],

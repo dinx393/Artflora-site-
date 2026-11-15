@@ -170,7 +170,7 @@ final class Catalog
             ];
         }
         $rows = self::ranked($rows, Settings::get('shop')['dayBouquet']);
-        return array_map(fn ($b) => [
+        return array_map(fn ($b) => self::preorder([
             'id' => (int) $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'enabled' => (bool) $b['enabled'], 'hideAt' => $b['hideAt'], 'hiddenByTimerAt' => $b['hiddenByTimerAt'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'],
             'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'], 'onlyShop' => (string) ($b['onlyShop'] ?? ''),
@@ -180,7 +180,23 @@ final class Catalog
             'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
             'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
             'sizes' => $byBouquet[$b['id']] ?? [],
-        ], $rows);
+        ]), $rows);
+    }
+
+    // Свадебные букеты (повод «Для невест») собираем только по предзаказу: цветы под них заказывают отдельно,
+    // поэтому «нет в наличии» их не скрывает и замен не включает (решение владельца 2026-11-15).
+    // Цветы такого букета для расчёта считаются в наличии; 'preorder' => true — для пометки на сайте и в заказе.
+    public static function isPreorder(array $b): bool
+    {
+        return in_array('wedding', $b['occasions'] ?? [], true);
+    }
+
+    public static function preorder(array $b): array
+    {
+        $b['preorder'] = self::isPreorder($b);
+        if (!$b['preorder']) return $b;
+        foreach ($b['sizes'] as &$s) foreach ($s['items'] as &$i) $i['flower']['inStock'] = true;
+        return $b;
     }
 
     // Кадр фото (миграция 015): {"/uploads/a.jpg": [x, y]} в процентах. Чужое и кривое отбрасываем.
@@ -232,6 +248,7 @@ final class Catalog
             'id' => $b['id'], 'slug' => $b['slug'], 'name' => $b['name'], 'description' => $b['description'],
             'format' => $b['format'], 'isHit' => $b['isHit'], 'isExclusive' => $b['isExclusive'], 'isPinned' => $b['isPinned'], 'hideAt' => $b['hideAt'],
             'weddingOnly' => $b['weddingOnly'] && in_array('wedding', $b['occasions'], true),
+            'preorder' => !empty($b['preorder']), // свадебный — по предзаказу
             'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $sections,
             'photos' => $b['photos'] ? array_map([Uploads::class, 'url'], $b['photos']) : [self::PLACEHOLDER],
             // кадр каждого фото для CSS object-position («50% 30%») или null — по центру

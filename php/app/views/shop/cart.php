@@ -54,6 +54,11 @@ $config = [
         <p class="muted" data-co-loading>Считаем…</p>
         <p class="error" data-co-removed hidden></p>
         <div data-co-lines></div>
+        <?php /* Свадебные букеты — по предзаказу (checkout.js показывает, если такой есть в корзине) */ ?>
+        <div class="only-shop-note preorder" data-co-preorder hidden>
+          <b><?= e(ShopView::PREORDER_TITLE) ?></b>
+          <span><?= e(ShopView::PREORDER_TEXT) ?></span>
+        </div>
         <?php /* В корзине букет «Только из Уручья»: весь заказ из этого магазина (checkout.js) */ ?>
         <div class="only-shop-note" data-co-only hidden>
           <b data-co-only-label></b>

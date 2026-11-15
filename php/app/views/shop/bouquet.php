@@ -67,6 +67,12 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
         <span class="price" style="font-size: 40px" data-price><?= ShopView::byn($def['priceKop']) ?></span>
         <span class="small muted" data-pickup>Самовывоз: <?= e($pickup($def['priceKop'])) ?></span>
       </div>
+      <?php if ($b['preorder']): /* свадебный — по предзаказу (решение 2026-11-15) */ ?>
+      <div class="only-shop-note preorder">
+        <b><?= e(ShopView::PREORDER_TITLE) ?></b>
+        <span><?= e(ShopView::PREORDER_TEXT) ?></span>
+      </div>
+      <?php endif ?>
       <?php /* «Только из Уручья» (решение 2026-11-15): у выбранного размера; меняется при выборе размера (shop.js) */ ?>
       <div class="only-shop-note" data-only-shop<?= $def['onlyShopLabel'] === '' ? ' hidden' : '' ?>>
         <b data-only-shop-label><?= e($def['onlyShopLabel']) ?></b>

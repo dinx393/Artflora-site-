@@ -314,6 +314,7 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .only-shop-note[hidden] { display: none; }
 .only-shop-note b { font-size: 18px; color: var(--cherry); font-weight: 800; }
 .only-shop-note b::before { content: "📍 "; }
+.only-shop.preorder::before, .only-shop-note.preorder b::before { content: "📅 "; } /* свадебные — по предзаказу */
 .pcard-buy { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .pcard-add { padding: 0 16px; font-size: 14px; }
 .pcard-add.done { background: var(--blush); }

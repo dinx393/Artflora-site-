@@ -203,6 +203,7 @@
         '<a href="' + href + '"><img src="' + esc(l.photo) + '" alt="' + esc(l.name) + '"' + (l.photoPos ? ' style="object-position: ' + esc(l.photoPos) + '" data-focus="' + esc(l.photoPos.replace(/%/g, "")) + '"' : "") + '></a>' +
         '<div class="stack" style="gap: 8px">' +
         '<a href="' + href + '" class="pcard-title" style="font-size: 22px">' + esc(l.name) + "</a>" +
+        (l.preorder ? '<span class="only-shop preorder">По предзаказу</span>' : "") +
         (l.onlyShopLabel ? '<span class="only-shop">' + esc(l.onlyShopLabel) + "</span>" : "") +
         '<div class="row" style="gap: 10px">' + sizes +
         '<div class="qty"><button type="button" aria-label="Меньше" data-qty="-1">−</button><span>' + l.qty +
@@ -329,6 +330,7 @@
     var pickupOnly = $("[data-co-pickup-only]");
     pickupOnly.hidden = !only;
     pickupOnly.textContent = only ? "В заказе букет, который есть только в магазине " + shopName(only) + ": забрать его можно только там." : "";
+    $("[data-co-preorder]").hidden = !lines.some(function (l) { return l.preorder; });
     var onlyBox = $("[data-co-only]");
     onlyBox.hidden = !only && !conflict.length;
     if (only) {

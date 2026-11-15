@@ -70,6 +70,7 @@ final class Checkout
                 // «Только из Уручья» (решение 2026-11-15): код филиала, '' — из любого
                 'onlyShop' => $only = Catalog::onlyShop($b, $size, $shops),
                 'onlyShopLabel' => Text::onlyShop($only, $shops),
+                'preorder' => !empty($b['preorder']), // свадебный — по предзаказу
             ];
         }
 
@@ -337,7 +338,7 @@ final class Checkout
                 Db::exec('UPDATE orders SET number = 10000 + id WHERE id = ?', [$id]);
                 foreach ($t['priced']['lines'] as $n => $l) {
                     Db::insert('order_items', ['orderId' => $id, 'bouquetId' => $l['bouquetId'], 'name' => $l['name'], 'size' => $l['size'],
-                        'composition' => $l['composition'], 'swaps' => mb_substr($swaps[$n] ?? $l['swaps'], 0, 500), 'onlyShop' => mb_substr($l['onlyShopLabel'], 0, 80), 'qty' => $l['qty'], 'priceKop' => $l['priceKop']]);
+                        'composition' => $l['composition'], 'swaps' => mb_substr($swaps[$n] ?? $l['swaps'], 0, 500), 'onlyShop' => mb_substr(trim(($l['preorder'] ? 'По предзаказу. ' : '') . $l['onlyShopLabel']), 0, 80), 'qty' => $l['qty'], 'priceKop' => $l['priceKop']]);
                 }
                 foreach ($t['priced']['addons'] as $a) {
                     Db::insert('order_items', ['orderId' => $id, 'addonId' => $a['addonId'], 'name' => $a['name'], 'composition' => '',

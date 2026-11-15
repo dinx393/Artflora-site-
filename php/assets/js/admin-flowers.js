@@ -93,7 +93,8 @@
             // замены — свои в каждом букете (задаются в карточке букета)
             var subs = [];
             ((b.swaps || {})[i.flowerId] || []).forEach(function (id) { if (flowers[id]) subs.push({ name: flowers[id].name, inStock: flowers[id].inStock, onlyShop: flowers[id].onlyShop }); });
-            return { qty: i.qty, flower: { name: f.name, priceKop: f.priceKop, inStock: f.inStock, onlyShop: f.onlyShop, substitutes: subs } };
+            // свадебные — по предзаказу: цветы закажут отдельно, «нет в наличии» их не скрывает
+            return { qty: i.qty, flower: { name: f.name, priceKop: f.priceKop, inStock: b.preorder ? true : f.inStock, onlyShop: f.onlyShop, substitutes: subs } };
           }),
         };
       }),
