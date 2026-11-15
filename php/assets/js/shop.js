@@ -144,6 +144,9 @@
     g.querySelectorAll("[data-photo]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         main.src = btn.dataset.photo;
+        main.style.objectPosition = btn.dataset.pos || ""; // кадр фото из админки (focus.js досчитает точнее)
+        if (btn.dataset.pos) main.setAttribute("data-focus", btn.dataset.pos.replace(/%/g, ""));
+        else main.removeAttribute("data-focus");
         label.textContent = btn.dataset.label;
         g.querySelectorAll("[data-photo]").forEach(function (b) { b.classList.toggle("on", b === btn); });
       });

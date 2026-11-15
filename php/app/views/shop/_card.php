@@ -5,7 +5,7 @@ $href = '/bouquet/' . rawurlencode($b['slug']);
 ?>
 <div class="pcard">
   <a href="<?= e($href) ?>" class="pcard-photo">
-    <img src="<?= e($b['photos'][0]) ?>" alt="<?= e($b['name']) ?>" loading="lazy">
+    <img src="<?= e($b['photos'][0]) ?>" alt="<?= e($b['name']) ?>" loading="lazy"<?= ShopView::pos($b['photoPos'][0] ?? null) ?>>
     <?= ShopView::badges($b) ?>
   </a>
   <div class="pcard-body">

@@ -2,6 +2,12 @@
 // Мелочи для шаблонов витрины: цена «172,50 BYN» с мелким «BYN», склонение «букет/букета/букетов».
 final class ShopView
 {
+    // Кадр фото букета (Catalog::focusCss): атрибут для <img>, чтобы букет не обрезался. Не задан — пусто.
+    public static function pos(?string $pos): string
+    {
+        return $pos ? ' style="object-position: ' . e($pos) . '" data-focus="' . e(str_replace('%', '', $pos)) . '"' : '';
+    }
+
     // «пн–сб 8:00…» → «Пн–сб 8:00…»
     public static function ucfirst(string $s): string
     {

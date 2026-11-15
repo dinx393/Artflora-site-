@@ -114,3 +114,20 @@ test('обычное небольшое фото не трогаем', function 
     $plain = ob_get_clean();
     eq(Uploads::shrinkJpeg($plain), $plain);
 });
+test('HEIC с iPhone узнаём по началу файла', function () {
+    ok(Uploads::isHeic("\0\0\0\x18ftypheic\0\0\0\0mif1heic"));
+    ok(Uploads::isHeic("\0\0\0\x18ftypmif1\0\0\0\0"));
+    ok(!Uploads::isHeic("\xFF\xD8\xFF\xE0"));
+    ok(!Uploads::isHeic("\0\0\0\x18ftypisom\0\0\0\0")); // видео mp4 — не фото
+    eq(Uploads::MAX_BYTES, 15 * 1024 * 1024);
+});
+test('кадр фото: только правильные точки, по центру не пишем', function () {
+    $m = Catalog::focusMap('{"/uploads/a.jpg":[77,42],"/uploads/b.jpg":[150,-3],"/uploads/c.jpg":"x","/uploads/d.jpg":[1]}');
+    eq($m, ['/uploads/a.jpg' => [77, 42], '/uploads/b.jpg' => [100, 0]]);
+    eq(Catalog::focusMap(null), []);
+    eq(Catalog::focusCss($m, '/uploads/a.jpg'), '77% 42%');
+    eq(Catalog::focusCss(['/uploads/e.jpg' => [50, 50]], '/uploads/e.jpg'), null);
+    eq(Catalog::focusCss($m, '/uploads/zzz.jpg'), null);
+    eq(ShopView::pos('77% 42%'), ' style="object-position: 77% 42%" data-focus="77 42"');
+    eq(ShopView::pos(null), '');
+});

@@ -113,7 +113,7 @@ $filterFlowers = $sortNames($filterFlowers);
           <td>
             <div class="row" style="gap: 12px; flex-wrap: nowrap">
               <label class="pick" title="Выбрать для массового действия"><input type="checkbox" data-pick value="<?= $b['id'] ?>" aria-label="Выбрать «<?= e($b['name']) ?>»"></label>
-              <img src="<?= e($b['photos'][0] ?? Catalog::PLACEHOLDER) ?>" alt="" style="width: 52px; height: 52px; border-radius: 10px; object-fit: cover">
+              <img src="<?= e($b['photos'][0] ?? Catalog::PLACEHOLDER) ?>" alt="" style="width: 52px; height: 52px; border-radius: 10px; object-fit: cover<?php if ($pos = Catalog::focusCss($b['photoFocus'] ?? [], $b['photos'][0] ?? null)): ?>; object-position: <?= e($pos) ?>" data-focus="<?= e(str_replace('%', '', $pos)) ?><?php endif ?>">
               <div class="stack" style="gap: 2px">
                 <a href="/admin/bouquets/<?= $b['id'] ?>" style="font-weight: 800"><?= e($b['name']) ?></a>
                 <span class="small muted"><?= $b['collectionName'] !== null ? e("Коллекция «{$b['collectionName']}» · ") : '' ?><?= e(Occasions::FORMATS[$b['format']]['label']) ?><?= $b['weddingOnly'] && in_array('wedding', $b['occasions'], true) ? ' · только в «Свадебных»' : '' ?></span>

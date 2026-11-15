@@ -46,6 +46,7 @@ $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
   <main class="admin-main"><?= $content ?></main>
 </div>
 <script src="<?= View::asset('js/admin.js') ?>"></script>
+<script src="<?= View::asset('js/focus.js') ?>"></script>
 <?= $scripts ?? '' ?>
 </body>
 </html>

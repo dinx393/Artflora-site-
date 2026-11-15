@@ -33,14 +33,14 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
   <div class="product">
     <div class="gallery" data-gallery>
       <div class="gallery-main">
-        <img src="<?= e($photos[0]) ?>" alt="<?= e($b['name']) ?>" data-gallery-main>
+        <img src="<?= e($photos[0]) ?>" alt="<?= e($b['name']) ?>" data-gallery-main<?= ShopView::pos($b['photoPos'][0] ?? null) ?>>
         <?= ShopView::badges($b, 'left: 16px; top: 16px') ?>
         <span class="badge" style="left: 16px; top: auto; bottom: 16px; font-weight: 400" data-gallery-label><?= e($views[0]) ?></span>
       </div>
       <?php if (count($photos) > 1): ?>
         <div class="thumbs">
           <?php foreach ($photos as $n => $p): $label = $views[$n] ?? 'Фото ' . ($n + 1) ?>
-            <button type="button" class="<?= $n === 0 ? 'on' : '' ?>" aria-label="<?= e($label) ?>" data-photo="<?= e($p) ?>" data-label="<?= e($label) ?>"><img src="<?= e($p) ?>" alt=""></button>
+            <button type="button" class="<?= $n === 0 ? 'on' : '' ?>" aria-label="<?= e($label) ?>" data-photo="<?= e($p) ?>" data-pos="<?= e($b['photoPos'][$n] ?? '') ?>" data-label="<?= e($label) ?>"><img src="<?= e($p) ?>" alt=""<?= ShopView::pos($b['photoPos'][$n] ?? null) ?>></button>
           <?php endforeach ?>
         </div>
       <?php endif ?>
@@ -90,7 +90,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
           <div class="forms">
             <?php foreach ($siblings as $s): $inForm = Occasions::FORMATS[$s['format']]['inForm'] ?>
               <a href="<?= e($link($s)) ?>" class="<?= $s['id'] === $b['id'] ? 'on' : '' ?>">
-                <span class="ph"><img src="<?= e($s['photos'][0]) ?>" alt="<?= e($inForm) ?>"></span>
+                <span class="ph"><img src="<?= e($s['photos'][0]) ?>" alt="<?= e($inForm) ?>"<?= ShopView::pos($s['photoPos'][0] ?? null) ?>></span>
                 <span class="t stack" style="gap: 2px">
                   <b style="font-size: 14px"><?= e($inForm) ?></b>
                   <?php if ($s['id'] === $b['id']): ?>
@@ -112,7 +112,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
           <div class="forms">
             <?php foreach (array_slice($similar, 0, 3) as $s): ?>
               <a href="<?= e($link($s)) ?>">
-                <span class="ph"><img src="<?= e($s['photos'][0]) ?>" alt="<?= e($s['name']) ?>"></span>
+                <span class="ph"><img src="<?= e($s['photos'][0]) ?>" alt="<?= e($s['name']) ?>"<?= ShopView::pos($s['photoPos'][0] ?? null) ?>></span>
                 <span class="t stack" style="gap: 2px">
                   <b class="forms-name"><?= e($s['name']) ?></b>
                   <span class="price" style="font-size: 15px"><?= ShopView::byn($s['priceKop']) ?></span>

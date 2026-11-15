@@ -21,11 +21,11 @@ Http::get('/', function () {
     foreach ($all as $b) {
         $p = $b['photos'][0] ?? null;
         if ($ofDay && $b['id'] === $ofDay['id']) continue;
-        if (!$p || ($ofDay && $p === $ofDay['photos'][0]) || in_array($p, $tile, true)) continue;
-        $tile[] = $p;
+        if (!$p || ($ofDay && $p === $ofDay['photos'][0]) || in_array($p, array_column($tile, 0), true)) continue;
+        $tile[] = [$p, $b['photoPos'][0] ?? null];
         if (count($tile) === 3) break;
     }
-    if (!$tile) $tile[] = '/demo/autumn.jpg'; // каталог пока пуст — фото букета из магазина
+    if (!$tile) $tile[] = ['/demo/autumn.jpg', null]; // каталог пока пуст — фото букета из магазина
     return View::page('shop/home', [
         'jsonLd' => [Seo::business($shop, Settings::get('delivery')), Seo::faqLd(Seo::homeFaq($shop, Settings::get('delivery')))],
         'all' => $all,

@@ -57,6 +57,7 @@ final class Checkout
                 'slug' => $b['slug'],
                 'name' => $b['name'],
                 'photo' => $b['photos'][0] ?? Catalog::PLACEHOLDER,
+                'photoPos' => Catalog::focusCss($b['photoFocus'] ?? [], $b['photos'][0] ?? null),
                 'size' => $size['code'],
                 // размеры по порядку: XS, S, M, L, XL, XXL
                 'sizes' => array_map(fn ($s) => ['code' => $s['code'], 'priceKop' => Pricing::sizePriceKop($s)], Pricing::availableSizes($b)),

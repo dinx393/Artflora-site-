@@ -21,6 +21,7 @@
   if (!initial.sections) initial.sections = [];
   if (initial.weddingOnly === undefined) initial.weddingOnly = true;
   if (!initial.swaps || Array.isArray(initial.swaps)) initial.swaps = {}; // замены в этом букете: {цветок: [замена, …]}
+  if (!initial.photoFocus || Array.isArray(initial.photoFocus)) initial.photoFocus = {}; // кадр фото: {путь: [x, y]} в %
   // упаковка у каждого размера своя; текст поля храним отдельно, чтобы можно было стереть и набрать
   function packagingTexts(x) {
     var t = {};
@@ -35,6 +36,7 @@
     msg: null,
     pending: false,
     uploading: false,
+    framing: null, // фото, у которого сейчас двигаем кадр
     flowerQuery: "",
     timerText: String(data.timerHours), // часы таймера «собран сегодня» в поле
   };
@@ -123,6 +125,63 @@
   }
   function toggleIn(list, v) {
     return list.indexOf(v) >= 0 ? list.filter(function (x) { return x !== v; }) : list.concat([v]);
+  }
+
+  // ---------- Кадр фото ----------
+  // На сайте фото обрезаются под рамку (карточка каталога, «Букет дня», корзина). Нажали на букет на фото —
+  // запоминаем эту точку (в % от левого и верхнего края), и на сайте фото обрезается вокруг неё (CSS object-position).
+  function focusOf(p) {
+    return state.b.photoFocus[p] || [50, 50];
+  }
+  // object-position для рамки bw×bh: точно как на сайте (focus.js), когда уже известен размер фото
+  var dims = {};
+  function posCss(p, bw, bh) {
+    var f = focusOf(p), d = dims[p];
+    if (!d) {
+      dims[p] = "loading";
+      var im = new Image();
+      im.onload = function () { dims[p] = [im.naturalWidth, im.naturalHeight]; ui.render(); };
+      im.src = p;
+    }
+    return d && d !== "loading" && window.ArtfloraFocus ? window.ArtfloraFocus.calc(f[0], f[1], d[0], d[1], bw, bh) : f[0] + "% " + f[1] + "%";
+  }
+  function setFocus(p, xy) {
+    var m = Object.assign({}, state.b.photoFocus);
+    if (xy[0] === 50 && xy[1] === 50) delete m[p];
+    else m[p] = xy;
+    set({ photoFocus: m });
+  }
+  // Рамки, как на сайте (ширина × высота): каталог на компьютере 295×340, на телефоне 165×210, «Букет дня» 3:4, корзина и страница букета — почти квадрат
+  var FRAMES = [
+    { name: "Каталог, компьютер", w: 118, h: 136 },
+    { name: "Каталог, телефон", w: 99, h: 126 },
+    { name: "Главная: букет дня", w: 102, h: 136 },
+    { name: "Страница букета, корзина", w: 136, h: 136 },
+  ];
+  function framingHtml(on) {
+    var p = state.framing;
+    if (!p || state.b.photos.indexOf(p) < 0) return "";
+    var f = focusOf(p);
+    var h = '<div class="card stack framing" style="gap: 12px">';
+    h += '<div class="row between"><b>Кадр фото на сайте</b><button type="button" class="btn btn-outline"' + on("click", function () { state.framing = null; ui.render(); }) + ">Готово</button></div>";
+    h += '<p class="small muted" style="margin: 0">Нажмите на фото туда, где букет (или его центр) — на сайте фото обрежется вокруг этой точки. Справа видно, как оно будет выглядеть. Не забудьте «Сохранить».</p>';
+    h += '<div class="framing-body">';
+    h += '<div class="framing-pick"' + on("click", function (e, el) {
+      var img = el.querySelector("img");
+      var r = img.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      var x = Math.round(Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)));
+      var y = Math.round(Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100)));
+      setFocus(p, [x, y]);
+    }) + '><span class="framing-img"><img src="' + esc(p) + '" alt="" draggable="false"><i class="framing-dot" style="left: ' + f[0] + "%; top: " + f[1] + '%"></i></span></div>';
+    h += '<div class="framing-previews">';
+    FRAMES.forEach(function (fr) {
+      h += '<figure><span style="width: ' + fr.w + "px; height: " + fr.h + 'px"><img src="' + esc(p) + '" alt="" style="object-position: ' + posCss(p, fr.w, fr.h) + '"></span><figcaption>' + esc(fr.name) + "</figcaption></figure>";
+    });
+    h += "</div></div>";
+    h += '<div class="row" style="gap: 8px"><button type="button" class="btn btn-outline"' + on("click", function () { setFocus(p, [50, 50]); }) + ">По центру</button>" +
+      '<span class="small muted">' + (f[0] === 50 && f[1] === 50 ? "Сейчас: по центру, как было" : "Точка: " + f[0] + "% слева, " + f[1] + "% сверху") + "</span></div>";
+    return h + "</div>";
   }
 
   function onUpload(files) {
@@ -221,7 +280,9 @@
     // Фото
     h += '<div class="photo-row">';
     b.photos.forEach(function (p, i) {
-      h += '<div class="ph"' + (i === 0 ? ' style="outline: 2px solid var(--cherry)"' : "") + '><img src="' + esc(p) + '" alt="">';
+      h += '<div class="ph' + (state.framing === p ? " framing-on" : "") + '"' + (i === 0 ? ' style="outline: 2px solid var(--cherry)"' : "") + '><img src="' + esc(p) + '" alt="" title="Нажмите, чтобы подвинуть кадр" style="cursor: pointer; object-position: ' + posCss(p, 120, 120) + '"' +
+        on("click", function () { state.framing = state.framing === p ? null : p; ui.render(); }) + ">";
+      h += '<button type="button" class="ph-frame"' + on("click", function () { state.framing = state.framing === p ? null : p; ui.render(); }) + ">✥ кадр</button>";
       h += '<button type="button" aria-label="Убрать фото"' + on("click", function () { set({ photos: b.photos.filter(function (_, n) { return n !== i; }) }); }) + ">×</button>";
       if (i > 0) {
         h += '<button type="button" style="left: 4px; right: auto; width: auto; border-radius: 999px; padding: 0 8px; font-size: 12px"' +
@@ -230,7 +291,9 @@
       h += "</div>";
     });
     h += '<label class="ph" style="display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 700">' + (state.uploading ? "Загрузка…" : "+ Фото") +
-      '<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden' + on("change", function (e) { onUpload(e.target.files); }) + "></label></div>";
+      '<input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden' + on("change", function (e) { onUpload(e.target.files); }) + "></label></div>";
+    if (b.photos.length) h += '<p class="small muted" style="margin: -8px 0 0">Букет на сайте обрезан не так? Нажмите на фото (или «✥ кадр») и отметьте, где букет.</p>';
+    h += framingHtml(on);
 
     // Поля
     h += '<label class="field"><span>Название</span><input class="input" data-k="name" value="' + esc(b.name) + '"' + on("input", function (e) { set({ name: e.target.value }); }) + "></label>";

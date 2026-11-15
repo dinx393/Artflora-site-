@@ -618,6 +618,19 @@ tr.dragging { opacity: .45; }
 .photo-row .ph { position: relative; width: 120px; height: 120px; border-radius: 14px; overflow: hidden; background: var(--blush); }
 .photo-row .ph img { width: 100%; height: 100%; object-fit: cover; }
 .photo-row .ph button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(255,255,255,.9); cursor: pointer; }
+/* Кадр фото букета (админка): кнопка на миниатюре, фото с точкой и примеры рамок, как на сайте */
+.photo-row .ph button.ph-frame { top: auto; bottom: 4px; left: 4px; right: auto; width: auto; height: 24px; border-radius: 999px; padding: 0 8px; font-size: 12px; font-weight: 700; }
+.photo-row .ph.framing-on { box-shadow: 0 0 0 3px var(--pink); }
+.framing-body { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+.framing-pick { flex: 0 1 auto; cursor: crosshair; }
+.framing-img { position: relative; display: inline-block; line-height: 0; border-radius: 12px; overflow: hidden; background: var(--blush); }
+.framing-img img { display: block; max-width: 100%; max-height: 380px; user-select: none; }
+.framing-dot { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; border: 3px solid #fff; background: var(--cherry); box-shadow: 0 0 0 2px var(--cherry), 0 2px 8px rgba(0,0,0,.35); pointer-events: none; }
+.framing-previews { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; flex: 1 1 260px; }
+.framing-previews figure { margin: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.framing-previews figure span { display: block; border-radius: 12px; overflow: hidden; background: var(--blush); }
+.framing-previews figure img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.framing-previews figcaption { font-size: 12px; color: var(--muted); max-width: 136px; line-height: 1.25; }
 @media (max-width: 860px) {
   .admin { grid-template-columns: minmax(0, 1fr); }
   /* Меню на телефоне: логотип, «Сайт» и «Выйти» сверху, разделы — кнопками в 3 столбца, всё видно сразу */

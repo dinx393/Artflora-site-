@@ -175,10 +175,33 @@ final class Catalog
             'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'],
             'photoSize' => $b['photoSize'], 'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']),
             'sections' => Db::fromJson($b['sections']), 'photos' => Db::fromJson($b['photos']), 'sortOrder' => (int) $b['sortOrder'],
+            'photoFocus' => self::focusMap($b['photoFocus'] ?? null),
             'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
             'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
             'sizes' => $byBouquet[$b['id']] ?? [],
         ], $rows);
+    }
+
+    // Кадр фото (миграция 015): {"/uploads/a.jpg": [x, y]} в процентах. Чужое и кривое отбрасываем.
+    public static function focusMap(mixed $json): array
+    {
+        $map = is_array($json) ? $json : Db::fromJson(is_string($json) ? $json : null);
+        $out = [];
+        if (!is_array($map)) return $out;
+        foreach ($map as $path => $xy) {
+            if (!is_string($path) || !is_array($xy) || count($xy) !== 2 || !array_is_list($xy)) continue;
+            [$x, $y] = $xy;
+            if (!is_int($x) && !is_float($x) || !is_int($y) && !is_float($y)) continue;
+            $out[$path] = [(int) round(max(0, min(100, $x))), (int) round(max(0, min(100, $y)))];
+        }
+        return $out;
+    }
+
+    // «35% 20%» для style="object-position: …"; по центру (50/50) или не задан — null
+    public static function focusCss(array $focus, ?string $path): ?string
+    {
+        $xy = $path !== null ? ($focus[$path] ?? null) : null;
+        return $xy && $xy !== [50, 50] ? "{$xy[0]}% {$xy[1]}%" : null;
     }
 
     // Букет для витрины. Невидимые (выключены или не из чего собрать) → null.
@@ -204,6 +227,8 @@ final class Catalog
             'weddingOnly' => $b['weddingOnly'] && in_array('wedding', $b['occasions'], true),
             'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $sections,
             'photos' => $b['photos'] ? array_map([Uploads::class, 'url'], $b['photos']) : [self::PLACEHOLDER],
+            // кадр каждого фото для CSS object-position («50% 30%») или null — по центру
+            'photoPos' => $b['photos'] ? array_map(fn ($p) => self::focusCss($b['photoFocus'] ?? [], $p), $b['photos']) : [null],
             'collectionId' => $b['collectionId'], 'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
             'flowerNames' => array_keys($names),
             'sizes' => $sizes,

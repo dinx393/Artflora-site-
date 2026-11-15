@@ -51,7 +51,7 @@ $cards = [
     </div>
     <?php if ($ofDay): ?>
       <a href="/bouquet/<?= e(rawurlencode($ofDay['slug'])) ?>" class="hero-day">
-        <img src="<?= e($ofDay['photos'][0]) ?>" alt="<?= e($ofDay['name']) ?>">
+        <img src="<?= e($ofDay['photos'][0]) ?>" alt="<?= e($ofDay['name']) ?>"<?= ShopView::pos($ofDay['photoPos'][0] ?? null) ?>>
         <span class="hero-day-body">
           <span class="eyebrow muted">Букет дня · собран сегодня</span>
           <span class="hero-day-name"><?= e($ofDay['name']) ?></span>
@@ -62,7 +62,7 @@ $cards = [
     <?php endif ?>
     <a href="/catalog" class="hero-tile <?= $ofDay ? '' : 'hero-tile-full' ?>">
       <span class="hero-tile-photos n<?= count($tilePhotos) ?>">
-        <?php foreach ($tilePhotos as $i => $p): ?><img src="<?= e($p) ?>" alt="<?= $i === 0 ? 'Букеты Artflora.by' : '' ?>"><?php endforeach ?>
+        <?php foreach ($tilePhotos as $i => [$p, $pos]): ?><img src="<?= e($p) ?>" alt="<?= $i === 0 ? 'Букеты Artflora.by' : '' ?>"<?= ShopView::pos($pos) ?>><?php endforeach ?>
       </span>
       <span class="hero-chip">Весь каталог ↗</span>
     </a>
@@ -114,7 +114,7 @@ $cards = [
           [$script, $text] = $splitName($b['name']);
           $size = array_values(array_filter($b['sizes'], fn ($s) => $s['code'] === $b['defaultSize']))[0] ?? null; ?>
         <a href="/bouquet/<?= e(rawurlencode($b['slug'])) ?>" class="story">
-          <img src="<?= e($b['photos'][0]) ?>" alt="<?= e($b['name']) ?>" loading="lazy">
+          <img src="<?= e($b['photos'][0]) ?>" alt="<?= e($b['name']) ?>" loading="lazy"<?= ShopView::pos($b['photoPos'][0] ?? null) ?>>
           <span class="story-shade"></span>
           <span class="story-title">
             <?php if ($script !== ''): ?><span class="story-script"><?= e($script) ?></span><?php endif ?>

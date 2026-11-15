@@ -181,7 +181,7 @@
         : "";
       html +=
         '<div class="line" data-line="' + l.bouquetId + '" data-line-size="' + esc(l.size) + '">' +
-        '<a href="' + href + '"><img src="' + esc(l.photo) + '" alt="' + esc(l.name) + '"></a>' +
+        '<a href="' + href + '"><img src="' + esc(l.photo) + '" alt="' + esc(l.name) + '"' + (l.photoPos ? ' style="object-position: ' + esc(l.photoPos) + '" data-focus="' + esc(l.photoPos.replace(/%/g, "")) + '"' : "") + '></a>' +
         '<div class="stack" style="gap: 8px">' +
         '<a href="' + href + '" class="pcard-title" style="font-size: 22px">' + esc(l.name) + "</a>" +
         '<div class="row" style="gap: 10px">' + sizes +
