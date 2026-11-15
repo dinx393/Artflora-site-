@@ -38,6 +38,7 @@ if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((S
   <?php endforeach ?>
 </div>
 
+<?php if (in_array($_GET['msg'] ?? '', ['updated', 'deleted'], true)): ?><p class="pill ok" style="align-self: flex-start"><?= $_GET['msg'] === 'updated' ? 'Исправлено.' : 'Удалено.' ?></p><?php endif ?>
 <?php if (!empty($_GET['merged'])): ?><p class="pill ok" style="align-self: flex-start">Связано. Теперь у позиции есть розничная цена из «Цветов».</p><?php endif ?>
 <?php if ($m === 'item' && ($cur = $items[$f['item']] ?? null) && $cur['flowerId'] === null): ?>
   <form id="link" class="card stack" style="gap: 10px; background: #fff6e5; border-color: #f1d9a8" method="post" action="/admin/stock/item/<?= (int) $cur['id'] ?>/merge">
@@ -190,7 +191,7 @@ if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((S
     </div>
     <?php if (!$entries): ?><p class="muted">Нет.</p><?php else: ?>
       <div class="table-wrap"><table class="table stk-table">
-        <thead><tr><th>Дата</th><th>Что</th><th>Описание</th><th>Магазин</th><th class="r">Сумма</th><th>Кто внёс</th></tr></thead>
+        <thead><tr><th>Дата</th><th>Что</th><th>Описание</th><th>Магазин</th><th class="r">Сумма</th><th>Кто внёс</th><th></th></tr></thead>
         <tbody>
           <?php foreach ($entries as $e): $isIn = $e['direction'] === 'IN'; ?>
             <tr>
@@ -200,6 +201,7 @@ if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((S
               <td><?= e($shopName[$e['shop']] ?? 'Общее') ?></td>
               <td class="r <?= $isIn ? 'stk-in' : 'stk-out' ?>"><b><?= $isIn ? '+' : '−' ?> <?= $money((int) $e['amountKop']) ?></b></td>
               <td class="small muted"><?= e($e['createdBy']) ?></td>
+              <td style="white-space: nowrap"><a class="btn-ghost small" href="/admin/stock/money?<?= e(http_build_query(['id' => $e['id'], 'back' => $q([])])) ?>">✎ Исправить</a> <form method="post" action="/admin/stock/money/<?= (int) $e['id'] ?>/delete" onsubmit="return confirm('Удалить эту запись?')" style="display: inline"><?= Auth::csrfField() ?><input type="hidden" name="back" value="<?= e($q([])) ?>"><button class="btn-ghost small" title="Удалить">× Удалить</button></form></td>
             </tr>
           <?php endforeach ?>
         </tbody>

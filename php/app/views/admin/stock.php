@@ -10,7 +10,7 @@ $back = http_build_query(array_filter(['p' => $preset, 'from' => $preset === 'cu
 $money = fn (int $kop) => e(preg_replace('/ BYN$/', '', Money::format($kop)));
 $byn = fn (int $kop) => admin_byn($kop);
 $periodText = $from === $to ? admin_date($from) . ' ' . substr($from, 0, 4) : admin_date($from) . ' – ' . admin_date($to) . ' ' . substr($to, 0, 4);
-$msgs = ['purchase' => 'Накладная сохранена.', 'writeoff' => 'Списание сохранено.', 'deleted' => 'Удалено.'];
+$msgs = ['purchase' => 'Накладная сохранена.', 'writeoff' => 'Списание сохранено.', 'deleted' => 'Удалено.', 'updated' => 'Исправлено.'];
 $monthNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 $itemName = fn (int $id) => $items[$id]['name'] ?? '?';
 // Ссылка на детализацию цифры: /admin/stock/detail?m=…, тот же период и магазин (магазин можно подменить в $more)
@@ -178,7 +178,7 @@ $cat = function (array $by, array $labels, string $color, string $dir) use ($dl,
   <?php if (!$entries): ?>
     <p class="small muted">За этот период ничего не внесено. Нажмите «+ Доход» или «− Расход» и впишите цифру из банкинга.</p>
   <?php else: ?>
-    <details><summary class="small" style="cursor: pointer; font-weight: 700">Все записи (<?= count($entries) ?>)</summary>
+    <details open><summary class="small" style="cursor: pointer; font-weight: 700">Все записи (<?= count($entries) ?>)</summary>
     <div class="table-wrap"><table class="table stk-table">
       <thead><tr><th>Дата</th><th>Что</th><th>Описание</th><th>Магазин</th><th class="r">Сумма</th><th>Кто внёс</th><th></th></tr></thead>
       <tbody>
@@ -190,7 +190,7 @@ $cat = function (array $by, array $labels, string $color, string $dir) use ($dl,
             <td><?= e($shopName[$m['shop']] ?? 'Общее') ?></td>
             <td class="r <?= $in ? 'stk-in' : 'stk-out' ?>"><b><?= $in ? '+' : '−' ?> <?= $money((int) $m['amountKop']) ?></b></td>
             <td class="small muted"><?= e($m['createdBy']) ?></td>
-            <td><form method="post" action="/admin/stock/money/<?= (int) $m['id'] ?>/delete" onsubmit="return confirm('Удалить эту запись?')"><?= Auth::csrfField() ?><input type="hidden" name="back" value="<?= e($back) ?>"><button class="btn-ghost small" aria-label="Удалить">×</button></form></td>
+            <td style="white-space: nowrap"><a class="btn-ghost small" href="/admin/stock/money?<?= e(http_build_query(['id' => $m['id'], 'back' => '/admin/stock?' . $back])) ?>">✎ Исправить</a> <form method="post" action="/admin/stock/money/<?= (int) $m['id'] ?>/delete" onsubmit="return confirm('Удалить эту запись?')" style="display: inline"><?= Auth::csrfField() ?><input type="hidden" name="back" value="<?= e($back) ?>"><button class="btn-ghost small" title="Удалить">× Удалить</button></form></td>
           </tr>
         <?php endforeach ?>
       </tbody>

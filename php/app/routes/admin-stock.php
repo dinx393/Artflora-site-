@@ -308,11 +308,25 @@ Http::post('/admin/stock/writeoff/{id}/delete', function (string $id) {
 
 // ---------- Доходы и расходы по банку ----------
 
+// Куда вернуться после правки: только страницы «Финансов», без старого msg
+function stock_back_url(string $url): string
+{
+    if (!preg_match('~^/admin/stock(/detail)?(\?[\w=&%.\-]*)?$~', $url)) return '/admin/stock';
+    return rtrim(preg_replace('/(^|&)msg=[^&]*/', '', $url) ?? '/admin/stock', '?&');
+}
+
 Http::get('/admin/stock/money', function () {
     Auth::requireAdmin('stock');
     $dir = ($_GET['dir'] ?? '') === 'out' ? 'OUT' : 'IN';
+    // ?id=N — исправить уже внесённую запись
+    $entry = ctype_digit((string) ($_GET['id'] ?? '')) ? Db::one('SELECT * FROM money_entries WHERE id = ?', [(int) $_GET['id']]) : null;
+    if (isset($_GET['id']) && !$entry) Http::abort(404);
+    if ($entry) $dir = $entry['direction'];
+    $ref = (string) ($_GET['back'] ?? parse_url((string) ($_SERVER['HTTP_REFERER'] ?? ''), PHP_URL_PATH) . '?' . parse_url((string) ($_SERVER['HTTP_REFERER'] ?? ''), PHP_URL_QUERY));
     return admin_page('stock-money', [
-        'title' => $dir === 'IN' ? 'Доход' : 'Расход',
+        'title' => $entry ? 'Исправить запись' : ($dir === 'IN' ? 'Доход' : 'Расход'),
+        'entry' => $entry,
+        'back' => stock_back_url($ref),
         'dir' => $dir,
         'shops' => stock_shops(),
         'date' => stock_date($_GET['date'] ?? null) ?? stock_today(),
@@ -325,7 +339,8 @@ Http::post('/admin/stock/money/save', function () {
     Auth::requireAdmin('stock');
     Auth::checkCsrf();
     $dir = Http::str('dir') === 'OUT' ? 'OUT' : 'IN';
-    $back = fn (array $q) => Http::redirect('/admin/stock/money?' . http_build_query(['dir' => strtolower($dir)] + $q));
+    $editId = Http::str('id', 12);
+    $back = fn (array $q) => Http::redirect('/admin/stock/money?' . http_build_query((ctype_digit($editId) && $editId !== '' ? ['id' => $editId, 'back' => Http::str('back', 400)] : ['dir' => strtolower($dir)]) + $q));
     $date = stock_date(Http::str('date', 10)) ?? $back(['error' => 'Укажите дату']);
     $cats = $dir === 'IN' ? Stock::MONEY_IN : Stock::MONEY_OUT;
     $cat = Http::str('category', 30);
@@ -335,6 +350,12 @@ Http::post('/admin/stock/money/save', function () {
     $kop = Money::parse(Http::str('amount', 30));
     if ($kop === null || $kop <= 0 || $kop > 100_000_000) $back(['date' => $date, 'error' => 'Проверьте сумму']);
     $desc = trim(Http::str('description', 300));
+    $id = Http::str('id', 12);
+    if (ctype_digit($id) && $id !== '') {
+        Db::exec('UPDATE money_entries SET entryDate = ?, direction = ?, category = ?, shop = ?, amountKop = ?, description = ? WHERE id = ?', [$date, $dir, $cat, $shop, $kop, mb_substr($desc, 0, 300), (int) $id]);
+        $to = stock_back_url(Http::str('back', 400));
+        Http::redirect($to . (str_contains($to, '?') ? '&' : '?') . 'msg=updated');
+    }
     Db::insert('money_entries', ['entryDate' => $date, 'direction' => $dir, 'category' => $cat, 'shop' => $shop, 'amountKop' => $kop, 'description' => mb_substr($desc, 0, 300), 'createdBy' => stock_me()]);
     $back(['date' => $date, 'saved' => 1]);
 });
@@ -343,7 +364,12 @@ Http::post('/admin/stock/money/{id}/delete', function (string $id) {
     Auth::requireAdmin('stock');
     Auth::checkCsrf();
     if (ctype_digit($id)) Db::exec('DELETE FROM money_entries WHERE id = ?', [(int) $id]);
-    Http::redirect('/admin/stock?' . preg_replace('/[^a-z0-9=&_-]/i', '', Http::str('back', 300)) . '&msg=deleted');
+    $back = Http::str('back', 400);
+    if (str_starts_with($back, '/admin/stock')) {
+        $to = stock_back_url($back);
+        Http::redirect($to . (str_contains($to, '?') ? '&' : '?') . 'msg=deleted');
+    }
+    Http::redirect('/admin/stock?' . preg_replace('/[^a-z0-9=&_-]/i', '', $back) . '&msg=deleted');
 });
 
 // Детализация любой цифры «Финансов»: из чего она сложилась (заказы, строки накладных, списания, записи банка, позиции)
