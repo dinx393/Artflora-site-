@@ -86,12 +86,12 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
       <?php /* Сначала размеры, потом этот же состав в другом виде; если других видов нет — похожие букеты */ ?>
       <?php if (count($siblings) > 1): ?>
         <div class="stack">
-          <div class="row between" style="align-items: baseline">
-            <span class="label">Этот же состав в другом виде</span>
-            <?php if ($b['collectionSlug']): ?>
-              <a href="/catalog?collection=<?= e(rawurlencode($b['collectionSlug'])) ?>" class="small" style="font-weight: 700">Вся коллекция «<?= e($b['collectionName']) ?>» →</a>
-            <?php endif ?>
-          </div>
+          <?php /* Заголовок — просто «Вся коллекция «…»» ссылкой (решение владельца 2026-11-15) */ ?>
+          <?php if ($b['collectionSlug']): ?>
+            <a href="/catalog?collection=<?= e(rawurlencode($b['collectionSlug'])) ?>" class="label" style="align-self: flex-start">Вся коллекция «<?= e($b['collectionName']) ?>» →</a>
+          <?php else: ?>
+            <span class="label">Вся коллекция</span>
+          <?php endif ?>
           <div class="forms">
             <?php foreach ($siblings as $s): $inForm = Occasions::FORMATS[$s['format']]['inForm'] ?>
               <a href="<?= e($link($s)) ?>" class="<?= $s['id'] === $b['id'] ? 'on' : '' ?>">

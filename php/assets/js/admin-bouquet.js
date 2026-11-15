@@ -503,7 +503,7 @@
     h += '<div class="card stack" style="gap: 10px"><span class="label">Коллекция</span><select class="input"' +
       on("change", function (e) { set({ collectionId: e.target.value ? Number(e.target.value) : null }); }) + '><option value="">Без коллекции</option>';
     collections.forEach(function (c) { h += '<option value="' + c.id + '"' + on_("selected", b.collectionId === c.id) + ">" + esc(c.name) + "</option>"; });
-    h += '</select><span class="small muted">На сайте покажем как «Этот же состав в другом виде»</span>';
+    h += '</select><span class="small muted">На сайте на странице букета — блок «Вся коллекция «…»»</span>';
     Object.keys(FORMATS).forEach(function (fmt) {
       var sib = siblings.filter(function (x) { return x.format === fmt; })[0];
       h += '<div class="sum-row small"><span>' + esc(FORMATS[fmt].label) + "</span>";
