@@ -37,6 +37,7 @@ final class Stock
         'bank' => 'Банк (комиссии)',
         'dividends' => 'Дивиденды',
         'corp_card' => 'Корпоративная карточка',
+        'loan_sn' => 'Займ СН',
         'other_out' => 'Другое',
     ];
 
