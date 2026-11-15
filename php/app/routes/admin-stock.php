@@ -340,3 +340,74 @@ Http::post('/admin/stock/money/{id}/delete', function (string $id) {
     if (ctype_digit($id)) Db::exec('DELETE FROM money_entries WHERE id = ?', [(int) $id]);
     Http::redirect('/admin/stock?' . preg_replace('/[^a-z0-9=&_-]/i', '', Http::str('back', 300)) . '&msg=deleted');
 });
+
+// Детализация любой цифры «Финансов»: из чего она сложилась (заказы, строки накладных, списания, записи банка, позиции)
+const STOCK_DETAIL = [
+    'site' => 'Заказы с сайта',
+    'buy' => 'Закупили',
+    'wo' => 'Списали',
+    'sold' => 'Продали цветов и заработали',
+    'bank' => 'Деньги по банку',
+    'item' => 'Позиция',
+];
+
+Http::get('/admin/stock/detail', function () {
+    Auth::requireAdmin('stock');
+    [$preset, $from, $to, $shop] = stock_filter();
+    $m = is_string($_GET['m'] ?? null) && isset(STOCK_DETAIL[$_GET['m']]) ? $_GET['m'] : Http::abort(404);
+    $str = fn (string $k) => is_string($_GET[$k] ?? null) ? $_GET[$k] : '';
+    $f = ['kind' => $str('kind'), 'reason' => $str('reason'), 'dir' => $str('dir'), 'cat' => $str('cat'), 'item' => (int) $str('item')];
+    $items = [];
+    foreach (Stock::items() as $i) $items[$i['id']] = $i;
+    $history = Stock::history();
+    $shopSql = $shop ? ' AND shop = ?' : '';
+    $args = fn (array $a) => $shop ? [...$a, $shop] : $a;
+    $data = ['orders' => [], 'lines' => [], 'writeoffs' => [], 'entries' => [], 'report' => null];
+    $title = STOCK_DETAIL[$m];
+
+    if ($m === 'site') {
+        $data['orders'] = Db::all("SELECT id, number, status, customerName, deliveryMethod, shop, deliveryDate, deliverySlot, paymentMethod, paid, totalKop FROM orders WHERE status <> 'CANCELLED' AND deliveryDate BETWEEN ? AND ?$shopSql ORDER BY deliveryDate, id", $args([$from, $to]));
+        $ids = array_column($data['orders'], 'id');
+        $what = [];
+        if ($ids) foreach (Db::all('SELECT orderId, name, size, qty FROM order_items WHERE orderId ' . Db::in($ids) . ' ORDER BY id', $ids) as $it) {
+            $what[$it['orderId']][] = $it['name'] . ($it['size'] ? ' ' . $it['size'] : '') . ((int) $it['qty'] > 1 ? ' × ' . $it['qty'] : '');
+        }
+        foreach ($data['orders'] as &$o) $o['what'] = implode(', ', $what[$o['id']] ?? []);
+        unset($o);
+    }
+    if ($m === 'buy' || $m === 'item') {
+        $sql = 'SELECT l.*, p.docDate, p.supplier, p.docNumber FROM stock_purchase_lines l JOIN stock_purchases p ON p.id = l.purchaseId WHERE p.docDate BETWEEN ? AND ?' . ($shop ? ' AND l.shop = ?' : '');
+        $rows = Db::all($sql . ' ORDER BY p.docDate, p.id, l.id', $args([$from, $to]));
+        if ($f['kind'] === 'flowers') $rows = array_filter($rows, fn ($l) => ($items[$l['itemId']]['kind'] ?? '') === 'FLOWER');
+        if ($f['kind'] === 'other') $rows = array_filter($rows, fn ($l) => ($items[$l['itemId']]['kind'] ?? '') !== 'FLOWER');
+        if ($m === 'item') $rows = array_filter($rows, fn ($l) => (int) $l['itemId'] === $f['item']);
+        $data['lines'] = array_values($rows);
+    }
+    if ($m === 'wo' || $m === 'item') {
+        $rows = Db::all("SELECT * FROM stock_writeoffs WHERE woDate BETWEEN ? AND ?$shopSql ORDER BY woDate, id", $args([$from, $to]));
+        if ($f['reason'] !== '') $rows = array_filter($rows, fn ($w) => $w['reason'] === $f['reason'] || ($f['reason'] === 'other' && !isset(Stock::REASONS[$w['reason']])));
+        if ($m === 'item') $rows = array_filter($rows, fn ($w) => (int) $w['itemId'] === $f['item']);
+        foreach ($rows as &$w) {
+            $c = Stock::unitCost($history, (int) $w['itemId'], $w['woDate']);
+            $w['kop'] = $c === null ? null : (int) round($c * (float) $w['qty']);
+        }
+        unset($w);
+        $data['writeoffs'] = array_values($rows);
+    }
+    if ($m === 'sold') $data['report'] = Stock::load($from, $to, $shop);
+    if ($m === 'bank') {
+        $rows = Db::all("SELECT * FROM money_entries WHERE entryDate BETWEEN ? AND ?$shopSql ORDER BY entryDate, id", $args([$from, $to]));
+        if (in_array($f['dir'], ['IN', 'OUT'], true)) $rows = array_filter($rows, fn ($e) => $e['direction'] === $f['dir']);
+        if ($f['cat'] !== '') $rows = array_filter($rows, fn ($e) => $e['category'] === $f['cat']);
+        $data['entries'] = array_values($rows);
+    }
+    if ($m === 'item') $title = $items[$f['item']]['name'] ?? Http::abort(404);
+
+    return admin_page('stock-detail', [
+        'title' => $title . ' — Финансы',
+        'heading' => $title,
+        'm' => $m, 'f' => $f,
+        'preset' => $preset, 'from' => $from, 'to' => $to, 'shop' => $shop,
+        'shops' => stock_shops(), 'items' => $items,
+    ] + $data);
+});

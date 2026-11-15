@@ -13,9 +13,11 @@ $periodText = $from === $to ? admin_date($from) . ' ' . substr($from, 0, 4) : ad
 $msgs = ['purchase' => 'Накладная сохранена.', 'writeoff' => 'Списание сохранено.', 'deleted' => 'Удалено.'];
 $monthNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 $itemName = fn (int $id) => $items[$id]['name'] ?? '?';
+// Ссылка на детализацию цифры: /admin/stock/detail?m=…, тот же период и магазин (магазин можно подменить в $more)
+$dl = fn (string $metric, array $more = []) => e('/admin/stock/detail?' . http_build_query(array_filter(array_merge(['m' => $metric, 'p' => $preset, 'from' => $preset === 'custom' ? $from : null, 'to' => $preset === 'custom' ? $to : null, 'shop' => $shop], $more), fn ($v) => $v !== null && $v !== '')));
 
 // Столбики по месяцам: $series = [[подпись, цвет, fn(месяц) → копейки], …] (масштаб — от самого большого значения)
-$chart = function (array $series) use ($months, $monthNames): string {
+$chart = function (array $series) use ($months, $monthNames, $shop): string {
     $max = 0;
     foreach ($months as $m) foreach ($series as [, , $get]) $max = max($max, $get($m));
     if ($max === 0) return '<p class="small muted">Пока нет данных.</p>';
@@ -39,7 +41,8 @@ $chart = function (array $series) use ($months, $monthNames): string {
         $x0 = $L + $i * $w + ($w - $bw * $k - 3 * ($k - 1)) / 2;
         foreach ($series as $j => [$label, $color, $get]) {
             $v = $get($m);
-            $svg .= '<rect x="' . round($x0 + $j * ($bw + 3), 1) . '" y="' . $y($v) . '" width="' . round($bw, 1) . '" height="' . round($B - $y($v), 1) . '" rx="3" fill="' . $color . '"><title>' . e($label) . ': ' . e(Money::format($v)) . '</title></rect>';
+            $href = '/admin/stock?' . http_build_query(array_filter(['p' => 'custom', 'from' => $ym . '-01', 'to' => date('Y-m-t', strtotime($ym . '-01')), 'shop' => $shop]));
+            $svg .= '<a href="' . e($href) . '"><rect x="' . round($x0 + $j * ($bw + 3), 1) . '" y="' . $y($v) . '" width="' . round($bw, 1) . '" height="' . round($B - $y($v), 1) . '" rx="3" fill="' . $color . '"><title>' . e($label) . ': ' . e(Money::format($v)) . ' — нажмите, чтобы открыть этот месяц</title></rect></a>';
         }
         $svg .= '<text x="' . round($L + $i * $w + $w / 2, 1) . '" y="' . ($B + 18) . '" text-anchor="middle">' . $monthNames[(int) substr($ym, 5, 2) - 1] . '</text>';
         $i++;
@@ -60,6 +63,12 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
   .stk-tile.wo .v { color: var(--danger); }
   .stk-tile.ok { background: #eef1e4; border-color: transparent; }
   .stk-tile.ok .v { color: var(--olive); }
+  a.stk-tile, a.stk-bar { color: inherit; text-decoration: none; }
+  a.stk-tile:hover { border-color: var(--cherry); box-shadow: 0 2px 10px rgba(126, 31, 60, .12); }
+  a.stk-tile::after { content: 'подробнее →'; font-size: 12px; font-weight: 700; color: var(--cherry); margin-top: 4px; }
+  a.stk-bar:hover span:first-child { color: var(--cherry); text-decoration: underline; }
+  .stk-table td a { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .stk-table td a:hover { color: var(--cherry); }
   .stk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
   .stk-chart { width: 100%; height: auto; }
   .stk-chart text { font-size: 11px; fill: var(--muted); font-family: var(--sans); }
@@ -118,24 +127,24 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
 </div>
 
 <div class="stk-tiles">
-  <div class="stk-tile"><span class="k">Закупили</span><span class="v"><?= $byn($t['buyKop']) ?></span><span class="small muted">цветы <?= $money($t['buyFlowersKop']) ?> · упаковка и др. <?= $money($t['buyOtherKop']) ?></span></div>
-  <div class="stk-tile wo"><span class="k">Списали</span><span class="v"><?= $byn($t['woKop']) ?></span><span class="small muted"><?= $t['woPct'] === null ? '—' : $t['woPct'] . '% от закупки' ?></span></div>
-  <div class="stk-tile"><span class="k">Продали цветов</span><span class="v"><?= e(Stock::qty($t['sold'])) ?> <small class="cur">шт.</small></span><span class="small muted">из <?= e(Stock::qty($t['in'])) ?> пришедших</span></div>
-  <div class="stk-tile ok"><span class="k">Заработали на цветах</span><span class="v">≈ <?= $byn($t['earnedKop']) ?></span><span class="small muted">продано на <?= $money($t['soldKop']) ?> − закупка цветов</span></div>
-  <div class="stk-tile"><span class="k">Заказы с сайта</span><span class="v"><?= $byn($t['siteKop']) ?></span><span class="small muted">кроме отменённых, по дате доставки</span></div>
+  <a class="stk-tile" href="<?= $dl('buy') ?>"><span class="k">Закупили</span><span class="v"><?= $byn($t['buyKop']) ?></span><span class="small muted">цветы <?= $money($t['buyFlowersKop']) ?> · упаковка и др. <?= $money($t['buyOtherKop']) ?></span></a>
+  <a class="stk-tile wo" href="<?= $dl('wo') ?>"><span class="k">Списали</span><span class="v"><?= $byn($t['woKop']) ?></span><span class="small muted"><?= $t['woPct'] === null ? '—' : $t['woPct'] . '% от закупки' ?></span></a>
+  <a class="stk-tile" href="<?= $dl('sold') ?>"><span class="k">Продали цветов</span><span class="v"><?= e(Stock::qty($t['sold'])) ?> <small class="cur">шт.</small></span><span class="small muted">из <?= e(Stock::qty($t['in'])) ?> пришедших</span></a>
+  <a class="stk-tile ok" href="<?= $dl('sold') ?>"><span class="k">Заработали на цветах</span><span class="v">≈ <?= $byn($t['earnedKop']) ?></span><span class="small muted">продано на <?= $money($t['soldKop']) ?> − закупка цветов</span></a>
+  <a class="stk-tile" href="<?= $dl('site') ?>"><span class="k">Заказы с сайта</span><span class="v"><?= $byn($t['siteKop']) ?></span><span class="small muted">кроме отменённых, по дате доставки</span></a>
 </div>
 
-<?php $md = $bank; $cat = fn (array $by, array $labels, string $color) => $by ? '<div class="stk-bars">' . implode('', array_map(fn ($k) => '<div class="stk-bar"><span>' . e($labels[$k] ?? $k) . '</span><div class="track"><div class="fill" style="width: ' . round($by[$k] / max(1, max($by)) * 100, 1) . '%; background: ' . $color . '"></div></div><span class="n">' . $money($by[$k]) . '</span></div>', array_keys($by))) . '</div>' : '<p class="small muted">Нет.</p>'; ?>
+<?php $md = $bank; $cat = fn (array $by, array $labels, string $color, string $dir) => $by ? '<div class="stk-bars">' . implode('', array_map(fn ($k) => '<a class="stk-bar" href="' . $dl('bank', ['dir' => $dir, 'cat' => $k]) . '"><span>' . e($labels[$k] ?? $k) . '</span><div class="track"><div class="fill" style="width: ' . round($by[$k] / max(1, max($by)) * 100, 1) . '%; background: ' . $color . '"></div></div><span class="n">' . $money($by[$k]) . '</span></a>', array_keys($by))) . '</div>' : '<p class="small muted">Нет.</p>'; ?>
 <div class="card stack" style="gap: 14px">
   <div class="row between"><h3>Деньги по банку</h3><?= $legend($bankSeries) ?></div>
   <div class="stk-tiles">
-    <div class="stk-tile ok"><span class="k">Пришло</span><span class="v"><?= $byn($md['inKop']) ?></span></div>
-    <div class="stk-tile wo"><span class="k">Ушло</span><span class="v"><?= $byn($md['outKop']) ?></span></div>
-    <div class="stk-tile"><span class="k">Итог</span><span class="v" style="color: <?= $md['netKop'] < 0 ? 'var(--danger)' : 'var(--olive)' ?>"><?= $byn($md['netKop']) ?></span><span class="small muted">пришло − ушло</span></div>
+    <a class="stk-tile ok" href="<?= $dl('bank', ['dir' => 'IN']) ?>"><span class="k">Пришло</span><span class="v"><?= $byn($md['inKop']) ?></span></a>
+    <a class="stk-tile wo" href="<?= $dl('bank', ['dir' => 'OUT']) ?>"><span class="k">Ушло</span><span class="v"><?= $byn($md['outKop']) ?></span></a>
+    <a class="stk-tile" href="<?= $dl('bank') ?>"><span class="k">Итог</span><span class="v" style="color: <?= $md['netKop'] < 0 ? 'var(--danger)' : 'var(--olive)' ?>"><?= $byn($md['netKop']) ?></span><span class="small muted">пришло − ушло</span></a>
   </div>
   <div class="stk-grid">
-    <div class="stack" style="gap: 8px"><b>Откуда пришло</b><?= $cat($md['byIn'], Stock::MONEY_IN, 'var(--olive)') ?></div>
-    <div class="stack" style="gap: 8px"><b>Куда ушло</b><?= $cat($md['byOut'], Stock::MONEY_OUT, 'var(--danger)') ?></div>
+    <div class="stack" style="gap: 8px"><b>Откуда пришло</b><?= $cat($md['byIn'], Stock::MONEY_IN, 'var(--olive)', 'IN') ?></div>
+    <div class="stack" style="gap: 8px"><b>Куда ушло</b><?= $cat($md['byOut'], Stock::MONEY_OUT, 'var(--danger)', 'OUT') ?></div>
     <div class="stack" style="gap: 8px"><b>По месяцам, BYN</b><?= $chart($bankSeries) ?></div>
   </div>
   <?php if (!$entries): ?>
@@ -171,12 +180,12 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
       <?php foreach ($shops as $s): $r = $report['shops'][$s['code']]; ?>
         <tr<?= $shop && $shop !== $s['code'] ? ' class="off"' : '' ?>>
           <td><b><?= e($s['name']) ?></b></td>
-          <td class="r"><?= $money($r['buyKop']) ?></td>
-          <td class="r stk-out"><?= $money($r['woKop']) ?></td>
+          <td class="r"><a href="<?= $dl('buy', ['shop' => $s['code']]) ?>"><?= $money($r['buyKop']) ?></a></td>
+          <td class="r stk-out"><a href="<?= $dl('wo', ['shop' => $s['code']]) ?>"><?= $money($r['woKop']) ?></a></td>
           <td class="r <?= ($r['woPct'] ?? 0) >= 15 ? 'hi' : '' ?>"><?= $r['woPct'] === null ? '—' : $r['woPct'] . '%' ?></td>
-          <td class="r stk-in"><?= $money($r['soldKop']) ?></td>
-          <td class="r"><?= $money($r['siteKop'] ?? 0) ?><?= !empty($r['siteOrders']) ? ' <span class="small muted">(' . $r['siteOrders'] . ')</span>' : '' ?></td>
-          <td class="r"><b><?= $money($r['earnedKop']) ?></b></td>
+          <td class="r stk-in"><a href="<?= $dl('sold', ['shop' => $s['code']]) ?>"><?= $money($r['soldKop']) ?></a></td>
+          <td class="r"><a href="<?= $dl('site', ['shop' => $s['code']]) ?>"><?= $money($r['siteKop'] ?? 0) ?></a><?= !empty($r['siteOrders']) ? ' <span class="small muted">(' . $r['siteOrders'] . ')</span>' : '' ?></td>
+          <td class="r"><a href="<?= $dl('sold', ['shop' => $s['code']]) ?>"><b><?= $money($r['earnedKop']) ?></b></a></td>
         </tr>
       <?php endforeach ?>
     </tbody>
@@ -202,7 +211,7 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
     <?php if (!$report['reasons']): ?><p class="small muted">За этот период списаний нет.</p><?php else: $maxR = max($report['reasons']); ?>
       <div class="stk-bars">
         <?php foreach ($report['reasons'] as $code => $kop): ?>
-          <div class="stk-bar"><span><?= e(Stock::REASONS[$code]) ?></span><div class="track"><div class="fill" style="width: <?= round($kop / max(1, $maxR) * 100, 1) ?>%; background: var(--danger)"></div></div><span class="n"><?= $money($kop) ?></span></div>
+          <a class="stk-bar" href="<?= $dl('wo', ['reason' => $code]) ?>"><span><?= e(Stock::REASONS[$code]) ?></span><div class="track"><div class="fill" style="width: <?= round($kop / max(1, $maxR) * 100, 1) ?>%; background: var(--danger)"></div></div><span class="n"><?= $money($kop) ?></span></a>
         <?php endforeach ?>
       </div>
     <?php endif ?>
@@ -219,7 +228,7 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
       <tbody>
         <?php foreach ($report['items'] as $i): ?>
           <tr>
-            <td><?= e($i['name']) ?><?= $i['kind'] !== 'FLOWER' ? ' <span class="pill">' . e(Stock::KINDS[$i['kind']]) . '</span>' : '' ?><?= $i['noCost'] ? ' <span class="pill warn" title="Нет накладной с этой позицией — не знаем цену закупки">нет цены</span>' : '' ?></td>
+            <td><a href="<?= $dl('item', ['item' => $i['id']]) ?>"><?= e($i['name']) ?></a><?= $i['kind'] !== 'FLOWER' ? ' <span class="pill">' . e(Stock::KINDS[$i['kind']]) . '</span>' : '' ?><?= $i['noCost'] ? ' <span class="pill warn" title="Нет накладной с этой позицией — не знаем цену закупки">нет цены</span>' : '' ?></td>
             <td class="r"><?= e(Stock::qty($i['in'])) ?></td>
             <td class="r stk-out"><?= e(Stock::qty($i['wo'])) ?></td>
             <td class="r"><?= e(Stock::qty($i['sold'])) ?></td>
