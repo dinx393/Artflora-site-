@@ -70,6 +70,47 @@ final class Stock
         return ['inKop' => $in, 'outKop' => $out - $owner, 'netKop' => $in - ($out - $owner), 'ownerKop' => $owner, 'afterOwnerKop' => $in - $out, 'byIn' => $byIn, 'byOut' => $byOut, 'byOwner' => $byOwner];
     }
 
+    // «Вставить из чата» для банка: {"entries":[{date, dir:IN|OUT, cat, sumKop, shop, desc}]} (или просто массив).
+    // Категорию можно ключом или названием, магазин — кодом или названием, сумму — sumKop (копейки) или sum («1 250,50»).
+    // → [строки {date, dir, cat, sumKop, shop, desc, error|null}, общая ошибка|null]
+    public static function parseMoneyImport(string $text, array $shops): array
+    {
+        $text = trim(preg_replace('/^```\w*|```$/m', '', trim($text)));
+        $data = json_decode($text, true);
+        if (!is_array($data)) return [[], 'Не получилось прочитать блок. Скопируйте его из чата целиком, вместе с { } или [ ].'];
+        $list = array_is_list($data) ? $data : ($data['entries'] ?? null);
+        if (!is_array($list) || !$list) return [[], 'В блоке нет записей.'];
+        $shopBy = [];
+        foreach ($shops as $sh) {
+            $shopBy[self::norm($sh['code'])] = $sh['code'];
+            $shopBy[self::norm($sh['name'])] = $sh['code'];
+        }
+        $shopBy[self::norm('Чечота')] ??= 'malinovka';
+        $rows = [];
+        foreach ($list as $e) {
+            if (!is_array($e)) continue;
+            $dirRaw = mb_strtolower(trim((string) ($e['dir'] ?? $e['direction'] ?? '')));
+            $dir = in_array($dirRaw, ['in', '+', 'доход', 'пришло'], true) ? 'IN' : (in_array($dirRaw, ['out', '-', '−', 'расход', 'ушло'], true) ? 'OUT' : null);
+            $cats = $dir === 'IN' ? self::MONEY_IN : ($dir === 'OUT' ? self::MONEY_OUT : []);
+            $catRaw = trim((string) ($e['cat'] ?? $e['category'] ?? ''));
+            $cat = isset($cats[$catRaw]) ? $catRaw : null;
+            if ($cat === null) foreach ($cats as $k => $label) if (self::norm($label) === self::norm($catRaw)) $cat = $k;
+            $kop = isset($e['sumKop']) && is_numeric($e['sumKop']) ? (int) round((float) $e['sumKop']) : Money::parse((string) ($e['sum'] ?? ''));
+            $shopRaw = self::norm((string) ($e['shop'] ?? ''));
+            $shop = $shopRaw === '' || $shopRaw === 'общее' ? '' : ($shopBy[$shopRaw] ?? null);
+            $date = (string) ($e['date'] ?? '');
+            $row = ['date' => $date, 'dir' => $dir, 'cat' => $cat, 'catRaw' => $catRaw, 'sumKop' => $kop, 'shop' => $shop ?? '', 'desc' => mb_substr(trim((string) ($e['desc'] ?? $e['description'] ?? '')), 0, 300), 'error' => null];
+            $d = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+            if (!$d || $d->format('Y-m-d') !== $date) $row['error'] = 'дата';
+            elseif ($dir === null) $row['error'] = 'доход или расход?';
+            elseif ($cat === null) $row['error'] = 'нет такой категории';
+            elseif ($kop === null || $kop <= 0 || $kop > 100_000_000) $row['error'] = 'сумма';
+            elseif ($shop === null) $row['error'] = 'нет такого магазина';
+            $rows[] = $row;
+        }
+        return [$rows, $rows ? null : 'В блоке нет записей.'];
+    }
+
     // Для сравнения названий: регистр, ё/е, лишние пробелы и кавычки не важны
     public static function norm(string $s): string
     {

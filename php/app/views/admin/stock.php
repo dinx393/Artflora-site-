@@ -10,7 +10,7 @@ $back = http_build_query(array_filter(['p' => $preset, 'from' => $preset === 'cu
 $money = fn (int $kop) => e(preg_replace('/ BYN$/', '', Money::format($kop)));
 $byn = fn (int $kop) => admin_byn($kop);
 $periodText = $from === $to ? admin_date($from) . ' ' . substr($from, 0, 4) : admin_date($from) . ' – ' . admin_date($to) . ' ' . substr($to, 0, 4);
-$msgs = ['purchase' => 'Накладная сохранена.', 'writeoff' => 'Списание сохранено.', 'deleted' => 'Удалено.', 'updated' => 'Исправлено.'];
+$msgs = ['purchase' => 'Накладная сохранена.', 'writeoff' => 'Списание сохранено.', 'deleted' => 'Удалено.', 'updated' => 'Исправлено.', 'imported' => 'Из чата внесено записей: ' . (int) ($_GET['n'] ?? 0) . ((int) ($_GET['skip'] ?? 0) ? ', пропущено (уже были или с ошибкой): ' . (int) $_GET['skip'] : '') . '. Период показан по датам этих записей.'];
 $monthNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 $itemName = fn (int $id) => $items[$id]['name'] ?? '?';
 // Ссылка на детализацию цифры: /admin/stock/detail?m=…, тот же период и магазин (магазин можно подменить в $more)
@@ -97,6 +97,7 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
   <div class="row">
     <a class="btn btn-pink" href="/admin/stock/money?dir=in">+ Доход</a>
     <a class="btn btn-pink" href="/admin/stock/money?dir=out">− Расход</a>
+    <a class="btn btn-pink" href="/admin/stock/money/import" title="Доходы и расходы из банка одним блоком из чата">⧉ Банк из чата</a>
     <a class="btn" href="/admin/stock/purchase">+ Накладная</a>
     <a class="btn" href="/admin/stock/writeoff">− Списание</a>
     <a class="btn btn-outline" href="/admin/stock/export?<?= e($back) ?>">Скачать для Excel</a>

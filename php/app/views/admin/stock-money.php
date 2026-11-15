@@ -7,6 +7,7 @@ $cats = $in ? Stock::MONEY_IN : Stock::MONEY_OUT;
   <h1><?= $entry ? 'Исправить: ' . ($in ? 'доход' : 'расход') : ($in ? '+ Доход' : '− Расход') ?></h1>
   <a class="btn-ghost" href="<?= e($entry ? $back : '/admin/stock') ?>">← Финансы</a>
 </div>
+<?php if (!$entry): ?><a class="small" href="/admin/stock/money/import">Много строк из банка? ⧉ Вставить блоком из чата →</a><?php endif ?>
 <span class="muted"><?= $in ? 'Что пришло на счёт: эквайринг, ЕРИП, безнал от организаций, сданная наличка.' : 'Что ушло со счёта: поставщикам, зарплата, аренда, налоги, реклама.' ?> Цифры — как в банкинге.</span>
 <?php if ($saved): ?><p class="pill ok" style="align-self: flex-start">Сохранено. Можно внести следующую строку.</p><?php endif ?>
 <?php if ($error): ?><p class="error"><?= e($error) ?></p><?php endif ?>

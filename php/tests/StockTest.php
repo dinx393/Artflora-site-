@@ -158,3 +158,19 @@ test('деньги по банку: дивиденды, корп. карточк
     eq(array_keys($r['byOut']), ['supplier']);
     eq($r['byOwner'], ['dividends' => 50000, 'corp_card' => 50000, 'loan_sn' => 30000]);
 });
+
+test('банк из чата: блок разбирается, ошибки по строкам', function () {
+    $shops = [['code' => 'uruchye', 'name' => 'Уручье'], ['code' => 'malinovka', 'name' => 'Малиновка']];
+    [$rows, $err] = Stock::parseMoneyImport("```json\n" . json_encode(['entries' => [
+        ['date' => '2026-11-13', 'dir' => 'IN', 'cat' => 'acquiring', 'sumKop' => 148620, 'shop' => 'uruchye', 'desc' => 'терминал'],
+        ['date' => '2026-11-04', 'dir' => 'out', 'cat' => 'Корпоративная карточка', 'sum' => '500,00', 'shop' => 'Чечота'],
+        ['date' => '2026-11-31', 'dir' => 'OUT', 'cat' => 'salary', 'sumKop' => 100],
+        ['date' => '2026-11-05', 'dir' => 'OUT', 'cat' => 'кофе', 'sumKop' => 100],
+    ]], JSON_UNESCAPED_UNICODE) . "\n```", $shops);
+    eq($err, null);
+    eq([$rows[0]['dir'], $rows[0]['cat'], $rows[0]['sumKop'], $rows[0]['shop'], $rows[0]['error']], ['IN', 'acquiring', 148620, 'uruchye', null]);
+    eq([$rows[1]['dir'], $rows[1]['cat'], $rows[1]['sumKop'], $rows[1]['shop'], $rows[1]['error']], ['OUT', 'corp_card', 50000, 'malinovka', null]);
+    eq($rows[2]['error'], 'дата');
+    eq($rows[3]['error'], 'нет такой категории');
+    eq(Stock::parseMoneyImport('не json', $shops)[1] !== null, true);
+});

@@ -360,6 +360,38 @@ Http::post('/admin/stock/money/save', function () {
     $back(['date' => $date, 'saved' => 1]);
 });
 
+// «Вставить из чата»: блок со строками из банковской выписки → проверка → сохранить все
+function stock_money_import_rows(string $text): array
+{
+    [$rows, $error] = Stock::parseMoneyImport($text, stock_shops());
+    foreach ($rows as &$r) {
+        $r['dup'] = !$r['error'] && (bool) Db::value('SELECT 1 FROM money_entries WHERE entryDate = ? AND direction = ? AND category = ? AND amountKop = ? LIMIT 1', [$r['date'], $r['dir'], $r['cat'], $r['sumKop']]);
+    }
+    unset($r);
+    return [$rows, $error];
+}
+
+Http::get('/admin/stock/money/import', function () {
+    Auth::requireAdmin('stock');
+    return admin_page('stock-money-import', ['title' => 'Вставить из чата', 'text' => '', 'rows' => [], 'error' => null, 'shops' => stock_shops()]);
+});
+
+Http::post('/admin/stock/money/import', function () {
+    Auth::requireAdmin('stock');
+    Auth::checkCsrf();
+    $text = Http::str('text', 200_000);
+    [$rows, $error] = stock_money_import_rows($text);
+    if (Http::str('action') === 'save' && !$error) {
+        $ok = array_values(array_filter($rows, fn ($r) => !$r['error'] && !$r['dup']));
+        Db::tx(function () use ($ok) {
+            foreach ($ok as $r) Db::insert('money_entries', ['entryDate' => $r['date'], 'direction' => $r['dir'], 'category' => $r['cat'], 'shop' => $r['shop'], 'amountKop' => $r['sumKop'], 'description' => $r['desc'], 'createdBy' => stock_me()]);
+        });
+        $dates = array_column($ok, 'date') ?: [stock_today()];
+        Http::redirect('/admin/stock?' . http_build_query(['p' => 'custom', 'from' => min($dates), 'to' => max($dates), 'msg' => 'imported', 'n' => count($ok), 'skip' => count($rows) - count($ok)]));
+    }
+    return admin_page('stock-money-import', ['title' => 'Вставить из чата', 'text' => $text, 'rows' => $rows, 'error' => $error, 'shops' => stock_shops()]);
+});
+
 Http::post('/admin/stock/money/{id}/delete', function (string $id) {
     Auth::requireAdmin('stock');
     Auth::checkCsrf();
