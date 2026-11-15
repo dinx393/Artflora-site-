@@ -406,6 +406,7 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .dims[hidden], .dims [hidden] { display: none; }
 .dims > span { display: flex; align-items: center; gap: 10px; }
 .dims b { font-weight: 700; }
+.dims small { font-size: 12px; opacity: .85; } /* «примерно, ± 2–3 см» */
 .thumbs { display: flex; gap: 10px; }
 .thumbs button { flex: 1; height: 96px; border-radius: 14px; overflow: hidden; cursor: pointer; padding: 0; background: var(--white); border: 1px solid var(--line); }
 .thumbs button.on { border: 2px solid var(--cherry); }

@@ -38,8 +38,9 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
         <span class="badge" style="left: 16px; top: auto; bottom: 16px; font-weight: 400" data-gallery-label><?= e($views[0]) ?></span>
         <?php /* Размер в сантиметрах выбранного размера (решение 2026-11-15); меняется при выборе размера (shop.js) */ ?>
         <span class="dims" data-dims<?= $def['widthCm'] || $def['heightCm'] ? '' : ' hidden' ?>>
-          <span data-dims-w<?= $def['widthCm'] ? '' : ' hidden' ?>><?= Icons::get('arrows-h', 22) ?><b><?= e($def['widthCm']) ?> см</b></span>
-          <span data-dims-h<?= $def['heightCm'] ? '' : ' hidden' ?>><?= Icons::get('arrows-v', 22) ?><b><?= e($def['heightCm']) ?> см</b></span>
+          <span data-dims-w<?= $def['widthCm'] ? '' : ' hidden' ?>><?= Icons::get('arrows-h', 22) ?><b>≈ <?= e($def['widthCm']) ?> см</b></span>
+          <span data-dims-h<?= $def['heightCm'] ? '' : ' hidden' ?>><?= Icons::get('arrows-v', 22) ?><b>≈ <?= e($def['heightCm']) ?> см</b></span>
+          <small>примерно, ± 2–3 см</small><?php /* букет живой — чтобы не мерили линейкой (решение 2026-11-15) */ ?>
         </span>
       </div>
       <?php if (count($photos) > 1): ?>

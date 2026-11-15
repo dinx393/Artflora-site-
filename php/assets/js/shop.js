@@ -98,8 +98,8 @@
           dims.hidden = !w && !hgt;
           dims.querySelector("[data-dims-w]").hidden = !w;
           dims.querySelector("[data-dims-h]").hidden = !hgt;
-          dims.querySelector("[data-dims-w] b").textContent = w + " см";
-          dims.querySelector("[data-dims-h] b").textContent = hgt + " см";
+          dims.querySelector("[data-dims-w] b").textContent = "≈ " + w + " см";
+          dims.querySelector("[data-dims-h] b").textContent = "≈ " + hgt + " см";
         }
         var only = box.querySelector("[data-only-shop]");
         if (only) {
