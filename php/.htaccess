@@ -7,7 +7,7 @@ AddDefaultCharset UTF-8
   RewriteEngine On
   # Служебные папки и файлы не отдаём никогда
   RewriteRule ^(app|tests|dev)(/|$) - [F,L]
-  RewriteRule (^|/)\.(git|env) - [F,L]
+  RewriteRule (^|/)\.(git|env|user\.ini) - [F,L]
   RewriteRule \.(md|sql|sh|yml|lock|log)$ - [F,L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^ index.php [L]

@@ -4,7 +4,8 @@
 final class Uploads
 {
     public const TYPES = ['image/jpeg' => '.jpg', 'image/png' => '.png', 'image/webp' => '.webp'];
-    public const MAX_BYTES = 10 * 1024 * 1024;
+    // 15 МБ (решение владельца 2026-11-15). Фото больше этого админка сама уменьшает в браузере перед отправкой.
+    public const MAX_BYTES = 15 * 1024 * 1024;
 
     public static function dir(): string
     {
@@ -35,19 +36,62 @@ final class Uploads
         };
     }
 
+    // HEIC/HEIF — формат фото iPhone: «....ftypheic» (или heix, mif1, msf1…) в начале файла
+    public static function isHeic(string $buf): bool
+    {
+        return substr($buf, 4, 4) === 'ftyp' && in_array(substr($buf, 8, 4), ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1'], true);
+    }
+
+    // HEIC → JPEG на сервере, если в PHP хостинга есть Imagick с поддержкой HEIC. Обычно фото HEIC переводит в JPEG
+    // сама админка в браузере (assets/js/admin.js), это запасной путь. Не получилось — null.
+    public static function heicToJpeg(string $heic): ?string
+    {
+        if (!class_exists('Imagick')) return null;
+        try {
+            $im = new Imagick();
+            $im->readImageBlob($heic);
+            if (method_exists($im, 'autoOrient')) $im->autoOrient();
+            $im->setImageFormat('jpeg');
+            $im->setImageCompressionQuality(90);
+            $out = $im->getImageBlob();
+            return str_starts_with($out, "\xFF\xD8\xFF") ? $out : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    // Самое большое фото, которое пропустят настройки PHP на хостинге (upload_max_filesize и post_max_size)
+    public static function phpLimit(): int
+    {
+        return min(self::bytes(ini_get('upload_max_filesize')), self::bytes(ini_get('post_max_size')));
+    }
+
+    public static function mb(int $bytes): string
+    {
+        return str_replace('.', ',', (string) round($bytes / 1048576, 1)) . ' МБ';
+    }
+
     // Сохранить загруженный файл из $_FILES[...]: ['ok' => true, 'path' => '/uploads/…'] или ['ok' => false, 'error' => …]
     public static function save(array $file): array
     {
-        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) return ['ok' => false, 'error' => 'Файл не загрузился'];
-        if ($file['size'] > self::MAX_BYTES) return ['ok' => false, 'error' => 'Фото больше 10 МБ'];
+        $err = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) {
+            return ['ok' => false, 'error' => 'Фото больше ' . self::mb(min(self::MAX_BYTES, self::phpLimit())) . ' — столько разрешает хостинг'];
+        }
+        if ($err !== UPLOAD_ERR_OK) return ['ok' => false, 'error' => 'Файл не загрузился'];
+        if ($file['size'] > self::MAX_BYTES) return ['ok' => false, 'error' => 'Фото больше ' . self::mb(self::MAX_BYTES)];
         $data = file_get_contents($file['tmp_name']);
+        if (self::isHeic($data)) {
+            $data = self::heicToJpeg($data);
+            if ($data === null) return ['ok' => false, 'error' => 'Фото в формате HEIC не получилось перевести в JPEG. Обновите страницу (F5) и выберите фото ещё раз'];
+        }
         $type = null;
         foreach (array_keys(self::TYPES) as $t) if (self::looksLikeImage($data, $t)) $type = $t;
-        if (!$type) return ['ok' => false, 'error' => 'Нужна картинка JPG, PNG или WebP'];
+        if (!$type) return ['ok' => false, 'error' => 'Нужна картинка JPG, PNG, WebP или HEIC'];
         if ($type === 'image/jpeg') $data = self::shrinkJpeg($data);
         $name = date('Ymd') . '-' . bin2hex(random_bytes(6)) . self::TYPES[$type];
         if (!is_dir(self::dir())) mkdir(self::dir(), 0755, true);
-        file_put_contents(self::dir() . "/$name", $data);
+        if (@file_put_contents(self::dir() . "/$name", $data) === false) return ['ok' => false, 'error' => 'Не удалось сохранить фото на сервере (папка uploads)'];
         return ['ok' => true, 'path' => "/uploads/$name"];
     }
 
