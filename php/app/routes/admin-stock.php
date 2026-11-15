@@ -43,7 +43,7 @@ Http::get('/admin/stock', function () {
     unset($p);
     $writeoffs = Db::all('SELECT * FROM stock_writeoffs WHERE woDate BETWEEN ? AND ?' . ($shop ? ' AND shop = ?' : '') . ' ORDER BY woDate DESC, id DESC LIMIT 300', $shop ? [$from, $to, $shop] : [$from, $to]);
     return admin_page('stock', [
-        'title' => 'Закупка и списание',
+        'title' => 'Финансы',
         'preset' => $preset, 'from' => $from, 'to' => $to, 'shop' => $shop,
         'shops' => stock_shops(),
         'report' => Stock::load($from, $to, $shop),
@@ -61,7 +61,7 @@ Http::get('/admin/stock/export', function () {
     Auth::requireAdmin('stock');
     [, $from, $to, $shop] = stock_filter();
     $shops = stock_shops();
-    $rows = [["Закупка и списание с $from по $to"], ['Магазин', 'Позиция', 'Вид', 'Пришло', 'Списали', 'Продали', '% списания', 'Закупка, BYN', 'Списано на, BYN', 'Продано на, BYN']];
+    $rows = [["Финансы: закупка и списание с $from по $to"], ['Магазин', 'Позиция', 'Вид', 'Пришло', 'Списали', 'Продали', '% списания', 'Закупка, BYN', 'Списано на, BYN', 'Продано на, BYN']];
     foreach ($shops as $s) {
         if ($shop && $shop !== $s['code']) continue;
         $r = Stock::load($from, $to, $s['code']);

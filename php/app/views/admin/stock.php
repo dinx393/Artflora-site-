@@ -78,7 +78,7 @@ $chart = function (string $key) use ($months, $shops, $shopColor, $monthNames): 
 </style>
 
 <div class="row between">
-  <h1>Закупка и списание</h1>
+  <h1>Финансы</h1>
   <div class="row">
     <a class="btn" href="/admin/stock/purchase">+ Накладная</a>
     <a class="btn" href="/admin/stock/writeoff">− Списание</a>

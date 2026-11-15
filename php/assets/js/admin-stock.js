@@ -211,7 +211,7 @@
   }
 
   function purchaseView(on) {
-    var h = '<div class="row between"><h1>Новая накладная</h1><a class="btn-ghost" href="/admin/stock">← Закупка и списание</a></div>';
+    var h = '<div class="row between"><h1>Новая накладная</h1><a class="btn-ghost" href="/admin/stock">← Финансы</a></div>';
     h += '<span class="muted">Сфотографируйте накладную (можно все страницы сразу) — строки заполнятся сами. Или впишите вручную. Суммы — с НДС, как заплатили.</span>';
     if (!data.recognize) h += '<p class="small muted">Распознавание фото не подключено (нет ключа в настройках сайта), строки вносятся вручную.</p>';
     if (state.busy) h += '<p class="pill" style="align-self: flex-start">' + esc(state.busy) + "</p>";
@@ -325,7 +325,7 @@
     state.msg = { ok: true, text: "Распознано строк: " + rows.length + (unknown ? ". У " + unknown + " выберите, что это." : ". Проверьте магазин и количество.") };
   }
   function writeoffView(on) {
-    var h = '<div class="row between"><h1>Списание</h1><a class="btn-ghost" href="/admin/stock">← Закупка и списание</a></div>';
+    var h = '<div class="row between"><h1>Списание</h1><a class="btn-ghost" href="/admin/stock">← Финансы</a></div>';
     h += '<span class="muted">Сфотографируйте лист списания из тетради — строки заполнятся сами. Или впишите вручную. Сумма посчитается по цене из последней накладной.</span>';
     if (!data.recognize) h += '<p class="small muted">Распознавание фото не подключено (нет ключа в настройках сайта), строки вносятся вручную.</p>';
     if (state.busy) h += '<p class="pill" style="align-self: flex-start">' + esc(state.busy) + "</p>";
