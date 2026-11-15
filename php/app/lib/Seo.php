@@ -19,6 +19,18 @@ final class Seo
     ];
 
     public const LANDINGS = [
+        // Сезонный раздел (Season, решение владельца 2026-11-12): до 25 декабря — «Зимнее настроение», потом — «Новый год».
+        // Букеты одни и те же (sections = 'newyear'), второй адрес на это время ведёт на первый (routes/seo.php).
+        'zimnee-nastroenie' => [
+            'filter' => ['section' => 'newyear'], 'h1' => ['Зимнее', 'настроение'],
+            'title' => 'Зимние букеты с доставкой по Минску — «Зимнее настроение»',
+            'description' => 'Зимние букеты и композиции: хвоя, ягоды, белые и бордовые розы. Доставка по Минску в день заказа, фото букета до отправки.',
+        ],
+        'novyj-god' => [
+            'filter' => ['section' => 'newyear'], 'h1' => ['Новогодние', 'букеты'],
+            'title' => 'Новогодние букеты и композиции с доставкой по Минску',
+            'description' => 'Новогодние букеты, композиции на праздничный стол и подарки коллегам. Доставка по Минску, фото букета до отправки.',
+        ],
         // Решение владельца 2026-11-03. Букеты отмечают в админке: «Разделы каталога» → «Авторские букеты».
         'avtorskie-bukety' => [
             'filter' => ['section' => 'author'], 'h1' => ['Авторские', 'букеты'],
@@ -171,6 +183,7 @@ final class Seo
         'den-rozhdeniya' => 'na-den-rozhdeniya', 'yubilej' => 'na-den-rozhdeniya',
         'svidanie' => 'lyubimoj', 'bukety-k-14-fevralya' => 'lyubimoj', 'bukety-k-8-marta-' => 'lyubimoj',
         'znak-vnimaniya' => 'bez-povoda',
+        'novogodnie-kompozitsii-so-svechami-' => 'novyj-god', 'novogodnie-venki-' => 'novyj-god', 'yaschiki-v-novogodnem-stile-' => 'novyj-god',
     ];
 
     // Старые страницы магазина → новые адреса
@@ -203,6 +216,7 @@ final class Seo
     // Адрес раздела по фильтру каталога, если ровно такой раздел есть: ['occasion' => 'wedding'] → /catalog/svadebnye-bukety
     public static function landingFor(array $filter): ?string
     {
+        if ($filter == ['section' => Season::SECTION]) return Season::current()['slug'];
         foreach (self::LANDINGS as $slug => $l) if ($l['filter'] == $filter) return $slug;
         return null;
     }
@@ -223,6 +237,14 @@ final class Seo
         if (($sp['q'] ?? '') !== '') return null;
         $main = array_intersect_key($sp, array_flip(['occasion', 'format', 'section', 'flower', 'price', 'collection']));
         return count($main) > 1 ? null : self::catalogUrl($main);
+    }
+
+    // «Зимнее настроение» и «Новый год» — один раздел под двумя названиями: адрес, который сейчас не действует, ведёт на действующий
+    public static function seasonRedirect(string $slug): ?string
+    {
+        if (!in_array($slug, [Season::WINTER_SLUG, Season::NEWYEAR_SLUG], true)) return null;
+        $now = Season::current()['slug'];
+        return $slug === $now ? null : "/catalog/$now";
     }
 
     // Куда вести старый адрес /catalog/<slug>

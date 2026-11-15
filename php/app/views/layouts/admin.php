@@ -7,6 +7,7 @@ $items = [
     '/admin/addons' => ['Доп. товары', 'catalog'],
     '/admin/orders' => ['Заказы', 'orders'],
     '/admin/delivery' => ['Доставка', 'delivery'],
+    '/admin/season' => ['Новый год', 'settings'],
     '/admin/settings' => ['Настройки', 'settings'],
     '/admin/users' => ['Сотрудники', 'users'],
 ];

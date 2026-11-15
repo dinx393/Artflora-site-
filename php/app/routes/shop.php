@@ -16,9 +16,12 @@ Http::get('/', function () {
     $fresh = array_filter($all, fn ($b) => $b['hideAt'] !== null);
     usort($fresh, fn ($a, $b) => strcmp($b['hideAt'], $a['hideAt']));
     $ofDay = $find(fn ($b) => $b['slug'] === $shop['dayBouquet']) ?? ($fresh[0] ?? null) ?? ($all[0] ?? null);
+    // Сезонный раздел «Зимнее настроение» / «Новый год» (Season): включён — первым блоком после первого экрана,
+    // и плитка «Весь каталог» в первом экране ведёт в него, с его фото.
+    $season = Season::sectionOn() ? Catalog::filter($all, ['section' => Season::SECTION]) : [];
     // Плитка «Весь каталог» — три разных букета рядом: вертикальные фото так обрезаются меньше, чем одно на всю ширину.
     $tile = [];
-    foreach ($all as $b) {
+    foreach ($season ?: $all as $b) {
         $p = $b['photos'][0] ?? null;
         if ($ofDay && $b['id'] === $ofDay['id']) continue;
         if (!$p || ($ofDay && $p === $ofDay['photos'][0]) || in_array($p, array_column($tile, 0), true)) continue;
@@ -36,6 +39,7 @@ Http::get('/', function () {
         'hits' => array_slice(array_values($hits), 0, 8),
         'ofDay' => $ofDay,
         'tilePhotos' => $tile,
+        'season' => $season,
         'exclusive' => array_slice(array_values(array_filter($all, fn ($b) => $b['isExclusive'])), 0, 3),
         'scripts' => '<script src="' . View::asset('js/shop.js') . '"></script>',
     ]);

@@ -23,6 +23,8 @@ $sections = [
     ['Корзины', ['format' => 'BASKET']],
     ['Поштучно', [], '/single'],
 ];
+// Сезонный раздел «Зимнее настроение» / «Новый год» — первым и с акцентом, пока он включён в админке (Season)
+if (Season::sectionOn()) array_unshift($sections, [Season::current()['label'], ['section' => Season::SECTION], null, 'chip-season']);
 $val = fn (string $k) => $sp[$k] ?? null;
 $shown = max($pageSize, (int) floor((float) ($sp['n'] ?? 0)));
 $minDelivery = Money::format(Delivery::minKop($delivery));
@@ -62,7 +64,9 @@ $f = fn (array $patch) => e($href($sp, $patch));
     <div class="row chips-row" style="gap: 8px">
       <a href="/catalog" class="chip <?= $allBouquets ? 'on' : '' ?>">Все букеты</a>
       <?php foreach ($sections as $c): ?>
-        <?php if (isset($c[2])): ?>
+        <?php if (isset($c[3])): $on = $isOn($sp, $c[1]) ?>
+          <a href="<?= $on ? '/catalog' : e($href([], $c[1])) ?>" class="chip <?= e($c[3]) ?> <?= $on ? 'on' : '' ?>"><?= Icons::get('snowflake', 16) ?><?= e($c[0]) ?></a>
+        <?php elseif (isset($c[2])): ?>
           <a href="<?= e($c[2]) ?>" class="chip"><?= e($c[0]) ?></a>
         <?php else: $on = $isOn($sp, $c[1]) ?>
           <a href="<?= $on ? '/catalog' : e($href([], $c[1])) ?>" class="chip <?= $on ? 'on' : '' ?>"><?= e($c[0]) ?></a>

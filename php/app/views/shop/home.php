@@ -18,6 +18,12 @@ $heroFacts = [
     ['Кризал', 'подкормка в подарок'],
     ['−' . $delivery['pickupDiscountPct'] . '%', 'самовывоз: ' . $shopNames],
 ];
+// Новогоднее оформление и сезонный раздел (Season, админка → «Новый год»)
+$ny = Season::themeOn();
+$phase = Season::phase();
+$sec = $season ? Season::current() : null;
+$countdown = $ny ? Season::countdown() : '';
+$nyCfg = Season::cfg();
 $cards = [
     ['shield', str_replace('Гарантия свежести', 'Гарантия', ShopView::GUARANTEE_TITLE), e(ShopView::GUARANTEE_TEXT), true],
     ['clock', 'В день заказа', e('Везём из ближайшего магазина, доставка от ' . Money::format(Delivery::minKop($delivery)) . '. Самовывоз −' . $delivery['pickupDiscountPct'] . '%.'), false],
@@ -29,10 +35,26 @@ $cards = [
   <div class="hero">
     <div class="hero-main">
       <svg class="hero-shape" viewBox="0 0 706 588" preserveAspectRatio="none" aria-hidden="true"><path d="<?= $heroNotch ?>" /></svg>
+      <?php if ($ny): ?>
+        <?= Season::trees('ny-trees ny-trees-hero') ?>
+        <?php if (Season::snowOn()): ?><div class="ny-snow ny-snow-hero" aria-hidden="true"></div><?php endif ?>
+      <?php endif ?>
       <div class="hero-text">
         <?php /* Заголовок страницы для поиска — «Доставка цветов в Минске» (2026-11-01); слоган из макета остаётся крупным, но уже не h1 */ ?>
+        <?php if ($ny): ?>
+          <div class="ny-eyebrow">
+            <h1 class="eyebrow">Доставка цветов в Минске</h1>
+            <?php if ($countdown !== ''): ?><span class="ny-countdown"><?= Icons::get('snowflake', 15) ?><?= e($countdown) ?></span><?php endif ?>
+          </div>
+          <?php if ($phase === 'winter'): ?>
+            <div class="hero-title">Зимнее настроение<br> начнётся <span class="script">с букета</span></div>
+          <?php else: ?>
+            <div class="hero-title">Новый год<br> начнётся <span class="script">с букета</span></div>
+          <?php endif ?>
+        <?php else: ?>
         <h1 class="eyebrow">Доставка цветов в Минске · салоны в Уручье и Малиновке</h1>
         <div class="hero-title">Букетов много,<br> а запомнят <span class="script">ваш</span></div>
+        <?php endif ?>
         <?php /* Главное за 3 секунды: крупное слово + подпись (вариант Б, решение владельца 2026-10-23) */ ?>
         <ul class="hero-facts">
           <?php foreach ($heroFacts as [$big, $note]): ?>
@@ -45,7 +67,11 @@ $cards = [
         </div>
       </div>
       <div class="hero-actions">
-        <a href="/catalog" class="btn btn-pink">Выбрать букет</a>
+        <?php if ($sec): ?>
+          <a href="/catalog/<?= e($sec['slug']) ?>" class="btn btn-pink"><?= $phase === 'winter' ? 'Зимние букеты' : 'Выбрать к празднику' ?></a>
+        <?php else: ?>
+          <a href="/catalog" class="btn btn-pink">Выбрать букет</a>
+        <?php endif ?>
         <a href="<?= e($shop['telegram']) ?>" class="btn btn-on-cherry" target="_blank" rel="noopener">Написать в Telegram</a>
       </div>
     </div>
@@ -60,14 +86,29 @@ $cards = [
         </span>
       </a>
     <?php endif ?>
-    <a href="/catalog" class="hero-tile <?= $ofDay ? '' : 'hero-tile-full' ?>">
+    <a href="<?= $sec ? '/catalog/' . e($sec['slug']) : '/catalog' ?>" class="hero-tile <?= $ofDay ? '' : 'hero-tile-full' ?>">
       <span class="hero-tile-photos n<?= count($tilePhotos) ?>">
         <?php foreach ($tilePhotos as $i => [$p, $pos]): ?><img src="<?= e($p) ?>" alt="<?= $i === 0 ? 'Букеты Artflora.by' : '' ?>"<?= ShopView::pos($pos) ?>><?php endforeach ?>
       </span>
-      <span class="hero-chip">Весь каталог ↗</span>
+      <span class="hero-chip"><?= $sec ? ($phase === 'winter' ? 'Все зимние букеты ↗' : 'Вся новогодняя коллекция ↗') : 'Весь каталог ↗' ?></span>
     </a>
   </div>
 </section>
+
+<?php if ($sec): /* Сезонный раздел — первым блоком после первого экрана */ ?>
+  <section class="section ny-section">
+    <div class="row between sec-title" style="align-items: flex-end; gap: 16px">
+      <h2 class="h2"><?php if ($phase === 'winter'): ?>Зимнее <span class="script">настроение</span><?php else: ?>Новогодняя <span class="script">коллекция</span><?php endif ?></h2>
+      <a href="/catalog/<?= e($sec['slug']) ?>" class="chip chip-season"><?= Icons::get('snowflake', 16) ?>Весь раздел · <?= count($season) ?></a>
+    </div>
+    <div class="grid grid-4">
+      <?php foreach (array_slice($season, 0, 8) as $b) echo View::render('shop/_card', ['b' => $b]) ?>
+    </div>
+    <?php if (count($season) > 8): ?>
+      <div class="more"><a href="/catalog/<?= e($sec['slug']) ?>" class="btn btn-outline btn-lg">Смотреть все <?= count($season) ?> →</a></div>
+    <?php endif ?>
+  </section>
+<?php endif ?>
 
 <section class="section" id="occasions">
   <h2 class="h2 sec-title">Кому сегодня <span class="script">дарим?</span></h2>
@@ -100,6 +141,39 @@ $cards = [
       <p class="muted">В этом диапазоне хитов нет. <a href="/catalog">Смотреть весь каталог →</a></p>
     <?php endif ?>
     <div class="more"><a href="/catalog" class="btn btn-outline btn-lg">Смотреть весь каталог →</a></div>
+  </section>
+<?php endif ?>
+
+<?php if (Season::rushOn()): /* Декабрь: когда заказывать к празднику и подарки коллегам */ ?>
+  <section class="section">
+    <div class="ny-rush">
+      <?= Season::trees('ny-trees ny-trees-rush', 'rgba(126,31,60,0.06)') ?>
+      <div class="row between" style="position: relative; align-items: flex-end; gap: 12px 32px">
+        <h2 class="h2">Успеть <span class="script">к празднику</span></h2>
+        <span class="muted" style="max-width: 420px; font-size: 15px">В последние дни декабря заказов особенно много. Оформите заранее, а оплатить можно после фото.</span>
+      </div>
+      <div class="ny-rush-grid">
+        <div class="ny-rush-card"><span class="eyebrow">До 20 декабря</span><b>Подарки для офиса</b><span class="muted">Корпоративные заказы лучше оформить заранее, безнал по реквизитам.</span></div>
+        <div class="ny-rush-card"><span class="eyebrow">21–30 декабря</span><b>Как обычно</b><span class="muted">Доставим в день заказа, пришлём фото до отправки.</span></div>
+        <div class="ny-rush-card on"><span class="eyebrow">31 декабря</span><b>Главный день</b><span><?= $nyCfg['hours31'] !== '' ? 'Работаем ' . e($nyCfg['hours31']) . '. ' : '' ?>Время выбирайте заранее: интервалы быстро заканчиваются.</span></div>
+        <?php if ($nyCfg['hours1'] !== ''): ?>
+          <div class="ny-rush-card"><span class="eyebrow">1 января</span><b>Работаем <?= e($nyCfg['hours1']) ?></b><span class="muted">Букет к новогоднему визиту в гости.</span></div>
+        <?php endif ?>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="band ny-band">
+      <?php if (Season::snowOn()): ?><div class="ny-snow" aria-hidden="true"></div><?php endif ?>
+      <?= Season::trees('ny-trees ny-trees-band') ?>
+      <div class="stack" style="position: relative; flex: 1 1 420px; gap: 12px">
+        <span class="eyebrow" style="color: var(--pink)">Для организаций</span>
+        <h2>Поздравим всю команду <span class="script">сразу.</span></h2>
+        <p>Соберём одинаковые или разные композиции к нужной дате, подпишем открытки и привезём в офис. Оплата безналом по реквизитам.</p>
+      </div>
+      <a href="<?= e($shop['telegram']) ?>" class="btn btn-pink btn-lg" style="position: relative" target="_blank" rel="noopener">Рассчитать заказ</a>
+    </div>
   </section>
 <?php endif ?>
 
