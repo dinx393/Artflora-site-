@@ -756,6 +756,8 @@ Http::post('/admin/orders/update', function () {
     $status = Http::str('status');
     if (array_key_exists($status, ADMIN_STATUS_LABEL)) Db::exec('UPDATE orders SET status = ? WHERE id = ?', [$status, $id]);
     if (isset($_POST['paid'])) Db::exec('UPDATE orders SET paid = ? WHERE id = ?', [(int) ($_POST['paid'] === '1'), $id]);
+    // Статус из списка заказов (выпадающий список на месте значка): без перехода в заказ
+    if (Http::str('ajax') === '1') Http::json(['ok' => array_key_exists($status, ADMIN_STATUS_LABEL), 'status' => Db::value('SELECT status FROM orders WHERE id = ?', [$id])]);
     Http::redirect("/admin/orders/$id");
 });
 
