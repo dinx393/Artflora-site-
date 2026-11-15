@@ -29,7 +29,7 @@
     };
   }
 
-  var state = { rows: initial.map(toRow), filter: "all", msg: null, pending: false, dragKey: null };
+  var state = { rows: initial.map(toRow), filter: "all", query: "", msg: null, pending: false, dragKey: null };
 
   // --- расчёт как в src/lib/pricing.ts (размер «на фото» здесь не учитываем, как и в Node-версии) ---
   var SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
@@ -183,7 +183,14 @@
   }
 
   function shown() {
-    return state.rows.filter(function (r) { return state.filter === "all" || r.kind === state.filter; });
+    // поиск по названию (просьба владельца 2026-11-15): «ё» = «е», регистр не важен; новый пустой цветок виден всегда
+    var q = norm(state.query);
+    return state.rows.filter(function (r) {
+      return (state.filter === "all" || r.kind === state.filter) && (!q || !r.name.trim() || norm(r.name).indexOf(q) >= 0);
+    });
+  }
+  function norm(t) {
+    return String(t || "").toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ").trim();
   }
 
   // тянем вниз — ставим после цели, вверх — перед ней
@@ -233,6 +240,7 @@
       var key = "new-" + Date.now();
       state.rows.unshift({ key: key, name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, inFilter: false, onlyShop: "", substitutes: [], isNew: true });
       if (state.filter === "GREEN") state.filter = "all";
+      state.query = "";
       ui.render();
       var input = document.querySelector('[data-k="name-' + key + '"]');
       if (input) input.focus();
@@ -243,6 +251,11 @@
       h += '<button type="button" class="chip ' + (state.filter === t[0] ? "on" : "") + '"' + on("click", function () { state.filter = t[0]; ui.render(); }) + ">" + t[1] + "</button>";
     });
     h += "</div>";
+    h += '<label class="field" style="max-width: 420px"><span>Поиск</span><input class="input" type="search" data-k="flower-search" value="' + esc(state.query) +
+      '" placeholder="Начните писать: роза, эвкалипт…"' +
+      on("input", function (e) { state.query = e.target.value; ui.render(); }) +
+      on("keydown", function (e) { if (e.key === "Escape") { state.query = ""; ui.render(); } }) + "></label>";
+    if (state.query.trim() && !shown().length) h += '<p class="muted">Ничего не нашлось по «' + esc(state.query.trim()) + '».</p>';
 
     h += '<div class="admin-grid"><div class="table-wrap"><table class="table"><thead><tr><th aria-label="Порядок"></th><th>Цветок</th><th>Цена, BYN</th><th>Было</th><th>Наличие</th><th title="Показывать в фильтре «Цветок» в каталоге">В фильтре</th><th>Букетов</th><th></th></tr></thead><tbody>';
     shown().forEach(function (r) {
