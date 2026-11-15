@@ -407,8 +407,9 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .buy { flex: 1 1 460px; display: flex; flex-direction: column; gap: 22px; min-width: 0; }
 .buy h1 { font-size: 48px; line-height: 1.05; }
 .label { font-weight: 800; font-size: 15px; }
-.forms { display: flex; gap: 8px; }
-.forms a { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 6px 6px 10px; border-radius: 16px; border: 1px solid var(--line); text-decoration: none; }
+/* Много букетов в коллекции (бывает 10+) — переносятся на новые строки, а не сжимаются в одну (2026-11-15) */
+.forms { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.forms a { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 6px 6px 10px; border-radius: 16px; border: 1px solid var(--line); text-decoration: none; }
 .forms a.on { border: 2px solid var(--cherry); padding: 5px 5px 9px; }
 .forms .ph { height: 78px; border-radius: 11px; overflow: hidden; background: var(--blush); }
 .forms .ph img { width: 100%; height: 100%; object-fit: cover; }
@@ -572,7 +573,7 @@ tr.dragging { opacity: .45; }
   .catalog-bar { padding: 14px 16px; }
   .gallery-main { height: 420px; }
   .buy h1 { font-size: 36px; }
-  .forms { overflow-x: auto; }
+  .forms { display: flex; overflow-x: auto; } /* на телефоне — лентой с прокруткой */
   .forms a { flex: 0 0 110px; }
   .checkout { grid-template-columns: 1fr; }
   .summary { position: static; }
