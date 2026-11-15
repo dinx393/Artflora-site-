@@ -146,7 +146,7 @@ final class Auth
         return self::$user = $user;
     }
 
-    // Можно ли в этот раздел: orders, catalog, delivery, settings, users
+    // Можно ли в этот раздел: orders, catalog, delivery, settings, users, stock (закупка и списание — только старшему)
     public static function can(string $perm): bool
     {
         $u = self::user();

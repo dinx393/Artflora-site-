@@ -6,6 +6,7 @@ $items = [
     '/admin/collections' => ['Коллекции', 'catalog'],
     '/admin/addons' => ['Доп. товары', 'catalog'],
     '/admin/orders' => ['Заказы', 'orders'],
+    '/admin/stock' => ['Закупка и списание', 'stock'],
     '/admin/delivery' => ['Доставка', 'delivery'],
     '/admin/season' => ['Новый год', 'settings'],
     '/admin/settings' => ['Настройки', 'settings'],
