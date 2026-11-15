@@ -210,14 +210,52 @@
     state.msg = { ok: !miss.length, text: "Расписано по магазинам: " + used + (miss.length ? ". Не нашли в накладной: " + miss.join(", ") + " — проверьте позиции строк." : ".") };
   }
 
+  // Блок из чата: { supplier, docNumber, docDate, totalKop, lines: [{ name, item, kind, qty, sumKop }], shops: { позиция: { код: кол-во } } }
+  function onPaste(d) {
+    var byName = {};
+    state.items.forEach(function (i) { byName[norm(i.name)] = i.id; });
+    state.head = { docDate: d.docDate || state.head.docDate, supplier: d.supplier || "", docNumber: d.docNumber || "", total: d.totalKop ? U.kopToInput(d.totalKop) : "", comment: d.comment || "" };
+    var keyOf = {};
+    state.lines = d.lines.map(function (l) {
+      var id = byName[norm(l.item)];
+      var row = newLine({ name: l.name || "", itemSel: id || "new", newName: id ? "" : String(l.item || ""), newKind: data.kinds[l.kind] ? l.kind : "FLOWER", qty: l.qty ? U.qtyText(l.qty) : "", sum: l.sumKop != null ? U.kopToInput(l.sumKop) : "" });
+      keyOf[norm(l.item)] = rowKey(row);
+      return row;
+    });
+    state.split = {};
+    Object.keys(d.shops || {}).forEach(function (name) {
+      var key = keyOf[norm(name)];
+      if (!key) return;
+      var s = {};
+      shops.forEach(function (sh) { s[sh.code] = U.qtyText(Number(d.shops[name][sh.code]) || 0); });
+      state.split[key] = s;
+    });
+    var fresh = state.lines.filter(function (l) { return l.itemSel === "new"; }).map(function (l) { return l.newName; });
+    fresh = fresh.filter(function (n, i) { return fresh.indexOf(n) === i; });
+    state.msg = { ok: true, text: "Заполнено строк: " + state.lines.length + "." + (fresh.length ? " Новые позиции: " + fresh.join(", ") + ". Если такая уже есть в списке под другим названием — выберите её в строке." : "") + " Проверьте и нажмите «Сохранить накладную»." };
+  }
+
   function purchaseView(on) {
     var h = '<div class="row between"><h1>Новая накладная</h1><a class="btn-ghost" href="/admin/stock">← Финансы</a></div>';
     h += '<span class="muted">Сфотографируйте накладную (можно все страницы сразу) — строки заполнятся сами. Или впишите вручную. Суммы — с НДС, как заплатили.</span>';
     if (!data.recognize) h += '<p class="small muted">Распознавание фото не подключено (нет ключа в настройках сайта), строки вносятся вручную.</p>';
     if (state.busy) h += '<p class="pill" style="align-self: flex-start">' + esc(state.busy) + "</p>";
-    h += U.msgHtml(state.msg, "align-self: flex-start");
+    h += U.msgHtml(state.msg, "align-self: flex-start; white-space: normal; border-radius: 12px");
 
-    h += '<div class="row">' + photoButton("Фото накладной", "invoice", on, onInvoice) + "</div>";
+    h += '<div class="row">' + photoButton("Фото накладной", "invoice", on, onInvoice);
+    // Накладную разобрал Claude в чате: вставляют готовый блок — строки и разбивка по магазинам заполняются сами
+    h += '<button type="button" class="btn btn-outline"' + on("click", function () { state.pasteOpen = !state.pasteOpen; ui.render(); }) + ">Вставить из чата</button></div>";
+    if (state.pasteOpen) {
+    h += '<div class="card stack" style="gap: 8px">';
+    h += '<span class="small muted">Пришлите фото накладной и тетради в чат с Claude, скопируйте блок из ответа и вставьте сюда. Потом проверьте строки и нажмите «Сохранить».</span>';
+    h += '<textarea class="input" rows="4" data-k="paste" placeholder="Вставьте блок из чата" style="font-family: monospace; font-size: 12px"' + on("input", function (e) { state.paste = e.target.value; }) + ">" + esc(state.paste || "") + "</textarea>";
+    h += '<button type="button" class="btn" style="align-self: flex-start"' + on("click", function () {
+      var d = null;
+      try { d = JSON.parse(String(state.paste || "").trim().replace(/^```\w*\s*|\s*```$/g, "")); } catch (err) { d = null; }
+      if (!d || !Array.isArray(d.lines)) { state.msg = { ok: false, text: "Не получилось прочитать блок. Скопируйте его из чата целиком." }; ui.render(); return; }
+      onPaste(d); state.pasteOpen = false; state.paste = ""; ui.render();
+    }) + ">Заполнить</button></div>";
+    }
 
     var hd = state.head;
     function setHead(p) { Object.assign(state.head, p); ui.render(); }
@@ -329,7 +367,7 @@
     h += '<span class="muted">Сфотографируйте лист списания из тетради — строки заполнятся сами. Или впишите вручную. Сумма посчитается по цене из последней накладной.</span>';
     if (!data.recognize) h += '<p class="small muted">Распознавание фото не подключено (нет ключа в настройках сайта), строки вносятся вручную.</p>';
     if (state.busy) h += '<p class="pill" style="align-self: flex-start">' + esc(state.busy) + "</p>";
-    h += U.msgHtml(state.msg, "align-self: flex-start");
+    h += U.msgHtml(state.msg, "align-self: flex-start; white-space: normal; border-radius: 12px");
     h += '<div class="card row" style="gap: 12px; align-items: flex-end">';
     h += '<label class="stack" style="gap: 4px"><span class="small muted">Дата</span><input class="input" type="date" data-k="w-date" value="' + esc(state.date) + '"' + on("input", function (e) { state.date = e.target.value; ui.render(); }) + "></label>";
     h += '<label class="stack" style="gap: 4px"><span class="small muted">Магазин (для новых строк)</span><select class="input" style="width: auto" data-k="w-shop"' + on("change", function (e) { state.shop = e.target.value; ui.render(); }) + ">";
