@@ -158,7 +158,7 @@ $f = fn (array $patch) => e($href($sp, $patch));
 
   <div id="catalog-list" class="stack" style="gap: 28px; min-width: 0">
     <div class="catalog-bar">
-      <span>Сегодня по Минску из ближайшего магазина. Доставка от <?= e($minDelivery) ?>, от <?= e(Money::format($delivery['freeFromKop'])) ?> <span class="gift">бесплатно</span>.</span>
+      <span>Сегодня по Минску из ближайшего магазина. Доставка от <?= e($minDelivery) ?>, в пределах МКАД от <?= e(Money::format($delivery['freeFromKop'])) ?> <span class="gift">бесплатно</span>.</span>
       <label class="sort">
         Сортировка
         <select class="input" data-sort='<?= e(json_encode($sortHrefs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>'>

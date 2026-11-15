@@ -192,7 +192,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
           <?php endforeach ?>
         </select>
         <div class="small muted" data-delivery-shop hidden></div>
-        <div class="small muted">Возим по Минску и за МКАД. Бесплатно от <?= e(Money::format($delivery['freeFromKop'])) ?>. Привезём <?= e(Text::fromHours($shop['leadHours'])) ?>.</div>
+        <div class="small muted">Возим по Минску и за МКАД. По Минску (в пределах МКАД) бесплатно от <?= e(Money::format($delivery['freeFromKop'])) ?>, за МКАД — <?= e(Money::format($delivery['outsideMkadKop'])) ?> при любой сумме. Привезём <?= e(Text::fromHours($shop['leadHours'])) ?>.</div>
       </div>
 
       <div class="acc">

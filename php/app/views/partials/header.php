@@ -17,7 +17,7 @@ $blank = fn (string $href) => str_starts_with($href, 'https://') ? ' target="_bl
     <b class="desktop-only"><?= e(mb_strtoupper(mb_substr($next['day'], 0, 1)) . mb_substr($next['day'], 1)) ?> доставим <?= e($next['when']) ?></b>
     <span class="mobile-only ribbon-when"><b>Доставим <?= e($next['day']) ?></b><span class="ribbon-till"> <?= e($next['when']) ?></span></span>
     <i aria-hidden="true" class="desktop-only">·</i>
-    <span class="desktop-only">Доставка от <?= e(Money::format(Delivery::minKop($delivery))) ?>, бесплатно от <?= e(Money::format($delivery['freeFromKop'])) ?></span>
+    <span class="desktop-only">Доставка от <?= e(Money::format(Delivery::minKop($delivery))) ?>, по Минску бесплатно от <?= e(Money::format($delivery['freeFromKop'])) ?></span>
     <i aria-hidden="true" class="desktop-only">·</i>
     <span class="desktop-only">Фото букета перед отправкой</span>
     <a href="tel:+<?= e(preg_replace('/\D/', '', $shop['phone'])) ?>" class="mobile-only ribbon-phone"><?= Icons::get('phone', 16) ?><?= e($shop['phone']) ?></a>
