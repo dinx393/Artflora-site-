@@ -98,6 +98,7 @@ $created = date('d.m.Y, H:i:s', strtotime($o['createdAt']));
           <?php foreach (ADMIN_STATUS_LABEL as $k => $l): ?><option value="<?= $k ?>" <?= $o['status'] === $k ? 'selected' : '' ?>><?= e($l) ?></option><?php endforeach ?>
         </select>
       </label>
+      <span class="small muted">«Выполнен» — заказ сам отмечается оплаченным.</span>
       <label class="field">
         <span>Оплата</span>
         <select class="input" name="paid">
