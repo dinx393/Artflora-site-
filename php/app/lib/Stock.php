@@ -23,6 +23,7 @@ final class Stock
         'erip' => 'ЕРИП',
         'cash' => 'Наличные (сдали в банк)',
         'company' => 'Безнал от организаций',
+        'flowwow' => 'Flowwow',
         'other_in' => 'Другое',
     ];
     public const MONEY_OUT = [
