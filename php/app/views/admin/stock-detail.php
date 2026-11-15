@@ -16,6 +16,9 @@ if ($f['kind'] === 'other') $sub[] = 'упаковка и прочее';
 if ($f['reason'] !== '') $sub[] = 'причина: ' . (Stock::REASONS[$f['reason']] ?? $f['reason']);
 if ($f['dir'] === 'IN') $sub[] = 'пришло';
 if ($f['dir'] === 'OUT') $sub[] = 'ушло';
+if ($f['dir'] === 'OWNER') $sub[] = 'директору';
+if ($f['dir'] === 'BIZOUT') $sub[] = 'ушло на бизнес';
+if ($f['dir'] === 'BIZ') $sub[] = 'бизнес, без директора';
 if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((Stock::MONEY_IN + Stock::MONEY_OUT)[$f['cat']] ?? $f['cat']);
 ?>
 <style>
@@ -183,9 +186,9 @@ if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((S
     $in = array_sum(array_map(fn ($e) => $e['direction'] === 'IN' ? (int) $e['amountKop'] : 0, $entries));
     $out = array_sum(array_map(fn ($e) => $e['direction'] === 'OUT' ? (int) $e['amountKop'] : 0, $entries)); ?>
   <div class="card stack" style="gap: 10px">
-    <div class="row between"><h3>Записи</h3><span class="stk-sum"><?= $f['dir'] === 'OUT' ? '− ' . admin_byn($out) : ($f['dir'] === 'IN' ? '+ ' . admin_byn($in) : admin_byn($in - $out)) ?></span></div>
+    <div class="row between"><h3>Записи</h3><span class="stk-sum"><?= in_array($f['dir'], ['OUT', 'OWNER', 'BIZOUT'], true) ? '− ' . admin_byn($out) : ($f['dir'] === 'IN' ? '+ ' . admin_byn($in) : admin_byn($in - $out)) ?></span></div>
     <div class="tabs">
-      <?php foreach (['' => 'Всё', 'IN' => 'Пришло', 'OUT' => 'Ушло'] as $k => $label): ?>
+      <?php foreach (['' => 'Всё', 'IN' => 'Пришло', 'OUT' => 'Ушло всё', 'BIZOUT' => 'Ушло на бизнес', 'BIZ' => 'Бизнес без директора', 'OWNER' => 'Директору'] as $k => $label): ?>
         <a class="chip chip-sm <?= $f['dir'] === $k && $f['cat'] === '' ? 'on' : '' ?>" href="<?= e($q(['dir' => $k ?: null, 'cat' => null])) ?>"><?= e($label) ?></a>
       <?php endforeach ?>
     </div>

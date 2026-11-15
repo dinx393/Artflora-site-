@@ -434,6 +434,10 @@ Http::get('/admin/stock/detail', function () {
     if ($m === 'bank') {
         $rows = Db::all("SELECT * FROM money_entries WHERE entryDate BETWEEN ? AND ?$shopSql ORDER BY entryDate, id", $args([$from, $to]));
         if (in_array($f['dir'], ['IN', 'OUT'], true)) $rows = array_filter($rows, fn ($e) => $e['direction'] === $f['dir']);
+        $isOwner = fn ($e) => $e['direction'] === 'OUT' && in_array($e['category'], Stock::OWNER, true);
+        if ($f['dir'] === 'OWNER') $rows = array_filter($rows, $isOwner);
+        if ($f['dir'] === 'BIZ') $rows = array_filter($rows, fn ($e) => !$isOwner($e));
+        if ($f['dir'] === 'BIZOUT') $rows = array_filter($rows, fn ($e) => $e['direction'] === 'OUT' && !$isOwner($e));
         if ($f['cat'] !== '') $rows = array_filter($rows, fn ($e) => $e['category'] === $f['cat']);
         $data['entries'] = array_values($rows);
     }

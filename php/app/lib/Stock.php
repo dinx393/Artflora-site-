@@ -41,6 +41,10 @@ final class Stock
         'other_out' => 'Другое',
     ];
 
+    // Не расходы бизнеса, а то, что директор взял себе из прибыли (решение владельца 2026-11-15):
+    // в «Финансах» отдельной графой «Директору», итог бизнеса считается без них.
+    public const OWNER = ['dividends', 'corp_card', 'loan_sn'];
+
     // Итоги по банку: пришло, ушло, разница, по категориям (больше — выше)
     public static function money(array $entries): array
     {
@@ -56,9 +60,14 @@ final class Stock
                 $byOut[$e['category']] = ($byOut[$e['category']] ?? 0) + $kop;
             }
         }
+        $byOwner = array_intersect_key($byOut, array_flip(self::OWNER));
+        $byOut = array_diff_key($byOut, $byOwner);
         arsort($byIn);
         arsort($byOut);
-        return ['inKop' => $in, 'outKop' => $out, 'netKop' => $in - $out, 'byIn' => $byIn, 'byOut' => $byOut];
+        arsort($byOwner);
+        $owner = array_sum($byOwner);
+        // outKop/netKop — без директора (только бизнес); afterOwnerKop — что осталось после того, как директор взял
+        return ['inKop' => $in, 'outKop' => $out - $owner, 'netKop' => $in - ($out - $owner), 'ownerKop' => $owner, 'afterOwnerKop' => $in - $out, 'byIn' => $byIn, 'byOut' => $byOut, 'byOwner' => $byOwner];
     }
 
     // Для сравнения названий: регистр, ё/е, лишние пробелы и кавычки не важны
@@ -355,13 +364,14 @@ final class Stock
         $history = self::history();
         $out = [];
         for ($m = $first; $m <= $last; $m = date('Y-m-01', strtotime('+1 month', strtotime($m)))) {
-            $out[substr($m, 0, 7)] = ['buy' => array_fill_keys($codes, 0), 'wo' => array_fill_keys($codes, 0), 'bank' => ['IN' => 0, 'OUT' => 0]];
+            $out[substr($m, 0, 7)] = ['buy' => array_fill_keys($codes, 0), 'wo' => array_fill_keys($codes, 0), 'bank' => ['IN' => 0, 'OUT' => 0, 'OWNER' => 0]];
         }
         foreach (Db::all('SELECT LEFT(p.docDate, 7) AS m, l.shop, SUM(l.sumKop) AS kop FROM stock_purchase_lines l JOIN stock_purchases p ON p.id = l.purchaseId WHERE p.docDate BETWEEN ? AND ? GROUP BY m, l.shop', [$first, $last]) as $r) {
             if (isset($out[$r['m']]['buy'][$r['shop']])) $out[$r['m']]['buy'][$r['shop']] += (int) $r['kop'];
         }
-        foreach (Db::all('SELECT LEFT(entryDate, 7) AS m, direction, SUM(amountKop) AS kop FROM money_entries WHERE entryDate BETWEEN ? AND ? GROUP BY m, direction', [$first, $last]) as $r) {
-            if (isset($out[$r['m']])) $out[$r['m']]['bank'][$r['direction']] = (int) $r['kop'];
+        foreach (Db::all('SELECT LEFT(entryDate, 7) AS m, direction, category, SUM(amountKop) AS kop FROM money_entries WHERE entryDate BETWEEN ? AND ? GROUP BY m, direction, category', [$first, $last]) as $r) {
+            $d = $r['direction'] === 'OUT' && in_array($r['category'], self::OWNER, true) ? 'OWNER' : $r['direction'];
+            if (isset($out[$r['m']])) $out[$r['m']]['bank'][$d] += (int) $r['kop'];
         }
         foreach (Db::all('SELECT itemId, shop, qty, woDate FROM stock_writeoffs WHERE woDate BETWEEN ? AND ?', [$first, $last]) as $w) {
             $m = substr($w['woDate'], 0, 7);

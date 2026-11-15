@@ -145,3 +145,16 @@ test('деньги по банку: пришло, ушло, итог, по ка�
     eq($r['byIn'], ['acquiring' => 125000, 'erip' => 30000]);
     eq(array_keys($r['byOut']), ['salary', 'supplier']);
 });
+
+test('деньги по банку: дивиденды, корп. карточка и займ СН — отдельно «Директору», не расходы бизнеса', function () {
+    $r = Stock::money([
+        ['direction' => 'IN', 'category' => 'acquiring', 'amountKop' => 300000],
+        ['direction' => 'OUT', 'category' => 'supplier', 'amountKop' => 200000],
+        ['direction' => 'OUT', 'category' => 'dividends', 'amountKop' => 50000],
+        ['direction' => 'OUT', 'category' => 'corp_card', 'amountKop' => 50000],
+        ['direction' => 'OUT', 'category' => 'loan_sn', 'amountKop' => 30000],
+    ]);
+    eq([$r['outKop'], $r['netKop'], $r['ownerKop'], $r['afterOwnerKop']], [200000, 100000, 130000, -30000]);
+    eq(array_keys($r['byOut']), ['supplier']);
+    eq($r['byOwner'], ['dividends' => 50000, 'corp_card' => 50000, 'loan_sn' => 30000]);
+});

@@ -51,7 +51,7 @@ $chart = function (array $series) use ($months, $monthNames, $shop): string {
 };
 $byShop = fn (string $key) => array_map(fn ($s) => [$s['name'], $shopColor[$s['code']], fn ($m) => $m[$key][$s['code']] ?? 0], $shops);
 $legend = fn (array $series) => '<div class="stk-legend">' . implode('', array_map(fn ($x) => '<span><i style="background: ' . $x[1] . '"></i>' . e($x[0]) . '</span>', $series)) . '</div>';
-$bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Ушло', '#a3283c', fn ($m) => $m['bank']['OUT']]];
+$bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Ушло на бизнес', '#a3283c', fn ($m) => $m['bank']['OUT']], ['Директору', '#8a7bb8', fn ($m) => $m['bank']['OWNER']]];
 ?>
 <style>
   .stk-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
@@ -167,12 +167,15 @@ $cat = function (array $by, array $labels, string $color, string $dir) use ($dl,
   <div class="row between"><h3>Деньги по банку</h3><?= $legend($bankSeries) ?></div>
   <div class="stk-tiles">
     <a class="stk-tile ok" href="<?= $dl('bank', ['dir' => 'IN']) ?>"><span class="k">Пришло</span><span class="v"><?= $byn($md['inKop']) ?></span></a>
-    <a class="stk-tile wo" href="<?= $dl('bank', ['dir' => 'OUT']) ?>"><span class="k">Ушло</span><span class="v"><?= $byn($md['outKop']) ?></span></a>
-    <a class="stk-tile" href="<?= $dl('bank') ?>"><span class="k">Итог</span><span class="v" style="color: <?= $md['netKop'] < 0 ? 'var(--danger)' : 'var(--olive)' ?>"><?= $byn($md['netKop']) ?></span><span class="small muted">пришло − ушло</span></a>
+    <a class="stk-tile wo" href="<?= $dl('bank', ['dir' => 'BIZOUT']) ?>"><span class="k">Ушло на бизнес</span><span class="v"><?= $byn($md['outKop']) ?></span><span class="small muted">поставщики, зарплата, аренда… — без директора</span></a>
+    <a class="stk-tile" href="<?= $dl('bank', ['dir' => 'BIZ']) ?>"><span class="k">Бизнес заработал</span><span class="v" style="color: <?= $md['netKop'] < 0 ? 'var(--danger)' : 'var(--olive)' ?>"><?= $byn($md['netKop']) ?></span><span class="small muted">пришло − ушло на бизнес</span></a>
+    <a class="stk-tile" href="<?= $dl('bank', ['dir' => 'OWNER']) ?>" style="background: #f1edf8"><span class="k">Директору</span><span class="v" style="color: #6b5a9e"><?= $byn($md['ownerKop']) ?></span><span class="small muted">дивиденды, корп. карточка, займ СН</span></a>
+    <a class="stk-tile" href="<?= $dl('bank') ?>"><span class="k">Осталось</span><span class="v" style="color: <?= $md['afterOwnerKop'] < 0 ? 'var(--danger)' : 'var(--olive)' ?>"><?= $byn($md['afterOwnerKop']) ?></span><span class="small muted">бизнес заработал − директору</span></a>
   </div>
   <div class="stk-grid">
     <div class="stack" style="gap: 8px"><b>Откуда пришло</b><?= $cat($md['byIn'], Stock::MONEY_IN, 'var(--olive)', 'IN') ?><?php if ($sitePay): ?><span class="small muted">«Через сайт» — оплаченные заказы с сайта за этот период, считается само, вычитать ничего не нужно. Банк зачисляет на день-два позже, поэтому цифра примерная. Всё остальное — другие источники: магазин, Инстаграм, мессенджеры.</span><?php endif ?></div>
-    <div class="stack" style="gap: 8px"><b>Куда ушло</b><?= $cat($md['byOut'], Stock::MONEY_OUT, 'var(--danger)', 'OUT') ?></div>
+    <div class="stack" style="gap: 8px"><b>Куда ушло (бизнес)</b><?= $cat($md['byOut'], Stock::MONEY_OUT, 'var(--danger)', 'OUT') ?>
+      <b style="margin-top: 8px">Директору</b><?= $cat($md['byOwner'], Stock::MONEY_OUT, '#8a7bb8', 'OUT') ?></div>
     <div class="stack" style="gap: 8px"><b>По месяцам, BYN</b><?= $chart($bankSeries) ?></div>
   </div>
   <?php if (!$entries): ?>
