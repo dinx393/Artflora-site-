@@ -16,7 +16,7 @@ if ($f['kind'] === 'other') $sub[] = 'упаковка и прочее';
 if ($f['reason'] !== '') $sub[] = 'причина: ' . (Stock::REASONS[$f['reason']] ?? $f['reason']);
 if ($f['dir'] === 'IN') $sub[] = 'пришло';
 if ($f['dir'] === 'OUT') $sub[] = 'ушло';
-if ($f['cat'] !== '') $sub[] = (Stock::MONEY_IN + Stock::MONEY_OUT)[$f['cat']] ?? $f['cat'];
+if ($f['cat'] !== '') $sub[] = ($m === 'site' ? 'оплачено: ' : '') . ((Stock::MONEY_IN + Stock::MONEY_OUT)[$f['cat']] ?? $f['cat']);
 ?>
 <style>
   .stk-table td.r, .stk-table th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }

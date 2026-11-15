@@ -54,6 +54,7 @@ Http::get('/admin/stock', function () {
         'writeoffs' => $writeoffs,
         'entries' => $entries,
         'bank' => Stock::money($entries),
+        'sitePay' => Stock::sitePaid($from, $to, $shop),
         'history' => Stock::history(),
         'msg' => is_string($_GET['msg'] ?? null) ? $_GET['msg'] : null,
     ]);
@@ -367,6 +368,11 @@ Http::get('/admin/stock/detail', function () {
 
     if ($m === 'site') {
         $data['orders'] = Db::all("SELECT id, number, status, customerName, deliveryMethod, shop, deliveryDate, deliverySlot, paymentMethod, paid, totalKop FROM orders WHERE status <> 'CANCELLED' AND deliveryDate BETWEEN ? AND ?$shopSql ORDER BY deliveryDate, id", $args([$from, $to]));
+        // из подсказки «из них с сайта» под строкой банка: только оплаченные этим способом
+        if ($f['cat'] !== '') {
+            $methods = array_keys(Stock::SITE_PAY, $f['cat'], true);
+            $data['orders'] = array_values(array_filter($data['orders'], fn ($o) => $o['paid'] && in_array($o['paymentMethod'], $methods, true)));
+        }
         $ids = array_column($data['orders'], 'id');
         $what = [];
         if ($ids) foreach (Db::all('SELECT orderId, name, size, qty FROM order_items WHERE orderId ' . Db::in($ids) . ' ORDER BY id', $ids) as $it) {

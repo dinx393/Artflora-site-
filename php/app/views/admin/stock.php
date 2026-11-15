@@ -66,6 +66,8 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
   a.stk-tile, a.stk-bar { color: inherit; text-decoration: none; }
   a.stk-tile:hover { border-color: var(--cherry); box-shadow: 0 2px 10px rgba(126, 31, 60, .12); }
   a.stk-tile::after { content: 'подробнее →'; font-size: 12px; font-weight: 700; color: var(--cherry); margin-top: 4px; }
+  .stk-hint { font-size: 12px; color: var(--muted); margin: -4px 0 2px; }
+  .stk-hint a { color: var(--cherry); font-weight: 700; }
   a.stk-bar:hover span:first-child { color: var(--cherry); text-decoration: underline; }
   .stk-table td a { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
   .stk-table td a:hover { color: var(--cherry); }
@@ -134,7 +136,25 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
   <a class="stk-tile" href="<?= $dl('site') ?>"><span class="k">Заказы с сайта</span><span class="v"><?= $byn($t['siteKop']) ?></span><span class="small muted">кроме отменённых, по дате доставки</span></a>
 </div>
 
-<?php $md = $bank; $cat = fn (array $by, array $labels, string $color, string $dir) => $by ? '<div class="stk-bars">' . implode('', array_map(fn ($k) => '<a class="stk-bar" href="' . $dl('bank', ['dir' => $dir, 'cat' => $k]) . '"><span>' . e($labels[$k] ?? $k) . '</span><div class="track"><div class="fill" style="width: ' . round($by[$k] / max(1, max($by)) * 100, 1) . '%; background: ' . $color . '"></div></div><span class="n">' . $money($by[$k]) . '</span></a>', array_keys($by))) . '</div>' : '<p class="small muted">Нет.</p>'; ?>
+<?php $md = $bank;
+// Полоски по категориям банка; у доходов — подсказка «из них через сайт ≈ …, остальное — другие источники» (Stock::sitePaid)
+$cat = function (array $by, array $labels, string $color, string $dir) use ($dl, $money, $sitePay): string {
+    if ($dir === 'IN') foreach ($sitePay as $k => $_) $by[$k] ??= 0;
+    if (!$by) return '<p class="small muted">Нет.</p>';
+    $max = max(1, max($by));
+    $out = '<div class="stk-bars">';
+    foreach ($by as $k => $kop) {
+        $out .= '<a class="stk-bar" href="' . $dl('bank', ['dir' => $dir, 'cat' => $k]) . '"><span>' . e($labels[$k] ?? $k) . '</span><div class="track"><div class="fill" style="width: ' . round($kop / $max * 100, 1) . '%; background: ' . $color . '"></div></div><span class="n">' . $money($kop) . '</span></a>';
+        if ($dir !== 'IN' || !isset($sitePay[$k])) continue;
+        [$site, $n] = $sitePay[$k];
+        $siteLink = '<a href="' . $dl('site', ['cat' => $k]) . '">через сайт ≈ ' . $money($site) . '</a> (' . $n . ' зак.)';
+        if ($kop === 0) $txt = $siteLink . ' — в банк по этой строке пока ничего не внесено';
+        elseif ($site > $kop) $txt = 'из них ' . $siteLink . ' — больше, чем внесено: часть денег, видимо, ещё не зачислена';
+        else $txt = 'из них ' . $siteLink . ' · остальное ≈ ' . $money($kop - $site) . ' — другие источники';
+        $out .= '<div class="stk-hint">' . $txt . '</div>';
+    }
+    return $out . '</div>';
+}; ?>
 <div class="card stack" style="gap: 14px">
   <div class="row between"><h3>Деньги по банку</h3><?= $legend($bankSeries) ?></div>
   <div class="stk-tiles">
@@ -143,7 +163,7 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
     <a class="stk-tile" href="<?= $dl('bank') ?>"><span class="k">Итог</span><span class="v" style="color: <?= $md['netKop'] < 0 ? 'var(--danger)' : 'var(--olive)' ?>"><?= $byn($md['netKop']) ?></span><span class="small muted">пришло − ушло</span></a>
   </div>
   <div class="stk-grid">
-    <div class="stack" style="gap: 8px"><b>Откуда пришло</b><?= $cat($md['byIn'], Stock::MONEY_IN, 'var(--olive)', 'IN') ?></div>
+    <div class="stack" style="gap: 8px"><b>Откуда пришло</b><?= $cat($md['byIn'], Stock::MONEY_IN, 'var(--olive)', 'IN') ?><?php if ($sitePay): ?><span class="small muted">«Через сайт» — оплаченные заказы с сайта за этот период, считается само, вычитать ничего не нужно. Банк зачисляет на день-два позже, поэтому цифра примерная. Всё остальное — другие источники: магазин, Инстаграм, мессенджеры.</span><?php endif ?></div>
     <div class="stack" style="gap: 8px"><b>Куда ушло</b><?= $cat($md['byOut'], Stock::MONEY_OUT, 'var(--danger)', 'OUT') ?></div>
     <div class="stack" style="gap: 8px"><b>По месяцам, BYN</b><?= $chart($bankSeries) ?></div>
   </div>

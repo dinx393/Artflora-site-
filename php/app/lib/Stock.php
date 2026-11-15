@@ -299,6 +299,24 @@ final class Stock
         return $r;
     }
 
+    // Какой способ оплаты на сайте в какую строку банка попадает (для подсказки «из них с сайта»)
+    public const SITE_PAY = ['ERIP' => 'erip', 'CARD' => 'acquiring', 'INVOICE' => 'company'];
+
+    // Оплаченные заказы с сайта за период (по дате доставки, кроме отменённых) → по строкам банка: [категория => [kop, n]]
+    public static function sitePaid(string $from, string $to, ?string $shop): array
+    {
+        $out = [];
+        $sql = "SELECT paymentMethod, SUM(totalKop) AS kop, COUNT(*) AS n FROM orders WHERE paid = 1 AND status <> 'CANCELLED' AND deliveryDate BETWEEN ? AND ?" . ($shop ? ' AND shop = ?' : '') . ' GROUP BY paymentMethod';
+        foreach (Db::all($sql, $shop ? [$from, $to, $shop] : [$from, $to]) as $r) {
+            $cat = self::SITE_PAY[$r['paymentMethod']] ?? null;
+            if ($cat === null) continue;
+            $out[$cat] ??= [0, 0];
+            $out[$cat][0] += (int) $r['kop'];
+            $out[$cat][1] += (int) $r['n'];
+        }
+        return $out;
+    }
+
     // Последние 6 месяцев: закупка и списание по магазинам (для графиков)
     public static function months(string $today, int $n = 6): array
     {
