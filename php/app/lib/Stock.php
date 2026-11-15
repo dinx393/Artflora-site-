@@ -17,6 +17,46 @@ final class Stock
         'other' => 'Другое',
     ];
 
+    // Доходы и расходы по банку (таблица money_entries)
+    public const MONEY_IN = [
+        'acquiring' => 'Эквайринг (оплата картой)',
+        'erip' => 'ЕРИП',
+        'cash' => 'Наличные (сдали в банк)',
+        'company' => 'Безнал от организаций',
+        'other_in' => 'Другое',
+    ];
+    public const MONEY_OUT = [
+        'supplier' => 'Поставщики',
+        'salary' => 'Зарплата',
+        'rent' => 'Аренда',
+        'tax' => 'Налоги и взносы',
+        'ads' => 'Реклама',
+        'delivery' => 'Такси / курьеры',
+        'utilities' => 'Коммунальные, связь',
+        'bank' => 'Банк (комиссии)',
+        'other_out' => 'Другое',
+    ];
+
+    // Итоги по банку: пришло, ушло, разница, по категориям (больше — выше)
+    public static function money(array $entries): array
+    {
+        $in = $out = 0;
+        $byIn = $byOut = [];
+        foreach ($entries as $e) {
+            $kop = (int) $e['amountKop'];
+            if ($e['direction'] === 'IN') {
+                $in += $kop;
+                $byIn[$e['category']] = ($byIn[$e['category']] ?? 0) + $kop;
+            } else {
+                $out += $kop;
+                $byOut[$e['category']] = ($byOut[$e['category']] ?? 0) + $kop;
+            }
+        }
+        arsort($byIn);
+        arsort($byOut);
+        return ['inKop' => $in, 'outKop' => $out, 'netKop' => $in - $out, 'byIn' => $byIn, 'byOut' => $byOut];
+    }
+
     // Для сравнения названий: регистр, ё/е, лишние пробелы и кавычки не важны
     public static function norm(string $s): string
     {
@@ -268,10 +308,13 @@ final class Stock
         $history = self::history();
         $out = [];
         for ($m = $first; $m <= $last; $m = date('Y-m-01', strtotime('+1 month', strtotime($m)))) {
-            $out[substr($m, 0, 7)] = ['buy' => array_fill_keys($codes, 0), 'wo' => array_fill_keys($codes, 0)];
+            $out[substr($m, 0, 7)] = ['buy' => array_fill_keys($codes, 0), 'wo' => array_fill_keys($codes, 0), 'bank' => ['IN' => 0, 'OUT' => 0]];
         }
         foreach (Db::all('SELECT LEFT(p.docDate, 7) AS m, l.shop, SUM(l.sumKop) AS kop FROM stock_purchase_lines l JOIN stock_purchases p ON p.id = l.purchaseId WHERE p.docDate BETWEEN ? AND ? GROUP BY m, l.shop', [$first, $last]) as $r) {
             if (isset($out[$r['m']]['buy'][$r['shop']])) $out[$r['m']]['buy'][$r['shop']] += (int) $r['kop'];
+        }
+        foreach (Db::all('SELECT LEFT(entryDate, 7) AS m, direction, SUM(amountKop) AS kop FROM money_entries WHERE entryDate BETWEEN ? AND ? GROUP BY m, direction', [$first, $last]) as $r) {
+            if (isset($out[$r['m']])) $out[$r['m']]['bank'][$r['direction']] = (int) $r['kop'];
         }
         foreach (Db::all('SELECT itemId, shop, qty, woDate FROM stock_writeoffs WHERE woDate BETWEEN ? AND ?', [$first, $last]) as $w) {
             $m = substr($w['woDate'], 0, 7);

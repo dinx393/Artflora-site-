@@ -41,6 +41,7 @@ Http::get('/admin/stock', function () {
     $plines = $ids ? Db::all('SELECT * FROM stock_purchase_lines WHERE purchaseId ' . Db::in($ids) . ' ORDER BY id', $ids) : [];
     foreach ($purchases as &$p) $p['lines'] = array_values(array_filter($plines, fn ($l) => $l['purchaseId'] === $p['id']));
     unset($p);
+    $entries = Db::all('SELECT * FROM money_entries WHERE entryDate BETWEEN ? AND ?' . ($shop ? ' AND shop = ?' : '') . ' ORDER BY entryDate DESC, id DESC LIMIT 500', $shop ? [$from, $to, $shop] : [$from, $to]);
     $writeoffs = Db::all('SELECT * FROM stock_writeoffs WHERE woDate BETWEEN ? AND ?' . ($shop ? ' AND shop = ?' : '') . ' ORDER BY woDate DESC, id DESC LIMIT 300', $shop ? [$from, $to, $shop] : [$from, $to]);
     return admin_page('stock', [
         'title' => 'Финансы',
@@ -51,6 +52,8 @@ Http::get('/admin/stock', function () {
         'items' => $items,
         'purchases' => $purchases,
         'writeoffs' => $writeoffs,
+        'entries' => $entries,
+        'bank' => Stock::money($entries),
         'history' => Stock::history(),
         'msg' => is_string($_GET['msg'] ?? null) ? $_GET['msg'] : null,
     ]);
@@ -79,6 +82,13 @@ Http::get('/admin/stock/export', function () {
     $shopName = array_column($shops, 'name', 'code');
     foreach (Db::all('SELECT * FROM stock_writeoffs WHERE woDate BETWEEN ? AND ?' . ($shop ? ' AND shop = ?' : '') . ' ORDER BY woDate, id', $shop ? [$from, $to, $shop] : [$from, $to]) as $w) {
         $rows[] = [$w['woDate'], $shopName[$w['shop']] ?? $w['shop'], $names[$w['itemId']] ?? '?', (float) $w['qty'], Stock::REASONS[$w['reason']] ?? $w['reason'], $w['createdBy']];
+    }
+    $rows[] = [];
+    $rows[] = ['Доходы и расходы по банку'];
+    $rows[] = ['Дата', 'Доход / расход', 'Категория', 'Магазин', 'Сумма, BYN', 'Описание', 'Кто внёс'];
+    foreach (Db::all('SELECT * FROM money_entries WHERE entryDate BETWEEN ? AND ?' . ($shop ? ' AND shop = ?' : '') . ' ORDER BY entryDate, id', $shop ? [$from, $to, $shop] : [$from, $to]) as $m) {
+        $in = $m['direction'] === 'IN';
+        $rows[] = [$m['entryDate'], $in ? 'Доход' : 'Расход', ($in ? Stock::MONEY_IN : Stock::MONEY_OUT)[$m['category']] ?? $m['category'], $shopName[$m['shop']] ?? 'Общее', ($in ? 1 : -1) * $m['amountKop'] / 100, $m['description'], $m['createdBy']];
     }
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="zakupka-spisanie-' . $from . '-' . $to . '.csv"');
@@ -288,5 +298,45 @@ Http::post('/admin/stock/writeoff/{id}/delete', function (string $id) {
     Auth::requireAdmin('stock');
     Auth::checkCsrf();
     if (ctype_digit($id)) Db::exec('DELETE FROM stock_writeoffs WHERE id = ?', [(int) $id]);
+    Http::redirect('/admin/stock?' . preg_replace('/[^a-z0-9=&_-]/i', '', Http::str('back', 300)) . '&msg=deleted');
+});
+
+// ---------- Доходы и расходы по банку ----------
+
+Http::get('/admin/stock/money', function () {
+    Auth::requireAdmin('stock');
+    $dir = ($_GET['dir'] ?? '') === 'out' ? 'OUT' : 'IN';
+    return admin_page('stock-money', [
+        'title' => $dir === 'IN' ? 'Доход' : 'Расход',
+        'dir' => $dir,
+        'shops' => stock_shops(),
+        'date' => stock_date($_GET['date'] ?? null) ?? stock_today(),
+        'saved' => isset($_GET['saved']),
+        'error' => is_string($_GET['error'] ?? null) ? mb_substr($_GET['error'], 0, 200) : null,
+    ]);
+});
+
+Http::post('/admin/stock/money/save', function () {
+    Auth::requireAdmin('stock');
+    Auth::checkCsrf();
+    $dir = Http::str('dir') === 'OUT' ? 'OUT' : 'IN';
+    $back = fn (array $q) => Http::redirect('/admin/stock/money?' . http_build_query(['dir' => strtolower($dir)] + $q));
+    $date = stock_date(Http::str('date', 10)) ?? $back(['error' => 'Укажите дату']);
+    $cats = $dir === 'IN' ? Stock::MONEY_IN : Stock::MONEY_OUT;
+    $cat = Http::str('category', 30);
+    if (!array_key_exists($cat, $cats)) $back(['date' => $date, 'error' => 'Выберите, что это']);
+    $shop = Http::str('shop', 20);
+    if ($shop !== '' && !in_array($shop, Stock::shopCodes(), true)) $shop = '';
+    $kop = Money::parse(Http::str('amount', 30));
+    if ($kop === null || $kop <= 0 || $kop > 100_000_000) $back(['date' => $date, 'error' => 'Проверьте сумму']);
+    $desc = trim(Http::str('description', 300));
+    Db::insert('money_entries', ['entryDate' => $date, 'direction' => $dir, 'category' => $cat, 'shop' => $shop, 'amountKop' => $kop, 'description' => mb_substr($desc, 0, 300), 'createdBy' => stock_me()]);
+    $back(['date' => $date, 'saved' => 1]);
+});
+
+Http::post('/admin/stock/money/{id}/delete', function (string $id) {
+    Auth::requireAdmin('stock');
+    Auth::checkCsrf();
+    if (ctype_digit($id)) Db::exec('DELETE FROM money_entries WHERE id = ?', [(int) $id]);
     Http::redirect('/admin/stock?' . preg_replace('/[^a-z0-9=&_-]/i', '', Http::str('back', 300)) . '&msg=deleted');
 });

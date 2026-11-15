@@ -14,10 +14,10 @@ $msgs = ['purchase' => 'Накладная сохранена.', 'writeoff' => '
 $monthNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 $itemName = fn (int $id) => $items[$id]['name'] ?? '?';
 
-// Столбики по месяцам, по магазину на каждый месяц (масштаб — от самого большого значения)
-$chart = function (string $key) use ($months, $shops, $shopColor, $monthNames): string {
+// Столбики по месяцам: $series = [[подпись, цвет, fn(месяц) → копейки], …] (масштаб — от самого большого значения)
+$chart = function (array $series) use ($months, $monthNames): string {
     $max = 0;
-    foreach ($months as $m) foreach ($m[$key] as $v) $max = max($max, $v);
+    foreach ($months as $m) foreach ($series as [, , $get]) $max = max($max, $get($m));
     if ($max === 0) return '<p class="small muted">Пока нет данных.</p>';
     $stepRaw = $max / 4;
     $pow = 10 ** floor(log10(max(1, $stepRaw)));
@@ -31,20 +31,24 @@ $chart = function (string $key) use ($months, $shops, $shopColor, $monthNames): 
         $svg .= '<text x="' . ($L - 6) . '" y="' . ($y($v) + 4) . '" text-anchor="end">' . number_format($v / 100, 0, ',', ' ') . '</text>';
     }
     $n = count($months);
+    $k = count($series);
     $w = ($R - $L) / $n;
-    $bw = min(28, $w * 0.7 / max(1, count($shops)));
+    $bw = min(28, $w * 0.7 / max(1, $k));
     $i = 0;
     foreach ($months as $ym => $m) {
-        $x0 = $L + $i * $w + ($w - $bw * count($shops) - 3 * (count($shops) - 1)) / 2;
-        foreach ($shops as $j => $s) {
-            $v = $m[$key][$s['code']] ?? 0;
-            $svg .= '<rect x="' . round($x0 + $j * ($bw + 3), 1) . '" y="' . $y($v) . '" width="' . round($bw, 1) . '" height="' . round($B - $y($v), 1) . '" rx="3" fill="' . $shopColor[$s['code']] . '"><title>' . e($s['name']) . ': ' . e(Money::format($v)) . '</title></rect>';
+        $x0 = $L + $i * $w + ($w - $bw * $k - 3 * ($k - 1)) / 2;
+        foreach ($series as $j => [$label, $color, $get]) {
+            $v = $get($m);
+            $svg .= '<rect x="' . round($x0 + $j * ($bw + 3), 1) . '" y="' . $y($v) . '" width="' . round($bw, 1) . '" height="' . round($B - $y($v), 1) . '" rx="3" fill="' . $color . '"><title>' . e($label) . ': ' . e(Money::format($v)) . '</title></rect>';
         }
         $svg .= '<text x="' . round($L + $i * $w + $w / 2, 1) . '" y="' . ($B + 18) . '" text-anchor="middle">' . $monthNames[(int) substr($ym, 5, 2) - 1] . '</text>';
         $i++;
     }
     return $svg . '</svg>';
 };
+$byShop = fn (string $key) => array_map(fn ($s) => [$s['name'], $shopColor[$s['code']], fn ($m) => $m[$key][$s['code']] ?? 0], $shops);
+$legend = fn (array $series) => '<div class="stk-legend">' . implode('', array_map(fn ($x) => '<span><i style="background: ' . $x[1] . '"></i>' . e($x[0]) . '</span>', $series)) . '</div>';
+$bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Ушло', '#a3283c', fn ($m) => $m['bank']['OUT']]];
 ?>
 <style>
   .stk-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
@@ -80,12 +84,14 @@ $chart = function (string $key) use ($months, $shops, $shopColor, $monthNames): 
 <div class="row between">
   <h1>Финансы</h1>
   <div class="row">
+    <a class="btn btn-pink" href="/admin/stock/money?dir=in">+ Доход</a>
+    <a class="btn btn-pink" href="/admin/stock/money?dir=out">− Расход</a>
     <a class="btn" href="/admin/stock/purchase">+ Накладная</a>
     <a class="btn" href="/admin/stock/writeoff">− Списание</a>
     <a class="btn btn-outline" href="/admin/stock/export?<?= e($back) ?>">Скачать для Excel</a>
   </div>
 </div>
-<span class="muted">Видит только старший администратор. Продажи не вносим: пришло по накладным − списали = продали. Цена списания — из последней накладной, «продано на» — по розничной цене из «Цветов».</span>
+<span class="muted">Видит только старший администратор. «Доход» и «Расход» — цифры из банкинга (эквайринг, оплата поставщикам, зарплата…). Продажи не вносим: пришло по накладным − списали = продали. Цена списания — из последней накладной, «продано на» — по розничной цене из «Цветов».</span>
 <?php if ($msg && isset($msgs[$msg])): ?><p class="pill ok" style="align-self: flex-start"><?= e($msgs[$msg]) ?></p><?php endif ?>
 
 <div class="stack" style="gap: 10px">
@@ -119,6 +125,43 @@ $chart = function (string $key) use ($months, $shops, $shopColor, $monthNames): 
   <div class="stk-tile"><span class="k">Заказы с сайта</span><span class="v"><?= $byn($t['siteKop']) ?></span><span class="small muted">кроме отменённых, по дате доставки</span></div>
 </div>
 
+<?php $md = $bank; $cat = fn (array $by, array $labels, string $color) => $by ? '<div class="stk-bars">' . implode('', array_map(fn ($k) => '<div class="stk-bar"><span>' . e($labels[$k] ?? $k) . '</span><div class="track"><div class="fill" style="width: ' . round($by[$k] / max(1, max($by)) * 100, 1) . '%; background: ' . $color . '"></div></div><span class="n">' . $money($by[$k]) . '</span></div>', array_keys($by))) . '</div>' : '<p class="small muted">Нет.</p>'; ?>
+<div class="card stack" style="gap: 14px">
+  <div class="row between"><h3>Деньги по банку</h3><?= $legend($bankSeries) ?></div>
+  <div class="stk-tiles">
+    <div class="stk-tile ok"><span class="k">Пришло</span><span class="v"><?= $byn($md['inKop']) ?></span></div>
+    <div class="stk-tile wo"><span class="k">Ушло</span><span class="v"><?= $byn($md['outKop']) ?></span></div>
+    <div class="stk-tile"><span class="k">Итог</span><span class="v" style="color: <?= $md['netKop'] < 0 ? 'var(--danger)' : 'var(--olive)' ?>"><?= $byn($md['netKop']) ?></span><span class="small muted">пришло − ушло</span></div>
+  </div>
+  <div class="stk-grid">
+    <div class="stack" style="gap: 8px"><b>Откуда пришло</b><?= $cat($md['byIn'], Stock::MONEY_IN, 'var(--olive)') ?></div>
+    <div class="stack" style="gap: 8px"><b>Куда ушло</b><?= $cat($md['byOut'], Stock::MONEY_OUT, 'var(--danger)') ?></div>
+    <div class="stack" style="gap: 8px"><b>По месяцам, BYN</b><?= $chart($bankSeries) ?></div>
+  </div>
+  <?php if (!$entries): ?>
+    <p class="small muted">За этот период ничего не внесено. Нажмите «+ Доход» или «− Расход» и впишите цифру из банкинга.</p>
+  <?php else: ?>
+    <details><summary class="small" style="cursor: pointer; font-weight: 700">Все записи (<?= count($entries) ?>)</summary>
+    <div class="table-wrap"><table class="table stk-table">
+      <thead><tr><th>Дата</th><th>Что</th><th>Описание</th><th>Магазин</th><th class="r">Сумма</th><th>Кто внёс</th><th></th></tr></thead>
+      <tbody>
+        <?php foreach ($entries as $m): $in = $m['direction'] === 'IN'; ?>
+          <tr>
+            <td><?= e(admin_date($m['entryDate'])) ?></td>
+            <td><?= e(($in ? Stock::MONEY_IN : Stock::MONEY_OUT)[$m['category']] ?? $m['category']) ?></td>
+            <td><?= e($m['description']) ?></td>
+            <td><?= e($shopName[$m['shop']] ?? 'Общее') ?></td>
+            <td class="r <?= $in ? 'stk-in' : 'stk-out' ?>"><b><?= $in ? '+' : '−' ?> <?= $money((int) $m['amountKop']) ?></b></td>
+            <td class="small muted"><?= e($m['createdBy']) ?></td>
+            <td><form method="post" action="/admin/stock/money/<?= (int) $m['id'] ?>/delete" onsubmit="return confirm('Удалить эту запись?')"><?= Auth::csrfField() ?><input type="hidden" name="back" value="<?= e($back) ?>"><button class="btn-ghost small" aria-label="Удалить">×</button></form></td>
+          </tr>
+        <?php endforeach ?>
+      </tbody>
+    </table></div>
+    </details>
+  <?php endif ?>
+</div>
+
 <div class="card stack" style="gap: 12px">
   <h3>Какой магазин сколько приносит</h3>
   <div class="table-wrap"><table class="table stk-table">
@@ -147,12 +190,12 @@ $chart = function (string $key) use ($months, $shops, $shopColor, $monthNames): 
 
 <div class="stk-grid">
   <div class="card stack" style="gap: 10px">
-    <div class="row between"><h3>Списание по месяцам, BYN</h3><div class="stk-legend"><?php foreach ($shops as $s): ?><span><i style="background: <?= $shopColor[$s['code']] ?>"></i><?= e($s['name']) ?></span><?php endforeach ?></div></div>
-    <?= $chart('wo') ?>
+    <div class="row between"><h3>Списание по месяцам, BYN</h3><?= $legend($byShop('wo')) ?></div>
+    <?= $chart($byShop('wo')) ?>
   </div>
   <div class="card stack" style="gap: 10px">
-    <div class="row between"><h3>Закупка по месяцам, BYN</h3><div class="stk-legend"><?php foreach ($shops as $s): ?><span><i style="background: <?= $shopColor[$s['code']] ?>"></i><?= e($s['name']) ?></span><?php endforeach ?></div></div>
-    <?= $chart('buy') ?>
+    <div class="row between"><h3>Закупка по месяцам, BYN</h3><?= $legend($byShop('buy')) ?></div>
+    <?= $chart($byShop('buy')) ?>
   </div>
   <div class="card stack" style="gap: 10px">
     <h3>Почему списываем</h3>

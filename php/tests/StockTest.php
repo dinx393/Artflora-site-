@@ -116,3 +116,16 @@ test('запрос распознавания: фото, схема ответа
     contains($sent['messages'][0]['content'][1]['text'], 'Чечота');
     contains($sent['messages'][0]['content'][1]['text'], '- Роза');
 });
+
+test('деньги по банку: пришло, ушло, итог, по категориям', function () {
+    $r = Stock::money([
+        ['direction' => 'IN', 'category' => 'acquiring', 'amountKop' => 120000],
+        ['direction' => 'IN', 'category' => 'erip', 'amountKop' => 30000],
+        ['direction' => 'OUT', 'category' => 'supplier', 'amountKop' => 69350],
+        ['direction' => 'OUT', 'category' => 'salary', 'amountKop' => 90000],
+        ['direction' => 'IN', 'category' => 'acquiring', 'amountKop' => 5000],
+    ]);
+    eq([$r['inKop'], $r['outKop'], $r['netKop']], [155000, 159350, -4350]);
+    eq($r['byIn'], ['acquiring' => 125000, 'erip' => 30000]);
+    eq(array_keys($r['byOut']), ['salary', 'supplier']);
+});
