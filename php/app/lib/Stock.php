@@ -112,6 +112,79 @@ final class Stock
         return [$rows, $rows ? null : 'В блоке нет записей.'];
     }
 
+    // ---------- Сверка с поставщиками (решение владельца 2026-11-16) ----------
+    // Сколько выставили по накладным и сколько оплатили по банку (категория «Поставщики»), по каждому поставщику.
+    // Оплата находится по названию в начале описания: «Аллюрфлор, док. 1611: …» → «Аллюрфлор» = «Аллюр» в накладных.
+
+    // Кому платёж: начало описания до «,» или «:» без «МТБанк, », «Док. 1611:» и т. п.
+    public static function payee(string $desc): string
+    {
+        $d = trim($desc);
+        $d = preg_replace('/^(мтбанк|беларусбанк|белагропромбанк|приорбанк|альфа-?банк|белинвестбанк|бнб|бсб)\s*[,:]\s*/iu', '', $d);
+        $d = preg_replace('/^(док(умент)?\.?\s*№?\s*\d+|п\/п\s*№?\s*\d+)\s*[,:]?\s*/iu', '', $d);
+        $name = trim(preg_split('/[,:;(]/u', $d)[0] ?? '');
+        return mb_substr($name !== '' ? $name : trim($desc), 0, 80);
+    }
+
+    // Ключ поставщика: только буквы, без ООО/ЧУП/«групп»/«флор» и т. п. («ИВИ ФЛОР» = «ИВИ», «АП-Салют групп» = «апсалют»)
+    public static function supplierKey(string $name): string
+    {
+        $words = preg_split('/[^\p{L}\p{N}]+/u', self::norm($name), -1, PREG_SPLIT_NO_EMPTY);
+        $skip = ['ооо', 'одо', 'оао', 'зао', 'чуп', 'уп', 'чтуп', 'ип', 'ао', 'llc', 'группа', 'групп', 'group', 'флор', 'flor', 'компания', 'торговый', 'дом'];
+        $kept = array_values(array_filter($words, fn ($w) => !in_array($w, $skip, true)));
+        return implode('', $kept ?: $words);
+    }
+
+    // Один и тот же поставщик: ключ одного — начало ключа другого («аллюр» и «аллюрфлор»), не короче 3 букв
+    public static function sameSupplier(string $a, string $b): bool
+    {
+        if ($a === '' || $b === '') return false;
+        if ($a === $b) return true;
+        [$short, $long] = mb_strlen($a) <= mb_strlen($b) ? [$a, $b] : [$b, $a];
+        return mb_strlen($short) >= 3 && str_starts_with($long, $short);
+    }
+
+    // $invoices: [{date, supplier, number, kop}], $payments: [{date, desc, kop}] — все, с самого начала.
+    // → [{name, openKop, invKop, paidKop, closeKop, events: [{date, type inv|pay, kop, text, balanceKop}]}]
+    // balance > 0 — мы должны поставщику, < 0 — заплатили больше, чем внесено накладных (аванс или не внесли накладные).
+    public static function reconcile(array $invoices, array $payments, string $from, string $to): array
+    {
+        $groups = [];
+        $find = function (string $name) use (&$groups): string {
+            $key = self::supplierKey($name);
+            foreach ($groups as $k => $g) if (self::sameSupplier($k, $key)) return $k;
+            $groups[$key] = ['name' => trim($name), 'all' => []];
+            return $key;
+        };
+        foreach ($invoices as $i) {
+            $k = $find((string) $i['supplier']);
+            if (empty($groups[$k]['fromInv'])) $groups[$k]['name'] = trim((string) $i['supplier']); // название как в накладных
+            $groups[$k]['fromInv'] = true;
+            $groups[$k]['all'][] = ['date' => $i['date'], 'type' => 'inv', 'kop' => (int) $i['kop'], 'text' => 'Накладная' . (($i['number'] ?? '') !== '' ? ' № ' . $i['number'] : '')];
+        }
+        foreach ($payments as $p) {
+            $k = $find(self::payee((string) $p['desc']));
+            $groups[$k]['all'][] = ['date' => $p['date'], 'type' => 'pay', 'kop' => (int) $p['kop'], 'text' => (string) $p['desc']];
+        }
+        $out = [];
+        foreach ($groups as $g) {
+            usort($g['all'], fn ($x, $y) => [$x['date'], $x['type'] === 'pay'] <=> [$y['date'], $y['type'] === 'pay']);
+            $open = $inv = $paid = 0;
+            $events = [];
+            foreach ($g['all'] as $e) {
+                $sign = $e['type'] === 'inv' ? 1 : -1;
+                if ($e['date'] < $from) { $open += $sign * $e['kop']; continue; }
+                if ($e['date'] > $to) continue;
+                if ($sign > 0) $inv += $e['kop']; else $paid += $e['kop'];
+                $events[] = $e + ['balanceKop' => $open + $inv - $paid];
+            }
+            if (!$events && $open === 0) continue;
+            $out[] = ['name' => $g['name'], 'openKop' => $open, 'invKop' => $inv, 'paidKop' => $paid, 'closeKop' => $open + $inv - $paid, 'events' => $events];
+        }
+        usort($out, fn ($x, $y) => [abs($y['closeKop']), $y['invKop'] + $y['paidKop']] <=> [abs($x['closeKop']), $x['invKop'] + $x['paidKop']]);
+        return $out;
+    }
+
     // Для сравнения названий: регистр, ё/е, лишние пробелы и кавычки не важны
     public static function norm(string $s): string
     {

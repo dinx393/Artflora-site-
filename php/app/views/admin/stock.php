@@ -100,6 +100,8 @@ $bankSeries = [['Пришло', '#4f5a2a', fn ($m) => $m['bank']['IN']], ['Уш�
     <a class="btn btn-pink" href="/admin/stock/money/import" title="Доходы и расходы из банка одним блоком из чата">⧉ Банк из чата</a>
     <a class="btn" href="/admin/stock/purchase">+ Накладная</a>
     <a class="btn" href="/admin/stock/writeoff">− Списание</a>
+    <a class="btn btn-outline" href="/admin/stock/reconcile?<?= e($back) ?>" title="Накладные против оплат по банку: долг или переплата по каждому поставщику">⚖ Сверка с поставщиками</a>
+    <a class="btn btn-outline" href="/admin/stock/claude?<?= e($back) ?>" title="Все цифры за период одним блоком — вставить в чат с Claude">⧉ Для Claude</a>
     <a class="btn btn-outline" href="/admin/stock/export?<?= e($back) ?>">Скачать для Excel</a>
   </div>
 </div>

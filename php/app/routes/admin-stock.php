@@ -523,3 +523,53 @@ Http::post('/admin/stock/item/{id}/merge', function (string $id) {
     $back = Http::str('back');
     Http::redirect('/admin/stock/detail?' . http_build_query(['m' => 'item', 'item' => $to]) . (preg_match('/^[\w=&%.-]*$/', $back) && $back !== '' ? '&' . $back : '') . '&merged=1');
 });
+
+// Сверка с поставщиками: накладные против оплат по банку (категория «Поставщики»), долг или переплата на конец периода.
+// Начальный остаток — всё, что было до начала периода (решение владельца 2026-11-16).
+function stock_reconcile(string $from, string $to): array
+{
+    $inv = Db::all('SELECT p.docDate AS date, p.supplier, p.docNumber AS number, COALESCE(SUM(l.sumKop), p.docTotalKop) AS kop FROM stock_purchases p LEFT JOIN stock_purchase_lines l ON l.purchaseId = p.id WHERE p.docDate <= ? GROUP BY p.id, p.docDate, p.supplier, p.docNumber, p.docTotalKop', [$to]);
+    $pay = Db::all("SELECT entryDate AS date, description AS `desc`, amountKop AS kop FROM money_entries WHERE direction = 'OUT' AND category = 'supplier' AND entryDate <= ?", [$to]);
+    return Stock::reconcile($inv, $pay, $from, $to);
+}
+
+Http::get('/admin/stock/reconcile', function () {
+    Auth::requireAdmin('stock');
+    [$preset, $from, $to] = stock_filter();
+    return admin_page('stock-reconcile', [
+        'title' => 'Сверка с поставщиками — Финансы',
+        'preset' => $preset, 'from' => $from, 'to' => $to,
+        'rows' => stock_reconcile($from, $to),
+    ]);
+});
+
+// «Скопировать для Claude»: все цифры «Финансов» за период одним блоком — вставить в чат для анализа
+Http::get('/admin/stock/claude', function () {
+    Auth::requireAdmin('stock');
+    [$preset, $from, $to, $shop] = stock_filter();
+    $items = [];
+    foreach (Stock::items() as $i) $items[$i['id']] = $i;
+    $name = fn ($id) => $items[(int) $id]['name'] ?? '?';
+    $purchases = [];
+    $rows = Db::all('SELECT p.id, p.docDate, p.supplier, p.docNumber, p.docTotalKop, l.itemId, l.shop, l.qty, l.sumKop FROM stock_purchases p LEFT JOIN stock_purchase_lines l ON l.purchaseId = p.id WHERE p.docDate BETWEEN ? AND ? ORDER BY p.docDate, p.id, l.id', [$from, $to]);
+    foreach ($rows as $r) {
+        $purchases[$r['id']] ??= ['date' => $r['docDate'], 'supplier' => $r['supplier'], 'number' => $r['docNumber'], 'totalKop' => (int) $r['docTotalKop'], 'lines' => []];
+        if ($r['itemId'] !== null) $purchases[$r['id']]['lines'][] = ['item' => $name($r['itemId']), 'kind' => $items[(int) $r['itemId']]['kind'] ?? '', 'shop' => $r['shop'], 'qty' => (float) $r['qty'], 'sumKop' => (int) $r['sumKop']];
+    }
+    $writeoffs = array_map(fn ($w) => ['date' => $w['woDate'], 'shop' => $w['shop'], 'item' => $name($w['itemId']), 'qty' => (float) $w['qty'], 'reason' => $w['reason']], Db::all('SELECT * FROM stock_writeoffs WHERE woDate BETWEEN ? AND ? ORDER BY woDate, id', [$from, $to]));
+    $bank = array_map(fn ($e) => ['date' => $e['entryDate'], 'dir' => $e['direction'], 'cat' => $e['category'], 'shop' => $e['shop'], 'sumKop' => (int) $e['amountKop'], 'desc' => $e['description']], Db::all('SELECT * FROM money_entries WHERE entryDate BETWEEN ? AND ? ORDER BY entryDate, id', [$from, $to]));
+    $report = Stock::load($from, $to, null);
+    $data = [
+        'artflora' => 'finance', 'from' => $from, 'to' => $to, 'money' => 'копейки',
+        'shops' => array_column(stock_shops(), 'name', 'code'),
+        'total' => $report['total'], 'byShop' => $report['shops'],
+        'reconcile' => array_map(fn ($r) => array_diff_key($r, ['events' => 0]), stock_reconcile($from, $to)),
+        'purchases' => array_values($purchases), 'writeoffs' => $writeoffs, 'bank' => $bank,
+    ];
+    return admin_page('stock-claude', [
+        'title' => 'Скопировать для Claude — Финансы',
+        'preset' => $preset, 'from' => $from, 'to' => $to,
+        'text' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        'counts' => [count($purchases), count($writeoffs), count($bank)],
+    ]);
+});
