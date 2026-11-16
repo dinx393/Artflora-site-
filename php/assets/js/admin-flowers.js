@@ -238,8 +238,7 @@
     h += '<button type="button" class="btn"' + on("click", function () {
       // новый цветок — сразу вверху списка, чтобы не листать; поле названия получает фокус
       var key = "new-" + Date.now();
-      state.rows.unshift({ key: key, name: "", kind: "FLOWER", unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, inFilter: false, onlyShop: "", substitutes: [], isNew: true });
-      if (state.filter === "GREEN") state.filter = "all";
+      state.rows.unshift({ key: key, name: "", kind: state.filter === "all" ? "FLOWER" : state.filter, unit: "STEM", priceText: "0,00", prevPriceKop: null, inStock: true, inFilter: false, onlyShop: "", substitutes: [], isNew: true });
       state.query = "";
       ui.render();
       var input = document.querySelector('[data-k="name-' + key + '"]');
@@ -247,7 +246,7 @@
     }) + ">+ Добавить цветок</button></div>";
 
     h += '<div class="tabs">';
-    [["all", "Все"], ["FLOWER", "Цветы"], ["GREEN", "Зелень"]].forEach(function (t) {
+    [["all", "Все"], ["FLOWER", "Цветы"], ["GREEN", "Зелень"], ["DECOR", "Декор"]].forEach(function (t) {
       h += '<button type="button" class="chip ' + (state.filter === t[0] ? "on" : "") + '"' + on("click", function () { state.filter = t[0]; ui.render(); }) + ">" + t[1] + "</button>";
     });
     h += "</div>";
@@ -291,7 +290,7 @@
       h += '<td><input class="input" style="padding: 8px 10px; font-weight: 700" data-k="name-' + esc(k) + '" value="' + esc(r.name) + '" placeholder="Название"' +
         on("input", function (e) { patch(k, { name: e.target.value }); }) + ">";
       h += '<div class="row small muted" style="gap: 6px; margin-top: 4px">' + (r.isNew ? '<span class="pill" title="Добавлен на этой неделе: стоит вверху списка, потом уйдёт в конец">новый</span> ' : "") + '<select style="border: 0; background: none"' + on("change", function (e) { patch(k, { kind: e.target.value }); }) + ">" +
-        '<option value="FLOWER"' + U.attr("selected", r.kind === "FLOWER") + ">Цветы</option><option value=\"GREEN\"" + U.attr("selected", r.kind === "GREEN") + ">Зелень</option></select> · " +
+        '<option value="FLOWER"' + U.attr("selected", r.kind === "FLOWER") + ">Цветы</option><option value=\"GREEN\"" + U.attr("selected", r.kind === "GREEN") + ">Зелень</option><option value=\"DECOR\"" + U.attr("selected", r.kind === "DECOR") + ">Декор</option></select> · " +
         '<select style="border: 0; background: none"' + on("change", function (e) { patch(k, { unit: e.target.value }); }) + ">" +
         '<option value="STEM"' + U.attr("selected", r.unit === "STEM") + ">за ветку</option><option value=\"PIECE\"" + U.attr("selected", r.unit === "PIECE") + ">за штуку</option></select>" +
         // Цветок остался только в одном филиале (решение владельца 2026-11-15): букеты с ним без замены — только оттуда
@@ -323,7 +322,7 @@
       h += '<td class="small muted">' + (r.prevPriceKop !== null ? U.kopToInput(r.prevPriceKop) : "—") + "</td>";
       h += '<td><button type="button" class="chip ' + (r.inStock ? "on" : "") + '" style="min-height: 34px; padding: 4px 12px"' +
         on("click", function () { patch(k, { inStock: !r.inStock }); }) + ">" + (r.inStock ? "Есть" : "Нет") + "</button></td>";
-      // фильтр «Цветок» в каталоге: только основные цветы, зелени там нет
+      // фильтр «Цветок» в каталоге: только основные цветы, зелени и декора там нет
       h += r.kind === "FLOWER"
         ? '<td><button type="button" class="chip ' + (r.inFilter ? "on" : "") + '" style="min-height: 34px; padding: 4px 12px" title="Показывать в фильтре «Цветок» в каталоге"' +
           on("click", function () { patch(k, { inFilter: !r.inFilter }); }) + ">" + (r.inFilter ? "Да" : "Нет") + "</button></td>"

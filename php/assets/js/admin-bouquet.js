@@ -354,12 +354,12 @@
     var hasRoses = b.sizes.some(function (s) {
       return s.items.some(function (i) { var f = byId[i.flowerId]; return f && f.name.toLowerCase().indexOf("роза") >= 0; });
     });
-    // Монобукет — один вид цветов во всех размерах, зелень не считается (как Catalog::isMono на сервере)
+    // Монобукет — один вид цветов во всех размерах, зелень и декор не считаются (как Catalog::isMono на сервере)
     var monoKinds = {};
     b.sizes.forEach(function (s) {
       s.items.forEach(function (i) {
         var f = byId[i.flowerId];
-        if (f && f.kind !== "GREEN") monoKinds[f.name.trim().toLowerCase().split(/[\s,]+/)[0]] = true;
+        if (f && f.kind === "FLOWER") monoKinds[f.name.trim().toLowerCase().split(/[\s,]+/)[0]] = true;
       });
     });
     var isMono = Object.keys(monoKinds).length === 1;
@@ -443,7 +443,7 @@
         var qk = code + "-" + i.flowerId;
         var qt = state.qtyText[qk];
         if (qt === undefined || parseFloat(qt.replace(",", ".")) !== i.qty) qt = U.qtyText(i.qty);
-        h += "<tr><td><b>" + esc(f ? f.name : "?") + '</b><div class="small muted">' + (f && f.kind === "GREEN" ? "Зелень" : "Цветы") +
+        h += "<tr><td><b>" + esc(f ? f.name : "?") + '</b><div class="small muted">' + (f && f.kind === "GREEN" ? "Зелень" : f && f.kind === "DECOR" ? "Декор" : "Цветы") +
           (f && !f.inStock ? (rep ? " · нет, 🔁 заменим на: " + esc(rep.name.toLowerCase()) : " · нет в наличии, замены нет") : "") + "</div></td>";
         h += '<td><div class="qty"><button type="button"' + on("click", function () { setQty(i.flowerId, i.qty > 1 ? i.qty - 1 : 0.5); }) + ">−</button>" +
           '<input class="num" style="width: 52px; border: 0; text-align: center" data-k="qty-' + qk + '" value="' + esc(qt) + '" inputmode="decimal"' +
@@ -539,7 +539,7 @@
     h += '<span class="small muted">Если цветок закончится, чем его можно заменить именно в этом букете. Можно несколько, первая в наличии и пойдёт в букет. ' +
       "Без замены: цветка нет — букет скрывается с сайта. Главный цветок (например, в монобукете) оставьте без замены.</span>";
     if (!list.length) return h + '<span class="small muted">Сначала добавьте цветы в состав.</span></div>';
-    var mains = list.filter(function (f) { return f.kind !== "GREEN"; });
+    var mains = list.filter(function (f) { return f.kind === "FLOWER"; });
     list.forEach(function (f) {
       var ids = swapsOf(f.id);
       var rep = replacement(f);

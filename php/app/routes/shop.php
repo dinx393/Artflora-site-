@@ -152,7 +152,7 @@ Http::get('/bouquet/{slug}', function (string $slug) {
 Http::get('/single', fn () => View::page('shop/single', [
     'title' => 'Цветы поштучно в Минске',
     'description' => 'Розы, хризантемы, эустома и другие цветы поштучно: соберём букет из выбранных цветов и доставим по Минску. Цены за штуку на сайте.',
-    'flowers' => Db::all("SELECT id, name, unit, priceKop FROM flowers WHERE inStock = 1 ORDER BY kind = 'GREEN', sortOrder, name"),
+    'flowers' => Db::all("SELECT id, name, unit, priceKop FROM flowers WHERE inStock = 1 ORDER BY kind, sortOrder, name"),
     'shop' => Settings::get('shop'),
 ]));
 

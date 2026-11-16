@@ -65,4 +65,5 @@ test('1,5 ветки эвкалипта: цена округляется до к
     eq(Pricing::sizePriceKop(['packagingKop' => 0, 'items' => [['qty' => 1.5, 'flower' => $euc]]]), 500);
     eq(Pricing::compositionText([['qty' => 1.5, 'flower' => $euc]]), 'Эвкалипт × 1,5');
 });
+test('цветков в размере (декор не считаем)', fn () => eq(Pricing::flowerCount([['qty' => 3, 'flower' => ['kind' => 'FLOWER']], ['qty' => 4, 'flower' => ['kind' => 'DECOR']]]), 3));
 test('цветков в размере (зелень не считаем)', fn () => eq(Pricing::flowerCount([['qty' => 5, 'flower' => ['kind' => 'FLOWER']], ['qty' => 2, 'flower' => ['kind' => 'GREEN']]]), 5));

@@ -186,11 +186,11 @@ final class Pricing
         return array_values($out);
     }
 
-    // Сколько всего цветков в размере, для подписи «11 цветков» (зелень не считаем).
+    // Сколько всего цветков в размере, для подписи «11 цветков» (зелень и декор не считаем).
     public static function flowerCount(array $items): int
     {
         $n = 0;
-        foreach ($items as $i) if (($i['flower']['kind'] ?? '') !== 'GREEN') $n += $i['qty'];
+        foreach ($items as $i) if (($i['flower']['kind'] ?? 'FLOWER') === 'FLOWER') $n += $i['qty'];
         return (int) round($n);
     }
 }

@@ -273,13 +273,13 @@ final class Catalog
         return in_array($code, $codes, true) ? $code : '';
     }
 
-    // Монобукет — во всех размерах один вид цветов (зелень не считается). Вид = первое слово названия:
+    // Монобукет — во всех размерах один вид цветов (зелень и декор не считаются). Вид = первое слово названия:
     // «Роза Кения» и «Роза кустовая» — обе розы. Такие букеты сами попадают в раздел «Монобукеты».
     public static function isMono(array $b): bool
     {
         $kinds = [];
         foreach ($b['sizes'] as $s) foreach ($s['items'] as $i) {
-            if (($i['flower']['kind'] ?? 'FLOWER') === 'GREEN') continue;
+            if (($i['flower']['kind'] ?? 'FLOWER') !== 'FLOWER') continue; // зелень и декор
             $kinds[mb_strtolower(preg_split('/[\s,]+/u', trim($i['flower']['name']))[0])] = true;
         }
         return count($kinds) === 1;

@@ -90,6 +90,7 @@ test('монобукеты: один вид цветов (зелень не сч
     $it = fn (string $name, string $kind = 'FLOWER') => ['qty' => 5, 'flower' => ['name' => $name, 'kind' => $kind]];
     $b = fn (array ...$sizes) => ['sizes' => array_map(fn ($items) => ['items' => $items], $sizes)];
     ok(Catalog::isMono($b([$it('Роза Кения'), $it('Эвкалипт', 'GREEN')], [$it('Роза Эквадор')])), 'розы разных сортов + зелень');
+    ok(Catalog::isMono($b([$it('Роза Кения'), $it('Хлопок', 'DECOR')])), 'розы + декор');
     ok(!Catalog::isMono($b([$it('Роза Кения'), $it('Эустома')])), 'сборный');
     ok(!Catalog::isMono($b([$it('Роза')], [$it('Тюльпан')])), 'в другом размере другой цветок');
     ok(!Catalog::isMono($b([$it('Эвкалипт', 'GREEN')])), 'только зелень');

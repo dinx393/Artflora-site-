@@ -589,7 +589,7 @@ Http::post('/admin/flowers/save', function () {
     foreach ($rows as $r) {
         $name = is_array($r) && is_string($r['name'] ?? null) ? trim($r['name']) : '';
         $subs = $r['substitutes'] ?? [];
-        if ($name === '' || mb_strlen($name) > 80 || !in_array($r['kind'] ?? '', ['FLOWER', 'GREEN'], true)
+        if ($name === '' || mb_strlen($name) > 80 || !in_array($r['kind'] ?? '', ['FLOWER', 'GREEN', 'DECOR'], true)
             || !in_array($r['unit'] ?? '', ['STEM', 'PIECE'], true) || !admin_is_int($r['priceKop'] ?? null, 0, 1_000_000)
             || !is_bool($r['inStock'] ?? null) || !is_bool($r['inFilter'] ?? true) || !(($r['id'] ?? null) === null || admin_is_int($r['id']))
             || !is_array($subs) || count($subs) > 20 || array_filter($subs, fn ($s) => !is_int($s)) || !admin_shop_code($r['onlyShop'] ?? '')) admin_fail($bad);
