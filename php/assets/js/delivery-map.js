@@ -159,6 +159,10 @@
       var c = cfg.mkadCenter;
       Z.zonesLayer(L, map, cfg).addTo(dyn);
       L.circle([c.lat, c.lng], { radius: cfg.mkadRadiusKm * 1000, color: "#7E1F3C", weight: 1.5, dashArray: "6 6", fill: false, interactive: false }).addTo(dyn);
+      var boundary = Z.deliveryBoundary(cfg);
+      if (boundary.length) L.polygon(boundary.map(function (p) { return [p.lat, p.lng]; }), {
+        color: "#7E1F3C", weight: 2, opacity: 0.7, dashArray: "8 6", fill: false, interactive: false,
+      }).addTo(dyn);
       cfg.areas.forEach(function (a) {
         if (a.points.length < 3) return;
         L.polygon(a.points.map(function (p) { return [p.lat, p.lng]; }), {
@@ -207,7 +211,7 @@
       map.on("click", function (e) {
         if (pickMode) return pickPoint(e.latlng);
         var q = Z.quote({ lat: e.latlng.lat, lng: e.latlng.lng }, 0, cfg);
-        var noFree = !q.area && !q.outside && cfg.zones[q.zone - 1].noFree;
+        var noFree = q.ok && !q.area && !q.outside && cfg.zones[q.zone - 1].noFree;
         var html = !q.ok ? "<b>Сюда не возим</b><br>Напишите нам, может быть, договоримся." :
           '<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor, cfg.shopOrder && cfg.shopOrder.farOutsideColor)) + '"></span><b>Возим сюда · ' + esc(byn(q.priceKop)) + "</b><br>" +
           esc(q.area ? q.area.name : q.outside ? (q.farSide ? "за МКАД, со стороны другого филиала" : "за МКАД") : "по Минску") +

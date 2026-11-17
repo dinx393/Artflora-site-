@@ -858,7 +858,7 @@ Http::post('/admin/delivery/save', function () {
 
     $center = admin_latlng($d['mkadCenter'] ?? null);
     $num = fn ($k, $min, $max) => admin_is_num($d[$k] ?? null) && $d[$k] >= $min && $d[$k] <= $max;
-    if (!$center || !$num('mkadRadiusKm', 0.001, 50) || !admin_is_int($d['outsideMkadKop'] ?? null, 0) || !admin_is_int($d['freeFromKop'] ?? null, 0)
+    if (!$center || !$num('mkadRadiusKm', 0.001, 50) || !admin_is_int($d['outsideMkadKop'] ?? null, 0) || !is_bool($d['limitToDeliveryAreas'] ?? null) || !admin_is_int($d['freeFromKop'] ?? null, 0)
         || !$num('pickupDiscountPct', 0, 50) || (isset($d['outsideColor']) && !admin_hex($d['outsideColor']))) $bad('доставка');
 
     $districts = [];
@@ -875,6 +875,7 @@ Http::post('/admin/delivery/save', function () {
     $cfg = [
         'shops' => $shops, 'zones' => $zones, 'areas' => $areas, 'mkadCenter' => $center, 'mkadRadiusKm' => $d['mkadRadiusKm'],
         'outsideMkadKop' => $d['outsideMkadKop'], 'freeFromKop' => $d['freeFromKop'], 'pickupDiscountPct' => $d['pickupDiscountPct'],
+        'limitToDeliveryAreas' => $d['limitToDeliveryAreas'],
     ];
     if (isset($d['outsideColor'])) $cfg['outsideColor'] = $d['outsideColor'];
     try {

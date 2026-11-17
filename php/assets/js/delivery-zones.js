@@ -3,6 +3,7 @@
 (function () {
   var ZONE_COLORS = ["#4f8ef7", "#f5892b", "#2fb36d", "#2cc6e8", "#ef5d6c", "#f2b705", "#8f6ed5", "#d45fb4", "#7f8c3a", "#5c6bc0"];
   var OUTSIDE_COLOR = "#a98be8";
+  var boundaryCache = new WeakMap();
   function zoneColor(zone, own) {
     return own || ZONE_COLORS[(zone - 1) % ZONE_COLORS.length];
   }
@@ -36,6 +37,43 @@
     var h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.pow(Math.sin(dLng / 2), 2);
     return 2 * 6371 * Math.asin(Math.sqrt(h));
   }
+  function deliveryBoundary(cfg) {
+    if (boundaryCache.has(cfg)) return boundaryCache.get(cfg);
+    if (!cfg.limitToDeliveryAreas) {
+      boundaryCache.set(cfg, []);
+      return [];
+    }
+    var points = [];
+    (cfg.areas || []).forEach(function (a) {
+      if (!a.noDelivery && a.points.length >= 3) points = points.concat(a.points);
+    });
+    if (!points.length) {
+      boundaryCache.set(cfg, []);
+      return [];
+    }
+    var c = cfg.mkadCenter;
+    for (var i = 0; i < 36; i++) {
+      var angle = (i * 10 * Math.PI) / 180;
+      points.push({
+        lat: c.lat + (cfg.mkadRadiusKm / 111) * Math.cos(angle),
+        lng: c.lng + (cfg.mkadRadiusKm / (111 * Math.cos((c.lat * Math.PI) / 180))) * Math.sin(angle),
+      });
+    }
+    points.sort(function (a, b) { return a.lng - b.lng || a.lat - b.lat; });
+    function cross(o, a, b) { return (a.lng - o.lng) * (b.lat - o.lat) - (a.lat - o.lat) * (b.lng - o.lng); }
+    function half(list) {
+      var out = [];
+      list.forEach(function (p) {
+        while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop();
+        out.push(p);
+      });
+      out.pop();
+      return out;
+    }
+    var boundary = half(points).concat(half(points.slice().reverse()));
+    boundaryCache.set(cfg, boundary);
+    return boundary;
+  }
   function quote(point, subtotalKop, cfg) {
     var km = Infinity;
     cfg.shops.forEach(function (s) { km = Math.min(km, distanceKm(point, s.location)); });
@@ -50,6 +88,8 @@
       return { ok: true, km: Math.round(km * 10) / 10, zone: 0, outsideMkadKm: 0, priceKop: area.priceKop + (areaFar ? area.farExtraKop : 0), area: tag };
     }
     var outside = Math.max(0, Math.ceil(distanceKm(point, cfg.mkadCenter) - cfg.mkadRadiusKm));
+    var boundary = deliveryBoundary(cfg);
+    if (outside > 0 && boundary.length && !insidePolygon(point, boundary)) return { ok: false, km: Math.round(km * 10) / 10 };
     var last = cfg.zones.length - 1;
     var zi = cfg.zones.findIndex(function (z) { return km <= z.maxKm; });
     if (zi === -1 || outside > 0) zi = last;
@@ -93,6 +133,6 @@
 
   window.DeliveryZones = {
     ZONE_COLORS: ZONE_COLORS, OUTSIDE_COLOR: OUTSIDE_COLOR, zoneColor: zoneColor, nextColor: nextColor, quoteColor: quoteColor,
-    insidePolygon: insidePolygon, distanceKm: distanceKm, quote: quote, rgba: rgba, zonesLayer: zonesLayer,
+    insidePolygon: insidePolygon, distanceKm: distanceKm, deliveryBoundary: deliveryBoundary, quote: quote, rgba: rgba, zonesLayer: zonesLayer,
   };
 })();

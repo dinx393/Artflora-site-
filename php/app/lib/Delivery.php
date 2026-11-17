@@ -11,7 +11,8 @@
 //
 // Настройки — массив как Defaults::DELIVERY: shops, zones, mkadCenter, mkadRadiusKm, outsideMkadKop,
 // freeFromKop, pickupDiscountPct, outsideColor?, areas?.
-// Предела «до N км за МКАД» нет (владелец, 2026-10-25): куда не возим, задают участки «не возим» на карте. Точка — ['lat' => .., 'lng' => ..].
+// Если limitToDeliveryAreas включён и есть платные участки, их внешний контур ограничивает доставку:
+// за ним не возим. Точка — ['lat' => .., 'lng' => ..].
 final class Delivery
 {
     // Точка внутри многоугольника (луч вправо, считаем пересечения). Для участков в пару десятков км плоской карты хватает.
@@ -36,6 +37,43 @@ final class Delivery
             if (count($a['points']) >= 3 && self::insidePolygon($point, $a['points'])) return $a;
         }
         return null;
+    }
+
+    // Внешняя оболочка МКАД и всех платных участков. Она закрывает бесконечную неявную зону «За МКАД»:
+    // нарисованные участки остаются доступными, промежуток от МКАД до них — тоже, а дальше оболочки не возим.
+    public static function deliveryBoundary(array $cfg): array
+    {
+        if (empty($cfg['limitToDeliveryAreas'])) return [];
+        $points = [];
+        foreach ($cfg['areas'] ?? [] as $a) {
+            if (!empty($a['noDelivery']) || count($a['points'] ?? []) < 3) continue;
+            foreach ($a['points'] as $p) $points[] = $p;
+        }
+        if (!$points) return [];
+
+        // Добавляем МКАД, чтобы внутри внешнего контура всегда оставались Минск и ближайшее «за МКАД».
+        $c = $cfg['mkadCenter'];
+        $radius = (float) $cfg['mkadRadiusKm'];
+        for ($i = 0; $i < 36; $i++) {
+            $angle = deg2rad($i * 10);
+            $points[] = [
+                'lat' => $c['lat'] + ($radius / 111.0) * cos($angle),
+                'lng' => $c['lng'] + ($radius / (111.0 * cos(deg2rad($c['lat'])))) * sin($angle),
+            ];
+        }
+
+        usort($points, fn ($a, $b) => ($a['lng'] <=> $b['lng']) ?: ($a['lat'] <=> $b['lat']));
+        $cross = fn ($o, $a, $b) => ($a['lng'] - $o['lng']) * ($b['lat'] - $o['lat']) - ($a['lat'] - $o['lat']) * ($b['lng'] - $o['lng']);
+        $half = function (array $list) use ($cross): array {
+            $out = [];
+            foreach ($list as $p) {
+                while (count($out) >= 2 && $cross($out[count($out) - 2], $out[count($out) - 1], $p) <= 0) array_pop($out);
+                $out[] = $p;
+            }
+            array_pop($out);
+            return $out;
+        };
+        return array_merge($half($points), $half(array_reverse($points)));
     }
 
     public static function distanceKm(array $a, array $b): float
@@ -80,6 +118,10 @@ final class Delivery
         }
         $fromCenter = self::distanceKm($point, $cfg['mkadCenter']);
         $outside = (int) max(0, ceil($fromCenter - $cfg['mkadRadiusKm']));
+        $boundary = self::deliveryBoundary($cfg);
+        if ($outside > 0 && $boundary && !self::insidePolygon($point, $boundary)) {
+            return ['ok' => false, 'reason' => 'too-far', 'km' => round($km, 1)];
+        }
         $last = count($cfg['zones']) - 1;
 
         $zoneIdx = -1;

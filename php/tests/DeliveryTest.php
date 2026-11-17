@@ -6,11 +6,28 @@ $at = function (string $name): array {
 };
 $cfg = Defaults::DELIVERY;
 
-test('предела «до N км за МКАД» нет: дальность задают участки на карте', function () use ($cfg) {
+test('без платных участков зона «за МКАД» не ограничена, участок «не возим» важнее', function () use ($cfg) {
     eq(Delivery::quote(['lat' => 54.2279, 'lng' => 28.505], 13000, $cfg)['priceKop'], $cfg['outsideMkadKop']); // Борисов
     $no = ['areas' => [['name' => 'Борисов', 'color' => '#999999', 'priceKop' => 0, 'noDelivery' => true,
         'points' => [['lat' => 54.1, 'lng' => 28.4], ['lat' => 54.3, 'lng' => 28.4], ['lat' => 54.3, 'lng' => 28.6], ['lat' => 54.1, 'lng' => 28.6]]]]] + $cfg;
     eq(Delivery::quote(['lat' => 54.2279, 'lng' => 28.505], 13000, $no)['ok'], false, 'участок «не возим»');
+});
+test('платные участки задают внешний предел доставки', function () use ($cfg) {
+    $cfg['areas'] = [[
+        'name' => 'Удалённая доставка', 'color' => '#f2b705', 'priceKop' => 6000, 'noDelivery' => false,
+        'points' => [
+            ['lat' => 53.80, 'lng' => 27.10], ['lat' => 54.00, 'lng' => 27.10],
+            ['lat' => 54.00, 'lng' => 27.20], ['lat' => 53.80, 'lng' => 27.20],
+        ],
+    ]];
+    $between = Delivery::quote(['lat' => 53.90, 'lng' => 27.30], 13000, $cfg);
+    ok($between['ok'] && !empty($between['outside']), 'между МКАД и дальним участком возим по цене «за МКАД»');
+    eq(Delivery::quote(['lat' => 53.90, 'lng' => 26.90], 13000, $cfg)['ok'], false, 'за внешним контуром не возим');
+    eq(Delivery::quote(['lat' => 53.90, 'lng' => 27.15], 13000, $cfg)['priceKop'], 6000, 'сам дальний участок доступен');
+    eq(Delivery::quote(['lat' => 53.90, 'lng' => 26.90], 13000, Delivery::fromShop($cfg, 'uruchye'))['ok'], false, 'ограничение действует и для букета из одного филиала');
+
+    $cfg['limitToDeliveryAreas'] = false;
+    eq(Delivery::quote(['lat' => 53.90, 'lng' => 26.90], 13000, $cfg)['priceKop'], $cfg['outsideMkadKop'], 'ограничение можно выключить в админке');
 });
 test('рядом с магазином — первая зона, 6 BYN', function () use ($at, $cfg) {
     $q = Delivery::quote($at('Уручье'), 13000, $cfg);

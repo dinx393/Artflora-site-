@@ -12,6 +12,7 @@ $zmapDelivery = fn (array $delivery) => [
         'shops' => array_map(fn ($s) => ['name' => $s['name'], 'location' => $s['location']], $delivery['shops']),
         'zones' => $delivery['zones'], 'mkadCenter' => $delivery['mkadCenter'], 'mkadRadiusKm' => $delivery['mkadRadiusKm'],
         'outsideMkadKop' => $delivery['outsideMkadKop'],
+        'limitToDeliveryAreas' => !empty($delivery['limitToDeliveryAreas']),
         'freeFromKop' => $delivery['freeFromKop'], 'outsideColor' => $delivery['outsideColor'] ?? null,
         // Карта «доставка из филиала» (Delivery::fromShop): другие филиалы и правила для них
         'otherShops' => $delivery['otherShops'] ?? null, 'shopOrder' => $delivery['shopOrder'] ?? null,
@@ -27,6 +28,7 @@ $zmap = [
 $pick = !empty($pick);
 $heading ??= null;
 $open = $pick || $heading || !empty($open);
+$hasDeliveryBoundary = !empty($delivery['limitToDeliveryAreas']) && array_filter($delivery['areas'] ?? [], fn ($a) => empty($a['noDelivery']) && count($a['points'] ?? []) >= 3);
 ?>
 <div class="zmap<?= $pick ? ' zmap-pick-mode' : '' ?>" data-zmap<?= $pick ? ' data-zmap-pick-mode' : '' ?>>
   <script type="application/json" data-zmap-config><?= json_encode($zmap, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
@@ -44,8 +46,11 @@ $open = $pick || $heading || !empty($open);
       <?php if ($pick): ?>
         <div class="zmap-places" data-zmap-places></div>
         <p class="small muted" data-zmap-tip hidden></p>
+        <?php if ($hasDeliveryBoundary): ?>
+          <p class="small muted">За внешним пунктиром доставка не оформляется.</p>
+        <?php endif ?>
       <?php else: ?>
-        <span class="small muted">Нажмите на карту, и покажем, возим ли туда и сколько стоит.</span>
+        <span class="small muted">Нажмите на карту, и покажем, возим ли туда и сколько стоит.<?= $hasDeliveryBoundary ? ' За внешним пунктиром не возим.' : '' ?></span>
         <div class="zmap-legend<?= $heading ? ' zmap-legend-big' : '' ?>" data-zmap-legend></div>
       <?php endif ?>
     </div>

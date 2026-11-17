@@ -156,6 +156,7 @@
       on("input", function (e) { changeCfg(withCfg({ outsideColor: e.target.value })); }) + '><b>За МКАД</b><span class="small muted">цена</span>' +
       '<span class="row" style="gap: 4px">' + money(on, "outside-price", cfg.outsideMkadKop, function (k) { changeCfg(withCfg({ outsideMkadKop: k })); }) + " BYN</span></div>";
     h += '<span class="small muted">За МКАД — одна цена, бесплатная доставка от суммы там не действует.</span>';
+    h += '<label class="check small" style="gap: 8px"><input type="checkbox"' + U.attr("checked", cfg.limitToDeliveryAreas) + on("change", function (e) { changeCfg(withCfg({ limitToDeliveryAreas: e.target.checked })); }) + '> за внешним контуром платных участков не возим</label>';
     h += '<div class="stack" style="gap: 8px; margin-top: 6px">';
     h += '<label class="sum-row" style="justify-content: flex-start; gap: 12px"><span>Бесплатно от, BYN</span>' + money(on, "free-from", cfg.freeFromKop, function (k) { changeCfg(withCfg({ freeFromKop: k })); }) + "</label>";
     h += '<label class="sum-row" style="justify-content: flex-start; gap: 12px"><span>Скидка за самовывоз, %</span>' + num(on, "pickup", cfg.pickupDiscountPct, 1, 70, function (n) { changeCfg(withCfg({ pickupDiscountPct: n })); }) + "</label>";
@@ -326,6 +327,10 @@
     g.clearLayers();
     // МКАД — пунктиром
     L.circle([cfg.mkadCenter.lat, cfg.mkadCenter.lng], { radius: cfg.mkadRadiusKm * 1000, color: "#7E1F3C", weight: 1.5, dashArray: "6 6", fill: false, interactive: false }).addTo(g);
+    var boundary = Z.deliveryBoundary(cfg);
+    if (boundary.length) L.polygon(boundary.map(function (p) { return [p.lat, p.lng]; }), {
+      color: "#7E1F3C", weight: 2, opacity: 0.7, dashArray: "8 6", fill: false, interactive: false,
+    }).addTo(g);
 
     // Свои участки: контур, подпись; у выбранного — точки, которые можно тянуть
     cfg.areas.forEach(function (a, i) {
