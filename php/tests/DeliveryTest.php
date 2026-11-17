@@ -106,20 +106,22 @@ test('выбор в корзине: кнопка зоны, участок, то�
 });
 
 group('доставка из филиала');
-test('из Уручья: рядом как на сайте, Малиновка — 25 BYN, при бесплатной — доплата 7', function () use ($at, $cfg) {
+test('из Уручья: рядом как на сайте, Малиновка — 25 BYN без бесплатной доставки', function () use ($at, $cfg) {
     $cfg['zones'] = [['maxKm' => 3, 'priceKop' => 700], ['maxKm' => 6, 'priceKop' => 1300], ['maxKm' => 10, 'priceKop' => 1600], ['maxKm' => 999, 'priceKop' => 1800]];
     $u = Delivery::fromShop($cfg, 'uruchye');
     eq(Delivery::quote($at('Восток'), 13000, $u)['priceKop'], 1300);
     eq(Delivery::quote($at('Шабаны'), 13000, $u)['priceKop'], 1800, '10–13 км — последняя зона сайта');
     eq(Delivery::quote($at('Малиновка'), 13000, $u)['priceKop'], 2500);
-    eq(Delivery::quote($at('Малиновка'), 20000, $u)['priceKop'], 700);
+    eq(Delivery::quote($at('Малиновка'), 20000, $u)['priceKop'], 2500);
     eq(Delivery::quote($at('Восток'), 20000, $u)['priceKop'], 0);
     eq(Delivery::quote($at('Малиновка'), 13000, $cfg)['priceKop'], 700, 'корзина считает как раньше');
 });
 test('за МКАД со стороны другого филиала — на 10 BYN дороже', function () use ($at, $cfg) {
     $m = Delivery::fromShop($cfg, 'malinovka');
     eq(Delivery::quote($at('Колодищи'), 13000, $m)['priceKop'], $cfg['outsideMkadKop'] + 1000);
+    eq(Delivery::quote($at('Колодищи'), 30000, $m)['priceKop'], $cfg['outsideMkadKop'] + 1000, 'порог бесплатной доставки не влияет');
     eq(Delivery::quote($at('Ратомка'), 13000, $m)['priceKop'], $cfg['outsideMkadKop']);
+    eq(Delivery::quote($at('Ратомка'), 30000, $m)['priceKop'], $cfg['outsideMkadKop'], 'порог бесплатной доставки не влияет');
     eq(Delivery::quote($at('Колодищи'), 13000, $cfg)['priceKop'], $cfg['outsideMkadKop']);
 });
 test('участки делятся по сторонам: со стороны другого филиала Смолевичи и Фаниполь — 85', function () use ($cfg) {
@@ -136,6 +138,10 @@ test('участки делятся по сторонам: со стороны �
     eq(Delivery::quote($smol, 13000, $m)['priceKop'], 8500);
     eq(Delivery::quote($fan, 13000, $m)['priceKop'], 6000);
     eq(Delivery::quote($fan, 13000, $u)['priceKop'], 8500);
+    eq(Delivery::quote($smol, 30000, $u)['priceKop'], 5000, 'Смолевичи платны выше порога');
+    eq(Delivery::quote($smol, 30000, $m)['priceKop'], 8500, 'Смолевичи от другого филиала платны выше порога');
+    eq(Delivery::quote($fan, 30000, $m)['priceKop'], 6000, 'удалённая зона платна выше порога');
+    eq(Delivery::quote($fan, 30000, $u)['priceKop'], 8500, 'удалённая зона от другого филиала платна выше порога');
     eq(Delivery::quote($fan, 13000, $cfg)['priceKop'], 6000, 'корзина — как раньше');
     eq($u['areas'][0]['sides'], [true, false]);
     eq($u['areas'][1]['sides'], [false, true]);

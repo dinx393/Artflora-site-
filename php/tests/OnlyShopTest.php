@@ -45,20 +45,47 @@ test('подписи: «Только из Уручья», «Только из М
 group('доставка только из одного филиала');
 $cfg = Defaults::DELIVERY;
 $u = Delivery::fromShop($cfg, 'uruchye');
+$m = Delivery::fromShop($cfg, 'malinovka');
 test('Малиновка от Уручья — дальняя зона (25 BYN), а не 6 BYN от ближайшего', function () use ($cfg, $u) {
     $p = ['lat' => 53.851, 'lng' => 27.476];
     eq(Delivery::quote($p, 0, $cfg)['priceKop'], 600);
     eq(Delivery::quote($p, 0, $u)['priceKop'], 2500);
 });
-test('кнопка дальней зоны при бесплатной доставке — доплата разницы', function () use ($u) {
+test('кнопка дальней зоны платная полностью независимо от суммы корзины', function () use ($u) {
     $last = count($u['zones']);
     eq(Delivery::quotePlace(['type' => 'zone', 'zone' => $last], 0, $u)['priceKop'], 2500);
-    eq(Delivery::quotePlace(['type' => 'zone', 'zone' => $last], 30000, $u)['priceKop'], 700);
+    eq(Delivery::quotePlace(['type' => 'zone', 'zone' => $last], 30000, $u)['priceKop'], 2500);
     eq(Delivery::quotePlace(['type' => 'zone', 'zone' => 1], 30000, $u)['priceKop'], 0);
 });
-test('кнопка «За МКАД со стороны другого филиала» дороже', function () use ($u) {
-    eq(Delivery::quotePlace(['type' => 'outside'], 0, $u)['priceKop'], 2500);
-    eq(Delivery::quotePlace(['type' => 'outside', 'far' => true], 0, $u)['priceKop'], 3500);
+test('точка на карте в дальней зоне тоже платная полностью независимо от суммы корзины', function () use ($u) {
+    $p = ['lat' => 53.851, 'lng' => 27.476];
+    eq(Delivery::quote($p, 0, $u)['priceKop'], 2500);
+    $q = Delivery::quote($p, 30000, $u);
+    eq($q['priceKop'], 2500);
+    eq($q['freeEligible'], false);
+    eq($q['leftToFreeKop'], 0);
+});
+test('оба филиала: своя ближняя зона бесплатна, противоположный конец города платный', function () use ($u, $m) {
+    $uruchye = ['lat' => 53.9452, 'lng' => 27.6882];
+    $malinovka = ['lat' => 53.851, 'lng' => 27.476];
+    eq(Delivery::quote($uruchye, 30000, $u)['priceKop'], 0, 'букет из Уручья — рядом с Уручьем бесплатно');
+    eq(Delivery::quote($malinovka, 30000, $u)['priceKop'], 2500, 'букет из Уручья — Малиновка платно');
+    eq(Delivery::quote($malinovka, 30000, $m)['priceKop'], 0, 'букет из Малиновки — рядом с Малиновкой бесплатно');
+    eq(Delivery::quote($uruchye, 30000, $m)['priceKop'], 2500, 'букет из Малиновки — Уручье платно');
+});
+test('оба филиала: кнопка дальней красной зоны платная', function () use ($u, $m) {
+    foreach ([$u, $m] as $delivery) {
+        $last = count($delivery['zones']);
+        eq(Delivery::quotePlace(['type' => 'zone', 'zone' => $last], 30000, $delivery)['priceKop'], 2500);
+    }
+});
+test('оба филиала: зоны за МКАД после красной платные при любой сумме', function () use ($u, $m) {
+    foreach ([$u, $m] as $delivery) {
+        eq(Delivery::quotePlace(['type' => 'outside'], 0, $delivery)['priceKop'], 2500);
+        eq(Delivery::quotePlace(['type' => 'outside'], 30000, $delivery)['priceKop'], 2500);
+        eq(Delivery::quotePlace(['type' => 'outside', 'far' => true], 0, $delivery)['priceKop'], 3500);
+        eq(Delivery::quotePlace(['type' => 'outside', 'far' => true], 30000, $delivery)['priceKop'], 3500);
+    }
 });
 test('браузер может прислать far только как true', function () {
     eq(Checkout::parsePlace(['type' => 'outside', 'far' => true]), ['type' => 'outside', 'far' => true]);

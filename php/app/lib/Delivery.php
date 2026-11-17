@@ -89,12 +89,16 @@ final class Delivery
         if ($zoneIdx === -1 || $outside > 0) $zoneIdx = $last;
 
         if ($outside > 0) return self::outsideQuote($shop, round($km, 1), $outside, $cfg, self::farSide($point, $km, $cfg));
-        $baseKop = (int) $cfg['zones'][$zoneIdx]['priceKop'];
-        $free = $subtotalKop >= $cfg['freeFromKop'];
+        $zone = $cfg['zones'][$zoneIdx];
+        $baseKop = (int) $zone['priceKop'];
+        // Для букета «только из одного филиала» дальний конец города — отдельная красная зона.
+        // Бесплатная доставка от суммы там не действует: заказ везут через весь город именно из нужного филиала.
+        $freeEligible = empty($zone['noFree']);
+        $free = $freeEligible && $subtotalKop >= $cfg['freeFromKop'];
         return [
             'ok' => true, 'shop' => $shop, 'km' => round($km, 1), 'zone' => $zoneIdx + 1, 'outsideMkadKm' => 0,
-            'baseKop' => $baseKop, 'priceKop' => $free ? (int) ($cfg['zones'][$zoneIdx]['freeKop'] ?? 0) : $baseKop, 'free' => $free,
-            'leftToFreeKop' => max(0, $cfg['freeFromKop'] - $subtotalKop),
+            'baseKop' => $baseKop, 'priceKop' => $free ? 0 : $baseKop, 'free' => $free, 'freeEligible' => $freeEligible,
+            'leftToFreeKop' => $freeEligible ? max(0, $cfg['freeFromKop'] - $subtotalKop) : 0,
         ];
     }
 
@@ -119,8 +123,8 @@ final class Delivery
 
     // Доставка, оформленная прямо в филиале $code (решение владельца 2026-10-27). Только для пояснения на странице
     // «Доставка и оплата»: корзина по-прежнему считает от ближайшего магазина. Букет едет из этого филиала, поэтому
-    // до shopOrder.farFromKm — зоны сайта, дальше по Минску — farKop (при бесплатной доставке — только разница с последней
-    // зоной сайта); со стороны другого филиала за МКАД дороже на outsideExtraKop, на своих участках — цена areaFarKop.
+    // до shopOrder.farFromKm — зоны сайта, дальше по Минску — farKop без бесплатной доставки от суммы;
+    // со стороны другого филиала за МКАД дороже на outsideExtraKop, на своих участках — цена areaFarKop.
     // Ответ — настройки доставки, как для quote(): с одним магазином и otherShops. У участков — farExtraKop и
     // sides: [near, far] — есть ли у участка часть со стороны этого / другого филиала (для подписей под картой).
     public static function fromShop(array $cfg, string $code): array
@@ -137,7 +141,7 @@ final class Delivery
         $last = array_pop($zones);
         $zones = array_values(array_filter($zones, fn ($z) => $z['maxKm'] < $o['farFromKm']));
         $zones[] = ['maxKm' => $o['farFromKm']] + $last;
-        $zones[] = ['maxKm' => 999, 'priceKop' => $o['farKop'], 'color' => $o['farColor'], 'freeKop' => max(0, $o['farKop'] - (int) $last['priceKop'])];
+        $zones[] = ['maxKm' => 999, 'priceKop' => $o['farKop'], 'color' => $o['farColor'], 'noFree' => true];
         $areas = [];
         foreach ($cfg['areas'] ?? [] as $a) {
             if (empty($a['noDelivery']) && count($a['points']) >= 3) {
@@ -167,11 +171,12 @@ final class Delivery
                 $z = $cfg['zones'][$place['zone'] - 1] ?? null;
                 if (!$z) return $far;
                 $base = (int) $z['priceKop'];
-                $free = $subtotalKop >= $cfg['freeFromKop'];
+                $freeEligible = empty($z['noFree']);
+                $free = $freeEligible && $subtotalKop >= $cfg['freeFromKop'];
                 return [
                     'ok' => true, 'shop' => null, 'km' => null, 'zone' => $place['zone'], 'outsideMkadKm' => 0,
-                    // карта «из филиала»: в дальней зоне при бесплатной доставке платят разницу (freeKop)
-                    'baseKop' => $base, 'priceKop' => $free ? (int) ($z['freeKop'] ?? 0) : $base, 'free' => $free, 'leftToFreeKop' => max(0, $cfg['freeFromKop'] - $subtotalKop),
+                    'baseKop' => $base, 'priceKop' => $free ? 0 : $base, 'free' => $free, 'freeEligible' => $freeEligible,
+                    'leftToFreeKop' => $freeEligible ? max(0, $cfg['freeFromKop'] - $subtotalKop) : 0,
                 ];
             case 'outside':
                 // far — кнопка «За МКАД со стороны другого филиала» на карте «из филиала»

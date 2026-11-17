@@ -11,7 +11,7 @@ $last = count($d['zones']) - 1;
     </div>
     <div class="info-card">
       <h3>Бесплатно от <?= e(Money::format($d['freeFromKop'])) ?></h3>
-      <p>Если заказ (букеты и допы к ним) стоит <?= e(Money::format($d['freeFromKop'])) ?> или больше, доставка по Минску <span class="gift">в подарок</span>.</p>
+      <p>Если заказ (букеты и допы к ним) стоит <?= e(Money::format($d['freeFromKop'])) ?> или больше, доставка по Минску <span class="gift">в подарок</span>. Исключение — дальняя красная зона, когда выбранный букет есть только в одном филиале.</p>
     </div>
     <div class="info-card">
       <h3>Самовывоз −<?= e($d['pickupDiscountPct']) ?>%</h3>
@@ -54,7 +54,6 @@ $last = count($d['zones']) - 1;
 
   <?php // Пояснение для заказов, оформленных прямо в филиале (решение владельца 2026-10-27): на корзину не влияет
   $so = $d['shopOrder'];
-  $lastZone = $d['zones'][count($d['zones']) - 1];
   $inShop = ['uruchye' => 'в Уручье', 'malinovka' => 'в Малиновке'];
   ?>
   <div class="panel stack" style="gap: 14px" id="v-magazine">
@@ -62,7 +61,7 @@ $last = count($d['zones']) - 1;
     <p>Цены выше считаются от ближайшего к получателю магазина. Если вы пришли в один из наших филиалов и просите отвезти букет в другой конец Минска, букет поедет из этого филиала. Путь у курьера получается длиннее, поэтому цена другая:</p>
     <div class="stack" style="gap: 0">
       <div class="sum-row zone-row"><span>До <?= e($so['farFromKm']) ?> км от филиала</span><b class="price" style="font-size: 22px">как на сайте</b></div>
-      <div class="sum-row zone-row"><span>Дальше по Минску<?php if ($so['farKop'] > $lastZone['priceKop']): ?> <span class="muted small">(при заказе от <?= e(Money::format($d['freeFromKop'])) ?> — <?= e(Money::format($so['farKop'] - $lastZone['priceKop'])) ?>)</span><?php endif ?></span><b class="price" style="font-size: 22px"><?= ShopView::byn((int) $so['farKop']) ?></b></div>
+      <div class="sum-row zone-row"><span>Дальше по Минску <span class="muted small">(бесплатная доставка от суммы не действует)</span></span><b class="price" style="font-size: 22px"><?= ShopView::byn((int) $so['farKop']) ?></b></div>
       <div class="sum-row zone-row"><span>За МКАД со стороны другого филиала</span><b class="price" style="font-size: 22px"><?= ShopView::byn((int) ($d['outsideMkadKop'] + $so['outsideExtraKop'])) ?></b></div>
       <?php $far = array_column(array_filter($d['areas'] ?? [], fn ($a) => empty($a['noDelivery']) && count($a['points']) >= 3), 'name');
       if ($far): ?>

@@ -58,8 +58,9 @@
       var farSide = (cfg.otherShops || []).some(function (o) { return distanceKm(point, o) < km; });
       return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: outside, outside: true, farSide: farSide, priceKop: cfg.outsideMkadKop + (farSide ? cfg.shopOrder.outsideExtraKop : 0) };
     }
-    var free = subtotalKop >= cfg.freeFromKop;
-    return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: 0, priceKop: free ? cfg.zones[zi].freeKop || 0 : cfg.zones[zi].priceKop };
+    var freeEligible = !cfg.zones[zi].noFree;
+    var free = freeEligible && subtotalKop >= cfg.freeFromKop;
+    return { ok: true, km: Math.round(km * 10) / 10, zone: zi + 1, outsideMkadKm: 0, priceKop: free ? 0 : cfg.zones[zi].priceKop, freeEligible: freeEligible };
   }
 
   function rgba(hex, a) {

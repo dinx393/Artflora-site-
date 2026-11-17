@@ -32,8 +32,8 @@
     // Бесплатно — как Delivery::quotePlace: только зоны по Минску (до МКАД); за МКАД и участки всегда платные.
     function places() {
       var last = cfg.zones.length - 1;
-      var free = subtotalKop >= cfg.freeFromKop;
       var list = cfg.zones.map(function (z, i) {
+        var free = !z.noFree && subtotalKop >= cfg.freeFromKop;
         return { key: "zone:" + (i + 1), place: { type: "zone", zone: i + 1 }, color: Z.zoneColor(i + 1, z.color), title: i === last ? "Дальше, до МКАД" : "До " + z.maxKm + " км от магазина", price: free ? "Бесплатно" : byn(z.priceKop), free: free };
       });
       if (cfg.otherShops) {
@@ -207,11 +207,11 @@
       map.on("click", function (e) {
         if (pickMode) return pickPoint(e.latlng);
         var q = Z.quote({ lat: e.latlng.lat, lng: e.latlng.lng }, 0, cfg);
-        var freeKop = !q.area && !q.outside ? cfg.zones[q.zone - 1].freeKop || 0 : 0;
+        var noFree = !q.area && !q.outside && cfg.zones[q.zone - 1].noFree;
         var html = !q.ok ? "<b>Сюда не возим</b><br>Напишите нам, может быть, договоримся." :
           '<span class="zmap-dot" style="background: ' + esc(Z.quoteColor(q, cfg.zones, cfg.outsideColor, cfg.shopOrder && cfg.shopOrder.farOutsideColor)) + '"></span><b>Возим сюда · ' + esc(byn(q.priceKop)) + "</b><br>" +
           esc(q.area ? q.area.name : q.outside ? (q.farSide ? "за МКАД, со стороны другого филиала" : "за МКАД") : "по Минску") +
-          (!q.area && !q.outside ? "<br>При заказе от " + esc(byn(cfg.freeFromKop)) + (freeKop ? " — " + esc(byn(freeKop)) : " — бесплатно") : "");
+          (!q.area && !q.outside ? (noFree ? "<br>Бесплатная доставка от суммы здесь не действует" : "<br>При заказе от " + esc(byn(cfg.freeFromKop)) + " — бесплатно") : "");
         L.popup({ closeButton: false, className: "zmap-popup" }).setLatLng(e.latlng).setContent(html).openOn(map);
       });
     }

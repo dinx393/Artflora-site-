@@ -337,7 +337,7 @@
       var names = lines.filter(function (l) { return l.onlyShop; }).map(function (l) { return "«" + l.name + "»"; });
       setText("[data-co-only-label]", t.priced.onlyShopFrom);
       setText("[data-co-only-text]", (names.length > 1 ? "Букеты " + names.join(", ") + " собираем" : "Букет " + names[0] + " собираем") +
-        " только в магазине " + shopName(only) + ", поэтому весь заказ поедет оттуда: доставка считается от этого магазина (в дальние районы дороже), самовывоз — тоже оттуда.");
+        " только в магазине " + shopName(only) + ", поэтому весь заказ поедет оттуда: доставка считается от этого магазина. В дальнюю красную зону бесплатная доставка от суммы не действует; самовывоз — тоже только оттуда.");
     } else if (conflict.length) {
       setText("[data-co-only-label]", "Букеты из разных магазинов");
       setText("[data-co-only-text]", "В корзине букеты, которые собираем в разных магазинах (" + conflict.join(", ").toLowerCase() + "). Оформите их отдельными заказами или позвоните нам.");
@@ -353,7 +353,7 @@
       setText("[data-co-zone-shop]", d.shopName ? "из магазина " + d.shopName : st.variant ? "из магазина " + shopName(st.variant) : "из ближайшего магазина");
       var left = Math.max(0, cfg.freeFromKop - t.priced.bouquetsKop - t.priced.addonsKop);
       var free = $("[data-co-zone-free]");
-      free.hidden = !(left > 0 && !d.area && !d.outside);
+      free.hidden = !(left > 0 && !d.area && !d.outside && d.freeEligible !== false);
       free.textContent = "До бесплатной доставки " + formatByn(left);
     }
     var places = root.querySelector("[data-zmap-places]");
