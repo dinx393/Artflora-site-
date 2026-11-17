@@ -67,11 +67,7 @@ $cards = [
         </div>
       </div>
       <div class="hero-actions">
-        <?php if ($sec): ?>
-          <a href="/catalog/<?= e($sec['slug']) ?>" class="btn btn-pink"><?= $phase === 'winter' ? 'Зимние букеты' : 'Выбрать к празднику' ?></a>
-        <?php else: ?>
-          <a href="/catalog" class="btn btn-pink">Выбрать букет</a>
-        <?php endif ?>
+        <a href="/catalog" class="btn btn-pink">Выбрать букет</a>
         <a href="<?= e($shop['telegram']) ?>" class="btn btn-on-cherry" target="_blank" rel="noopener">Написать в Telegram</a>
       </div>
     </div>
@@ -86,11 +82,11 @@ $cards = [
         </span>
       </a>
     <?php endif ?>
-    <a href="<?= $sec ? '/catalog/' . e($sec['slug']) : '/catalog' ?>" class="hero-tile <?= $ofDay ? '' : 'hero-tile-full' ?>">
+    <a href="/catalog" class="hero-tile <?= $ofDay ? '' : 'hero-tile-full' ?>">
       <span class="hero-tile-photos n<?= count($tilePhotos) ?>">
         <?php foreach ($tilePhotos as $i => [$p, $pos]): ?><img src="<?= e($p) ?>" alt="<?= $i === 0 ? 'Букеты Artflora.by' : '' ?>"<?= ShopView::pos($pos) ?>><?php endforeach ?>
       </span>
-      <span class="hero-chip"><?= $sec ? ($phase === 'winter' ? 'Все зимние букеты ↗' : 'Вся новогодняя коллекция ↗') : 'Весь каталог ↗' ?></span>
+      <span class="hero-chip">Весь каталог ↗</span>
     </a>
   </div>
 </section>

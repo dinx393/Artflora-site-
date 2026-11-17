@@ -16,12 +16,15 @@ Http::get('/', function () {
     $fresh = array_filter($all, fn ($b) => $b['hideAt'] !== null);
     usort($fresh, fn ($a, $b) => strcmp($b['hideAt'], $a['hideAt']));
     $ofDay = $find(fn ($b) => $b['slug'] === $shop['dayBouquet']) ?? ($fresh[0] ?? null) ?? ($all[0] ?? null);
-    // Сезонный раздел «Зимнее настроение» / «Новый год» (Season): включён — первым блоком после первого экрана,
-    // и плитка «Весь каталог» в первом экране ведёт в него, с его фото.
+    // Сезонный раздел «Зимнее настроение» / «Новый год» (Season) остаётся первым блоком после первого экрана.
+    // Первый экран при этом ведёт в основной каталог и показывает обычные букеты: сезон не должен прятать ассортимент.
     $season = Season::sectionOn() ? Catalog::filter($all, ['section' => Season::SECTION]) : [];
     // Плитка «Весь каталог» — три разных букета рядом: вертикальные фото так обрезаются меньше, чем одно на всю ширину.
+    // Пока сезон включён, специально не берём сюда зимнюю коллекцию: она уже показана отдельным блоком ниже.
+    $tileCatalog = array_values(array_filter($all, fn ($b) => !in_array(Season::SECTION, $b['sections'] ?? [], true)));
+    if (!$tileCatalog) $tileCatalog = $all;
     $tile = [];
-    foreach ($season ?: $all as $b) {
+    foreach ($tileCatalog as $b) {
         $p = $b['photos'][0] ?? null;
         if ($ofDay && $b['id'] === $ofDay['id']) continue;
         if (!$p || ($ofDay && $p === $ofDay['photos'][0]) || in_array($p, array_column($tile, 0), true)) continue;
