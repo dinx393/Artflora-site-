@@ -29,3 +29,12 @@ test('раздел хранится как обычный, его можно о�
     eq(isset(Occasions::SECTIONS[Season::SECTION]), true);
     eq(isset(Seo::LANDINGS[Season::WINTER_SLUG], Seo::LANDINGS[Season::NEWYEAR_SLUG]), true);
 });
+test('у зимнего раздела свой порядок, неизвестные и новые букеты не теряются', function () {
+    $list = [['id' => 1], ['id' => 2], ['id' => 3]];
+    eq(array_column(Season::orderBouquets($list, [3, 999, 1]), 'id'), [3, 1, 2]);
+});
+test('при выключенном сезоне зимняя отметка заморожена, остальные разделы редактируются', function () {
+    eq(Season::protectSections(['roses'], ['newyear', 'mono'], false), ['roses', 'newyear']);
+    eq(Season::protectSections(['roses', 'newyear'], ['mono'], false), ['roses']);
+    eq(Season::protectSections(['roses', 'newyear'], [], true), ['roses', 'newyear']);
+});

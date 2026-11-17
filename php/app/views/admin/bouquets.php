@@ -167,10 +167,10 @@ $filterFlowers = $sortNames($filterFlowers);
       <option value="hide">Скрыть с сайта (выключить)</option>
     </optgroup>
     <optgroup label="Добавить в раздел каталога">
-      <?php foreach (Occasions::SECTIONS as $k => $label): ?><option value="section-add:<?= e($k) ?>">+ <?= e($label) ?></option><?php endforeach ?>
+      <?php foreach (Occasions::SECTIONS as $k => $label): if ($k === Season::SECTION && !Season::editingOn()) continue; ?><option value="section-add:<?= e($k) ?>">+ <?= e($label) ?></option><?php endforeach ?>
     </optgroup>
     <optgroup label="Убрать из раздела">
-      <?php foreach (Occasions::SECTIONS as $k => $label): ?><option value="section-remove:<?= e($k) ?>">− <?= e($label) ?></option><?php endforeach ?>
+      <?php foreach (Occasions::SECTIONS as $k => $label): if ($k === Season::SECTION && !Season::editingOn()) continue; ?><option value="section-remove:<?= e($k) ?>">− <?= e($label) ?></option><?php endforeach ?>
     </optgroup>
     <optgroup label="Добавить повод">
       <?php foreach (Occasions::LIST as $o): if ($o['slug'] === 'exotic') continue; ?><option value="occasion-add:<?= e($o['slug']) ?>">+ <?= e($o['label']) ?><?= $o['slug'] === 'wedding' ? ' (будут только в «Свадебных»)' : '' ?></option><?php endforeach ?>

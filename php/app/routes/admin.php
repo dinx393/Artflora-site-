@@ -239,6 +239,9 @@ Http::post('/admin/bouquets/bulk', function () {
     $in = admin_body();
     $ids = $in['ids'] ?? null;
     $action = $in['action'] ?? null;
+    if (!Season::editingOn() && in_array($action, ['section-add:' . Season::SECTION, 'section-remove:' . Season::SECTION], true)) {
+        admin_fail('Зимняя тема выключена: сезонный список сохранён и временно закрыт для изменений');
+    }
     if (!is_array($ids) || !$ids || !array_is_list($ids) || count($ids) > 2000 || array_filter($ids, fn ($x) => !admin_is_int($x))
         || !is_string($action) || Catalog::bulkPatch(['enabled' => 0, 'isPinned' => 0, 'isHit' => 0, 'sections' => '[]', 'occasions' => '[]'], $action) === null) {
         admin_fail('Ошибка, обновите страницу');
@@ -356,7 +359,8 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
         'editor' => [
             'stamp' => admin_stamp('bouquet', (int) $b['id']),
             'initial' => $initial, 'flowers' => $flowers, 'collections' => $collections, 'siblings' => $siblings,
-            'colors' => Settings::get('colors'), 'occasions' => Occasions::LIST, 'formats' => Occasions::FORMATS, 'sections' => Occasions::SECTIONS,
+            'colors' => Settings::get('colors'), 'occasions' => Occasions::LIST, 'formats' => Occasions::FORMATS,
+            'sections' => array_filter(Occasions::SECTIONS, fn ($_label, $key) => $key !== Season::SECTION || Season::editingOn(), ARRAY_FILTER_USE_BOTH),
             'shops' => admin_shops(),
             'timerHours' => Catalog::TIMER_HOURS, 'now' => date('Y-m-d H:i:s'), 'today' => ($_GET['today'] ?? '') === '1',
         ],
@@ -389,6 +393,8 @@ Http::post('/admin/bouquets/save', function () {
     if (!in_array($timer, ['keep', 'off'], true) && !admin_is_int($timer, 1, 24 * 30)) admin_fail('Таймер: от 1 часа до 30 дней');
     $sections = $in['sections'] ?? [];
     if (!is_array($sections) || !array_is_list($sections) || array_diff($sections, Occasions::STORED_SECTIONS)) admin_fail($bad);
+    $storedSections = Db::fromJson((string) Db::value('SELECT sections FROM bouquets WHERE id = ?', [$id])) ?: [];
+    $sections = Season::protectSections($sections, $storedSections);
     foreach ($lists as $k => [$max, $len]) {
         $l = $in[$k] ?? null;
         if (!is_array($l) || !array_is_list($l) || count($l) > $max) admin_fail($bad);
@@ -488,11 +494,13 @@ Http::post('/admin/bouquets/{id}/clone', function (string $id) {
         }
         $collection = Db::value('SELECT name FROM collections WHERE id = ?', [$collectionId]);
         $name = Occasions::FORMATS[$format]['label'] . ' «' . str_replace(['«', '»'], '', $collection) . '»';
+        $copySections = Db::fromJson($src['sections'] ?? '[]') ?: [];
+        if (!Season::editingOn()) $copySections = array_values(array_diff($copySections, [Season::SECTION]));
         $copyId = Db::insert('bouquets', [
             'name' => $name, 'slug' => admin_free_slug('bouquets', admin_slugify($name)), 'description' => $src['description'],
             'format' => $format, 'packagingKop' => $src['packagingKop'], 'sortOrder' => (int) Db::value('SELECT COALESCE(MAX(sortOrder), 0) + 1 FROM bouquets'),
             'enabled' => 0, // включите, когда добавите фото
-            'colors' => '[]', 'occasions' => $src['occasions'], 'sections' => $src['sections'] ?? '[]', 'photos' => '[]', 'collectionId' => $collectionId,
+            'colors' => '[]', 'occasions' => $src['occasions'], 'sections' => Db::json($copySections), 'photos' => '[]', 'collectionId' => $collectionId,
         ]);
         foreach (Db::all('SELECT * FROM bouquet_sizes WHERE bouquetId = ?', [$src['id']]) as $s) {
             $sizeId = Db::insert('bouquet_sizes', ['bouquetId' => $copyId, 'code' => $s['code'], 'note' => $s['note'], 'packagingKop' => $s['packagingKop']]);
@@ -1042,9 +1050,20 @@ Http::post('/admin/settings/test-email', function () {
 // Новый год (решение владельца 2026-11-12): новогоднее оформление и сезонный раздел включаются здесь, основной дизайн не меняется (Season)
 Http::get('/admin/season', function () {
     Auth::requireAdmin('settings');
-    $marked = array_values(array_filter(Db::all("SELECT id, name, enabled, sections FROM bouquets ORDER BY sortOrder, name"),
+    $marked = array_values(array_filter(Db::all("SELECT id, name, enabled, sections, photos, photoFocus FROM bouquets ORDER BY sortOrder, name"),
         fn ($b) => in_array(Season::SECTION, Db::fromJson($b['sections']) ?: [], true)));
-    return admin_page('season', ['title' => 'Новый год', 'cfg' => Season::cfg(), 'marked' => $marked, 'saved' => isset($_GET['saved'])]);
+    $marked = array_map(function ($b) {
+        $photos = Db::fromJson($b['photos']) ?: [];
+        $photo = $photos[0] ?? null;
+        return $b + [
+            'photo' => $photo ? Uploads::url($photo) : Catalog::PLACEHOLDER,
+            'photoPos' => $photo ? Catalog::focusCss(Catalog::focusMap($b['photoFocus'] ?? null), $photo) : null,
+        ];
+    }, Season::orderBouquets($marked));
+    return admin_page('season', [
+        'title' => 'Новый год', 'cfg' => Season::cfg(), 'marked' => $marked, 'saved' => isset($_GET['saved']),
+        'scripts' => admin_scripts('admin-season.js'),
+    ]);
 });
 
 Http::post('/admin/season', function () {
@@ -1058,4 +1077,26 @@ Http::post('/admin/season', function () {
     foreach (['hours31', 'hours1'] as $k) $cfg[$k] = mb_substr(trim((string) ($_POST[$k] ?? '')), 0, 40);
     Settings::save('season', $cfg);
     Http::redirect('/admin/season?saved=1');
+});
+
+Http::post('/admin/season/order', function () {
+    Auth::requireAdmin('settings');
+    Auth::checkCsrf();
+    if (!Season::editingOn()) admin_fail('Зимняя тема выключена: порядок сохранён и временно закрыт для изменений');
+    $ids = admin_body()['ids'] ?? null;
+    if (!is_array($ids) || !array_is_list($ids) || count($ids) > 2000
+        || array_filter($ids, fn ($id) => !admin_is_int($id)) || count(array_unique($ids)) !== count($ids)) {
+        admin_fail('Ошибка, обновите страницу');
+    }
+    $marked = array_map('intval', array_column(array_filter(Db::all('SELECT id, sections FROM bouquets ORDER BY id'),
+        fn ($b) => in_array(Season::SECTION, Db::fromJson($b['sections']) ?: [], true)), 'id'));
+    $clean = array_map('intval', $ids);
+    sort($marked);
+    $check = $clean;
+    sort($check);
+    if ($marked !== $check) admin_fail('Список букетов изменился, обновите страницу (F5)');
+    $cfg = Season::cfg();
+    $cfg['bouquetOrder'] = $clean;
+    Settings::save('season', $cfg);
+    Http::json(['ok' => true]);
 });

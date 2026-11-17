@@ -28,7 +28,7 @@ final class Defaults
 
     // Новогодний сезон (Season, админка → «Новый год»): оформление, раздел «Зимнее настроение» / «Новый год»,
     // с какого дня (ММ-ДД) раздел называется «Новый год», часы работы 31 декабря и 1 января (пусто — не пишем).
-    public const SEASON = ['theme' => false, 'snow' => true, 'garland' => true, 'section' => false, 'switchDate' => '12-25', 'hours31' => '', 'hours1' => ''];
+    public const SEASON = ['theme' => false, 'snow' => true, 'garland' => true, 'section' => false, 'switchDate' => '12-25', 'hours31' => '', 'hours1' => '', 'bouquetOrder' => []];
 
     // Координаты приблизительные, их можно уточнить в настройках.
     public const DELIVERY = [

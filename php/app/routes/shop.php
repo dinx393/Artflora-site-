@@ -18,7 +18,7 @@ Http::get('/', function () {
     $ofDay = $find(fn ($b) => $b['slug'] === $shop['dayBouquet']) ?? ($fresh[0] ?? null) ?? ($all[0] ?? null);
     // Сезонный раздел «Зимнее настроение» / «Новый год» (Season) остаётся первым блоком после первого экрана.
     // Первый экран при этом ведёт в основной каталог и показывает обычные букеты: сезон не должен прятать ассортимент.
-    $season = Season::sectionOn() ? Catalog::filter($all, ['section' => Season::SECTION]) : [];
+    $season = Season::sectionOn() ? Season::orderBouquets(Catalog::filter($all, ['section' => Season::SECTION])) : [];
     // Плитка «Весь каталог» — три разных букета рядом: вертикальные фото так обрезаются меньше, чем одно на всю ширину.
     // Пока сезон включён, специально не берём сюда зимнюю коллекцию: она уже показана отдельным блоком ниже.
     $tileCatalog = array_values(array_filter($all, fn ($b) => !in_array(Season::SECTION, $b['sections'] ?? [], true)));
@@ -72,6 +72,7 @@ function catalog_page(?string $landingSlug = null): string
         'collection' => $sp['collection'] ?? null,
         'q' => $sp['q'] ?? null,
     ]);
+    if (($sp['section'] ?? '') === Season::SECTION) $list = Season::orderBouquets($list);
     $sort = $sp['sort'] ?? '';
     if ($sort === 'cheap') usort($list, fn ($a, $b) => $a['priceKop'] <=> $b['priceKop']);
     if ($sort === 'expensive') usort($list, fn ($a, $b) => $b['priceKop'] <=> $a['priceKop']);

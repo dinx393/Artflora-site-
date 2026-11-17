@@ -43,6 +43,36 @@ final class Season
         return !empty(self::cfg()['section']);
     }
 
+    // Когда оформление выключено, сезонный раздел «заморожен»: состав и порядок хранятся,
+    // но администраторы не могут случайно изменить список.
+    public static function editingOn(): bool
+    {
+        return self::themeOn();
+    }
+
+    public static function orderBouquets(array $bouquets, ?array $order = null): array
+    {
+        $order ??= (array) (self::cfg()['bouquetOrder'] ?? []);
+        $byId = [];
+        foreach ($bouquets as $b) $byId[(int) $b['id']] = $b;
+        $out = [];
+        foreach ($order as $id) {
+            $id = (int) $id;
+            if (!isset($byId[$id])) continue;
+            $out[] = $byId[$id];
+            unset($byId[$id]);
+        }
+        return array_merge($out, array_values($byId));
+    }
+
+    public static function protectSections(array $incoming, array $stored, ?bool $editing = null): array
+    {
+        if ($editing ?? self::editingOn()) return array_values(array_unique($incoming));
+        $incoming = array_values(array_diff($incoming, [self::SECTION]));
+        if (in_array(self::SECTION, $stored, true)) $incoming[] = self::SECTION;
+        return array_values(array_unique($incoming));
+    }
+
     // Сегодня по минскому времени
     public static function today(): DateTimeImmutable
     {
