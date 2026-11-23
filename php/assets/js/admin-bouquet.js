@@ -336,7 +336,7 @@
     h += '<div class="stack" style="gap: 8px"><span class="label">Видео в карточке каталога <span class="small muted">(необязательно)</span></span>';
     if (b.video) {
       h += '<div class="row" style="align-items: center; gap: 12px"><video src="' + esc(b.video) + '" muted loop playsinline preload="metadata" style="width: 120px; height: 120px; object-fit: cover; border-radius: 12px" autoplay></video>' +
-        '<button type="button" class="btn btn-outline"' + on("click", function () { set({ video: "" }); }) + ">Убрать видео</button></div>';
+        '<button type="button" class="btn btn-outline"' + on("click", function () { set({ video: "" }); }) + ">Убрать видео</button></div>";
     }
     h += '<label class="btn btn-outline" style="align-self: flex-start; cursor: pointer">' + (state.uploadingVideo ? "Сжимаем видео…" : (b.video ? "Заменить видео" : "+ Добавить видео")) +
       '<input type="file" accept="video/mp4,video/webm,.mp4,.webm" hidden' + on_("disabled", state.uploadingVideo) + on("change", function (e) { onVideoUpload(e.target.files); }) + "></label>";
