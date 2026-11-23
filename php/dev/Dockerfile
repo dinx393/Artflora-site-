@@ -7,5 +7,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends libjpeg62-turbo
     && rm -rf /var/lib/apt/lists/* \
     && a2enmod rewrite expires
 RUN sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
-# Фото до 15 МБ, как на хостинге (там это делает php/.user.ini, а Apache с mod_php его не читает)
-RUN printf "upload_max_filesize=20M\npost_max_size=24M\n" > /usr/local/etc/php/conf.d/uploads.ini
+# Фото до 15 МБ и исходное видео до 50 МБ, как на хостинге (.user.ini там читает PHP-FPM).
+RUN printf "upload_max_filesize=55M\npost_max_size=60M\n" > /usr/local/etc/php/conf.d/uploads.ini
