@@ -19,7 +19,7 @@ function admin_stamp(string $what, int $id = 0): string
     $setting = fn (string $k) => Db::value('SELECT value FROM settings WHERE `key` = ?', [$k]);
     $data = match ($what) {
         'bouquet' => [
-            Db::one('SELECT name, slug, description, format, enabled, hideAt, isHit, isExclusive, onlyShop, photoSize, packagingKop, colors, occasions, sections, photos, photoFocus, collectionId FROM bouquets WHERE id = ?', [$id]),
+            Db::one('SELECT name, slug, description, format, enabled, hideAt, isHit, isExclusive, onlyShop, photoSize, packagingKop, colors, occasions, sections, photos, video, photoFocus, collectionId FROM bouquets WHERE id = ?', [$id]),
             Db::all('SELECT s.code, s.note, s.packagingKop, s.widthCm, s.heightCm, i.flowerId, i.qty FROM bouquet_sizes s LEFT JOIN bouquet_items i ON i.sizeId = s.id WHERE s.bouquetId = ? ORDER BY s.code, i.id', [$id]),
             Db::all('SELECT flowerId, substituteId, sortOrder FROM bouquet_swaps WHERE bouquetId = ? ORDER BY flowerId, sortOrder, substituteId', [$id]),
         ],
@@ -326,7 +326,7 @@ Http::get('/admin/bouquets/{id}', function (string $id) {
         'enabled' => (bool) $b['enabled'], 'isHit' => (bool) $b['isHit'], 'isExclusive' => (bool) $b['isExclusive'], 'photoSize' => $b['photoSize'],
         'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'], 'onlyShop' => (string) $b['onlyShop'],
         'isDayBouquet' => Settings::get('shop')['dayBouquet'] === $b['slug'],
-        'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']), 'photos' => Db::fromJson($b['photos']),
+        'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']), 'photos' => Db::fromJson($b['photos']), 'video' => (string) ($b['video'] ?? ''),
         'photoFocus' => (object) Catalog::focusMap($b['photoFocus'] ?? null),
         'sections' => Db::fromJson($b['sections']),
         'hideAt' => $b['hideAt'], 'hiddenByTimerAt' => $b['hiddenByTimerAt'], 'timer' => 'keep',
@@ -400,6 +400,8 @@ Http::post('/admin/bouquets/save', function () {
         if (!is_array($l) || !array_is_list($l) || count($l) > $max) admin_fail($bad);
         foreach ($l as $v) if (admin_str($v, $len) === null) admin_fail($bad);
     }
+    $video = $in['video'] ?? '';
+    if (!is_string($video) || strlen($video) > 300 || ($video !== '' && !Uploads::isVideoPath($video))) admin_fail($bad);
     // Кадр фото: {путь: [x, y]} — только для фото этого букета, по центру (50, 50) не храним
     if (!is_array($in['photoFocus'] ?? []) || count($in['photoFocus'] ?? []) > 12) admin_fail($bad);
     $focus = array_filter(Catalog::focusMap($in['photoFocus'] ?? []), fn ($xy, $p) => in_array($p, $in['photos'], true) && $xy !== [50, 50], ARRAY_FILTER_USE_BOTH);
@@ -439,7 +441,7 @@ Http::post('/admin/bouquets/save', function () {
     foreach ($sizes as $s) if ($s['code'] === $photoSize) $photo = $s;
     $oldSlug = Db::value('SELECT slug FROM bouquets WHERE id = ?', [$id]);
     try {
-        Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes, $sections, $timer, $swaps, $focus) {
+        Db::tx(function () use ($in, $id, $name, $slug, $photoSize, $photo, $sizes, $sections, $timer, $swaps, $focus, $video) {
             Db::all('SELECT id FROM bouquets WHERE id = ? FOR UPDATE', [$id]);
             admin_check_stamp($in['stamp'] ?? null, 'bouquet', $id);
             Db::update('bouquets', $id, [
@@ -447,7 +449,7 @@ Http::post('/admin/bouquets/save', function () {
                 'packagingKop' => $photo['packagingKop'], 'enabled' => (int) $in['enabled'], 'isHit' => (int) $in['isHit'],
                 'isExclusive' => (int) $in['isExclusive'], 'isPinned' => (int) ($in['isPinned'] ?? false), 'weddingOnly' => (int) ($in['weddingOnly'] ?? true), 'onlyShop' => $in['onlyShop'] ?? '', 'photoSize' => $photoSize, 'colors' => Db::json($in['colors']),
                 'occasions' => Db::json($in['occasions']), 'sections' => Db::json(array_values(array_unique($sections))),
-                'photos' => Db::json($in['photos']), 'collectionId' => $in['collectionId'],
+                'photos' => Db::json($in['photos']), 'video' => $video, 'collectionId' => $in['collectionId'],
                 'photoFocus' => $focus ? Db::json($focus) : null,
             ]);
             if ($in['enabled']) Db::exec('UPDATE bouquets SET hiddenByTimerAt = NULL WHERE id = ?', [$id]); // включили вручную
@@ -529,6 +531,16 @@ Http::post('/admin/upload', function () {
         admin_fail($len > Uploads::phpLimit() ? 'Фото больше ' . Uploads::mb(Uploads::phpLimit()) . ' — столько разрешает хостинг' : 'Файл не выбран');
     }
     Http::json(Uploads::save($_FILES['file']));
+});
+
+Http::post('/admin/upload-video', function () {
+    Auth::requireAdmin('catalog');
+    Auth::checkCsrf();
+    if (!isset($_FILES['file'])) {
+        $len = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+        admin_fail($len > Uploads::phpLimit() ? 'Видео больше ' . Uploads::mb(Uploads::phpLimit()) . ' — столько разрешает хостинг' : 'Видео не выбрано');
+    }
+    Http::json(Uploads::saveVideo($_FILES['file']));
 });
 
 // ---------- Цветы ----------

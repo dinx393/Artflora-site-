@@ -12,6 +12,8 @@ final class Config
         'telegram_bot_token' => '', 'telegram_chat_id' => '',
         'anthropic_api_key' => '', 'anthropic_model' => '', // распознавание фото накладных и списания (Recognize)
         'upload_dir' => '', // по умолчанию папка uploads рядом с index.php
+        // путь к ffmpeg для сжатия видео в карточках каталога; пусто — команда ffmpeg из PATH сервера
+        'ffmpeg' => 'ffmpeg',
         'backup_dir' => '', // по умолчанию ~/backups/<папка сайта>
         'trusted_proxies' => [], // адреса nginx хостинга, если он не на этом же сервере (обычно не нужно)
     ];

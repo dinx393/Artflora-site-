@@ -21,6 +21,7 @@
   if (!initial.sections) initial.sections = [];
   if (initial.weddingOnly === undefined) initial.weddingOnly = true;
   if (!initial.onlyShop) initial.onlyShop = ""; // «Только из Уручья»: код филиала, "" — из любого
+  if (!initial.video) initial.video = "";
   var shops = data.shops || [];
   function shopLabel(code) {
     return (shops.filter(function (x) { return x.code === code; })[0] || {}).label || "";
@@ -41,6 +42,7 @@
     msg: null,
     pending: false,
     uploading: false,
+    uploadingVideo: false,
     framing: null, // фото, у которого сейчас двигаем кадр
     flowerQuery: "",
     timerText: String(data.timerHours), // часы таймера «собран сегодня» в поле
@@ -223,6 +225,26 @@
     });
   }
 
+  function onVideoUpload(files) {
+    var file = files && files[0];
+    if (!file) return;
+    state.uploadingVideo = true;
+    ui.render();
+    window.ArtfloraAdmin.upload("/admin/upload-video", file).then(
+      function (r) {
+        if (r.ok && r.path) state.b.video = r.path;
+        else state.msg = { ok: false, text: r.error || "Не удалось загрузить видео" };
+        state.uploadingVideo = false;
+        ui.render();
+      },
+      function () {
+        state.uploadingVideo = false;
+        state.msg = { ok: false, text: "Не удалось загрузить видео" };
+        ui.render();
+      }
+    );
+  }
+
   function save() {
     var bad = state.b.sizes.filter(function (s) { return U.parseByn(state.packagingText[s.code]) === null; })[0];
     if (bad) {
@@ -309,6 +331,16 @@
       '<input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden' + on("change", function (e) { onUpload(e.target.files); }) + "></label></div>";
     if (b.photos.length) h += '<p class="small muted" style="margin: -8px 0 0">Букет на сайте обрезан не так? Нажмите на фото (или «✥ кадр») и отметьте, где букет.</p>';
     h += framingHtml(on);
+
+    // В каталоге видео подгружается только рядом с экраном и заменяет фото после готовности; без него остаётся фото.
+    h += '<div class="stack" style="gap: 8px"><span class="label">Видео в карточке каталога <span class="small muted">(необязательно)</span></span>';
+    if (b.video) {
+      h += '<div class="row" style="align-items: center; gap: 12px"><video src="' + esc(b.video) + '" muted loop playsinline preload="metadata" style="width: 120px; height: 120px; object-fit: cover; border-radius: 12px" autoplay></video>' +
+        '<button type="button" class="btn btn-outline"' + on("click", function () { set({ video: "" }); }) + ">Убрать видео</button></div>';
+    }
+    h += '<label class="btn btn-outline" style="align-self: flex-start; cursor: pointer">' + (state.uploadingVideo ? "Сжимаем видео…" : (b.video ? "Заменить видео" : "+ Добавить видео")) +
+      '<input type="file" accept="video/mp4,video/webm,.mp4,.webm" hidden' + on_("disabled", state.uploadingVideo) + on("change", function (e) { onVideoUpload(e.target.files); }) + "></label>";
+    h += '<span class="small muted">MP4 или WebM до 50 МБ. Сервер удалит звук и сохранит облегчённый MP4; покупатель загрузит его только при прокрутке к карточке.</span></div>';
 
     // Поля
     h += '<label class="field"><span>Название</span><input class="input" data-k="name" value="' + esc(b.name) + '"' + on("input", function (e) { set({ name: e.target.value }); }) + "></label>";

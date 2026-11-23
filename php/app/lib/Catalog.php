@@ -176,6 +176,7 @@ final class Catalog
             'isPinned' => (bool) $b['isPinned'], 'weddingOnly' => (bool) $b['weddingOnly'], 'onlyShop' => (string) ($b['onlyShop'] ?? ''),
             'photoSize' => $b['photoSize'], 'colors' => Db::fromJson($b['colors']), 'occasions' => Db::fromJson($b['occasions']),
             'sections' => Db::fromJson($b['sections']), 'photos' => Db::fromJson($b['photos']), 'sortOrder' => (int) $b['sortOrder'],
+            'video' => (string) ($b['video'] ?? ''),
             'photoFocus' => self::focusMap($b['photoFocus'] ?? null),
             'collectionId' => $b['collectionId'] === null ? null : (int) $b['collectionId'],
             'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],
@@ -251,6 +252,7 @@ final class Catalog
             'preorder' => !empty($b['preorder']), // свадебный — по предзаказу
             'colors' => $b['colors'], 'occasions' => $b['occasions'], 'sections' => $sections,
             'photos' => $b['photos'] ? array_map([Uploads::class, 'url'], $b['photos']) : [self::PLACEHOLDER],
+            'video' => !empty($b['video']) && Uploads::isVideoPath($b['video']) ? Uploads::url($b['video']) : '',
             // кадр каждого фото для CSS object-position («50% 30%») или null — по центру
             'photoPos' => $b['photos'] ? array_map(fn ($p) => self::focusCss($b['photoFocus'] ?? [], $p), $b['photos']) : [null],
             'collectionId' => $b['collectionId'], 'collectionSlug' => $b['collectionSlug'], 'collectionName' => $b['collectionName'],

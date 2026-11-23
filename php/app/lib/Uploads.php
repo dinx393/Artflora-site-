@@ -6,6 +6,10 @@ final class Uploads
     public const TYPES = ['image/jpeg' => '.jpg', 'image/png' => '.png', 'image/webp' => '.webp'];
     // 15 МБ (решение владельца 2026-11-15). Фото больше этого админка сама уменьшает в браузере перед отправкой.
     public const MAX_BYTES = 15 * 1024 * 1024;
+    public const VIDEO_TYPES = ['video/mp4', 'video/webm'];
+    // Исходник можно снять телефоном; на витрину сохраняется только пережатая версия до 20 МБ.
+    public const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+    public const MAX_VIDEO_RESULT_BYTES = 20 * 1024 * 1024;
 
     public static function dir(): string
     {
@@ -22,7 +26,13 @@ final class Uploads
 
     public static function safeName(string $name): ?string
     {
-        return preg_match('/^[a-z0-9-]+\.(jpg|png|webp)$/', $name) ? $name : null;
+        return preg_match('/^[a-z0-9-]+\.(jpg|png|webp|mp4)$/', $name) ? $name : null;
+    }
+
+    public static function isVideoPath(string $path): bool
+    {
+        return str_starts_with($path, '/uploads/') && self::safeName(substr($path, 9)) !== null
+            && str_ends_with($path, '.mp4');
     }
 
     // Проверяем сам файл, а не только его тип из браузера: первые байты должны быть настоящей картинкой.
@@ -93,6 +103,57 @@ final class Uploads
         if (!is_dir(self::dir())) mkdir(self::dir(), 0755, true);
         if (@file_put_contents(self::dir() . "/$name", $data) === false) return ['ok' => false, 'error' => 'Не удалось сохранить фото на сервере (папка uploads)'];
         return ['ok' => true, 'path' => "/uploads/$name"];
+    }
+
+    // Видео для карточки: принимаем только MP4/WebM, удаляем звук и сохраняем компактный MP4.
+    // Исходник никогда не становится доступен покупателю, поэтому тяжёлое видео не замедлит каталог.
+    public static function saveVideo(array $file): array
+    {
+        $err = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) {
+            return ['ok' => false, 'error' => 'Видео больше ' . self::mb(min(self::MAX_VIDEO_BYTES, self::phpLimit())) . ' — столько разрешает хостинг'];
+        }
+        if ($err !== UPLOAD_ERR_OK) return ['ok' => false, 'error' => 'Видео не загрузилось'];
+        if ((int) ($file['size'] ?? 0) > self::MAX_VIDEO_BYTES) return ['ok' => false, 'error' => 'Видео больше ' . self::mb(self::MAX_VIDEO_BYTES)];
+        $head = @file_get_contents((string) ($file['tmp_name'] ?? ''), false, null, 0, 32);
+        if (!is_string($head) || !self::looksLikeVideo($head)) return ['ok' => false, 'error' => 'Нужно видео MP4 или WebM'];
+        if (!function_exists('exec')) return ['ok' => false, 'error' => 'На сервере отключён ffmpeg. Попросите хостинг включить ffmpeg для сжатия видео'];
+
+        if (!is_dir(self::dir())) mkdir(self::dir(), 0755, true);
+        $base = date('Ymd') . '-' . bin2hex(random_bytes(6));
+        $source = self::dir() . "/.$base-source";
+        $result = self::dir() . "/.$base-video.mp4";
+        $name = "$base.mp4";
+        try {
+            if (!@move_uploaded_file((string) $file['tmp_name'], $source)) {
+                // move_uploaded_file() не работает в тестах и при нестандартном PHP upload handler.
+                if (!@copy((string) $file['tmp_name'], $source)) return ['ok' => false, 'error' => 'Не удалось подготовить видео к сжатию'];
+            }
+            $ffmpeg = trim((string) Config::get('ffmpeg')) ?: 'ffmpeg';
+            // 720 px по длинной стороне, H.264 для Safari/iPhone, без аудио, faststart — можно начать смотреть сразу.
+            $cmd = escapeshellcmd($ffmpeg) . ' -y -i ' . escapeshellarg($source)
+                . ' -map 0:v:0 -an -vf ' . escapeshellarg('scale=720:720:force_original_aspect_ratio=decrease')
+                . ' -c:v libx264 -preset veryfast -crf 28 -pix_fmt yuv420p -movflags +faststart ' . escapeshellarg($result);
+            $out = [];
+            $code = 1;
+            @exec($cmd . ' 2>&1', $out, $code);
+            $size = is_file($result) ? filesize($result) : 0;
+            if ($code !== 0 || !$size || $size > self::MAX_VIDEO_RESULT_BYTES) {
+                return ['ok' => false, 'error' => 'Не удалось сжать видео. Проверьте, что на хостинге установлен ffmpeg, либо выберите ролик короче'];
+            }
+            $check = (string) @file_get_contents($result, false, null, 0, 32);
+            if (!self::looksLikeVideo($check) || !@rename($result, self::dir() . "/$name")) return ['ok' => false, 'error' => 'Не удалось сохранить сжатое видео'];
+            return ['ok' => true, 'path' => "/uploads/$name", 'size' => $size];
+        } finally {
+            @unlink($source);
+            @unlink($result);
+        }
+    }
+
+    // MP4: первые четыре байта — длина блока, затем ftyp. WebM начинается с EBML-заголовка.
+    public static function looksLikeVideo(string $buf): bool
+    {
+        return substr($buf, 4, 4) === 'ftyp' || str_starts_with($buf, "\x1A\x45\xDF\xA3");
     }
 
     // Фото прямо с iPhone (3024×4032, 2–3 МБ) несут вторую, HDR-картинку («карту яркости»). iPhone 12 и новее

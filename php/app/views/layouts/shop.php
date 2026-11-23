@@ -50,6 +50,7 @@ $ogImageUrl = Seo::absUrl($ogImage ?? '/assets/img/og.jpg');
 <?= View::render('partials/footer', ['shop' => $shop, 'delivery' => $delivery]) ?>
 <script src="<?= View::asset('js/site.js') ?>"></script>
 <script src="<?= View::asset('js/focus.js') ?>"></script>
+<script src="<?= View::asset('js/catalog-video.js') ?>"></script>
 <?= $scripts ?? '' ?>
 <?= View::render('partials/counters', ['part' => 'body']) ?>
 </body>

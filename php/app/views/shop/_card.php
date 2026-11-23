@@ -6,6 +6,7 @@ $href = '/bouquet/' . rawurlencode($b['slug']);
 <div class="pcard">
   <a href="<?= e($href) ?>" class="pcard-photo">
     <img src="<?= e($b['photos'][0]) ?>" alt="<?= e($b['name']) ?>" loading="lazy"<?= ShopView::pos($b['photoPos'][0] ?? null) ?>>
+    <?php if (!empty($b['video'])): ?><video class="pcard-video" data-catalog-video data-src="<?= e($b['video']) ?>" muted loop playsinline preload="none" aria-label="<?= e($b['name']) ?>"></video><?php endif ?>
     <?= ShopView::badges($b) ?>
   </a>
   <div class="pcard-body">

@@ -302,8 +302,10 @@ a.map-link:hover { color: inherit; text-decoration-thickness: 2px; }
 .grid-3 { grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); }
 .pcard { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .pcard-photo { position: relative; height: 340px; border-radius: var(--radius); overflow: hidden; background: var(--blush); display: block; }
-.pcard-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
-.pcard-photo:hover img { transform: scale(1.03); }
+.pcard-photo img, .pcard-video { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+.pcard-video { position: absolute; inset: 0; opacity: 0; transition: opacity .25s, transform .4s; }
+.pcard-video.is-ready { opacity: 1; }
+.pcard-photo:hover img, .pcard-photo:hover .pcard-video { transform: scale(1.03); }
 /* Название в одну строку (решение владельца), длинное обрезается «…» */
 .pcard-title { font-family: var(--serif); font-size: 22px; font-weight: 500; line-height: 1.2; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pcard-body { flex: 1; display: flex; flex-direction: column; gap: 10px; }

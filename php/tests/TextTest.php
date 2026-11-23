@@ -81,9 +81,15 @@ test('пароль', function () {
 group('фото');
 test('имя файла и первые байты', function () {
     eq(Uploads::safeName('20261023-ab12.jpg'), '20261023-ab12.jpg');
+    eq(Uploads::safeName('20261023-ab12.mp4'), '20261023-ab12.mp4');
     eq(Uploads::safeName('../x.php'), null);
     eq(Uploads::looksLikeImage("\xFF\xD8\xFF\xE0", 'image/jpeg'), true);
     eq(Uploads::looksLikeImage('<?php', 'image/jpeg'), false);
+    ok(Uploads::looksLikeVideo("\0\0\0\x18ftypisom"));
+    ok(Uploads::looksLikeVideo("\x1A\x45\xDF\xA3webm"));
+    ok(!Uploads::looksLikeVideo("\xFF\xD8\xFF\xE0"));
+    ok(Uploads::isVideoPath('/uploads/20261023-ab12.mp4'));
+    ok(!Uploads::isVideoPath('/uploads/20261023-ab12.webm'));
 });
 
 group('SQL-миграции');
