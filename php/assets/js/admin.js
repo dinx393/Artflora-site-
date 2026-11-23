@@ -2,6 +2,24 @@
 // (заголовок X-CSRF берётся из <meta name="csrf">), ответ — тоже JSON.
 (function () {
   var token = (document.querySelector('meta[name="csrf"]') || {}).content || "";
+
+  function sendFile(url, file, kind, timeoutMs) {
+    var fd = new FormData();
+    fd.append("file", file, file.name);
+    fd.append("_csrf", token);
+    var controller = "AbortController" in window ? new AbortController() : null;
+    var timer = controller && timeoutMs ? setTimeout(function () { controller.abort(); }, timeoutMs) : null;
+    return fetch(url, { method: "POST", headers: { "X-CSRF": token }, body: fd, signal: controller ? controller.signal : undefined }).then(function (r) {
+      if (timer) clearTimeout(timer);
+      return r.json().catch(function () {
+        return { ok: false, error: r.status === 413 ? kind + " слишком большое для хостинга" : "Сервер ответил ошибкой " + r.status };
+      });
+    }, function (e) {
+      if (timer) clearTimeout(timer);
+      return { ok: false, error: e && e.name === "AbortError" ? "Сжатие видео заняло больше 3 минут. Попробуйте укоротить ролик" : "Не удалось отправить " + kind.toLowerCase() };
+    });
+  }
+
   window.ArtfloraAdmin = {
     post: function (url, data) {
       return fetch(url, {
@@ -16,17 +34,14 @@
     // Перед отправкой: HEIC (фото iPhone) → JPEG, слишком большое фото — уменьшаем (см. prepareImage).
     upload: function (url, file) {
       return prepareImage(file).then(function (f) {
-        var fd = new FormData();
-        fd.append("file", f, f.name);
-        fd.append("_csrf", token);
-        return fetch(url, { method: "POST", headers: { "X-CSRF": token }, body: fd }).then(function (r) {
-          return r.json().catch(function () {
-            return { ok: false, error: r.status === 413 ? "Фото слишком большое для хостинга" : "Сервер ответил ошибкой " + r.status };
-          });
-        });
+        return sendFile(url, f, "Фото", 120000);
       }, function (e) {
         return { ok: false, error: (e && e.message) || "Не удалось открыть фото" };
       });
+    },
+    // Видео не пропускаем через prepareImage: большой MP4 нельзя пытаться открыть как фотографию.
+    uploadFile: function (url, file) {
+      return sendFile(url, file, "Видео", 180000);
     },
   };
 

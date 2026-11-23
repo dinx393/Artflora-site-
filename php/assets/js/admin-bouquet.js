@@ -230,7 +230,7 @@
     if (!file) return;
     state.uploadingVideo = true;
     ui.render();
-    window.ArtfloraAdmin.upload("/admin/upload-video", file).then(
+    window.ArtfloraAdmin.uploadFile("/admin/upload-video", file).then(
       function (r) {
         if (r.ok && r.path) state.b.video = r.path;
         else state.msg = { ok: false, text: r.error || "Не удалось загрузить видео" };

@@ -109,6 +109,7 @@ final class Uploads
     // Исходник никогда не становится доступен покупателю, поэтому тяжёлое видео не замедлит каталог.
     public static function saveVideo(array $file): array
     {
+        @set_time_limit(180);
         $err = $file['error'] ?? UPLOAD_ERR_NO_FILE;
         if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) {
             return ['ok' => false, 'error' => 'Видео больше ' . self::mb(min(self::MAX_VIDEO_BYTES, self::phpLimit())) . ' — столько разрешает хостинг'];
@@ -131,9 +132,9 @@ final class Uploads
             }
             $ffmpeg = trim((string) Config::get('ffmpeg')) ?: 'ffmpeg';
             // 720 px по длинной стороне, H.264 для Safari/iPhone, без аудио, faststart — можно начать смотреть сразу.
-            $cmd = escapeshellcmd($ffmpeg) . ' -y -i ' . escapeshellarg($source)
-                . ' -map 0:v:0 -an -vf ' . escapeshellarg('scale=720:720:force_original_aspect_ratio=decrease')
-                . ' -c:v libx264 -preset veryfast -crf 28 -pix_fmt yuv420p -movflags +faststart ' . escapeshellarg($result);
+            $cmd = escapeshellcmd($ffmpeg) . ' -hide_banner -loglevel error -nostdin -y -i ' . escapeshellarg($source)
+                . ' -map 0:v:0 -an -vf ' . escapeshellarg('scale=720:720:force_original_aspect_ratio=decrease,fps=24')
+                . ' -c:v libx264 -preset superfast -crf 29 -pix_fmt yuv420p -movflags +faststart ' . escapeshellarg($result);
             $out = [];
             $code = 1;
             @exec($cmd . ' 2>&1', $out, $code);
