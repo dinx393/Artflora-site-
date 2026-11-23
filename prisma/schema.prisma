@@ -69,6 +69,7 @@ model Bouquet {
   colors        String[]      @default([]) // слаги цветов для фильтра: white, pink, red, burgundy, yellow, lilac, mix
   occasions     String[] // слаги поводов: mom, love, birthday, colleague, nothing, wedding, exotic
   photos        String[] // пути к фото, первое — главное
+  video         String        @default("") // короткий ролик для карточки в каталоге
   sortOrder     Int           @default(0)
   collectionId  Int?
   collection    Collection?   @relation(fields: [collectionId], references: [id], onDelete: SetNull)

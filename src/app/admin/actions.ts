@@ -1,7 +1,10 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { promisify } from "node:util";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -16,7 +19,9 @@ import type { ColorOption } from "@/lib/occasions";
 import { sendTestEmail } from "@/lib/notify";
 import { SIZE_ORDER } from "@/lib/pricing";
 import { saveSetting } from "@/lib/settings";
-import { ALLOWED_TYPES, looksLikeImage, UPLOAD_DIR } from "@/lib/uploads";
+import { ALLOWED_TYPES, looksLikeImage, looksLikeVideo, UPLOAD_DIR, VIDEO_TYPES } from "@/lib/uploads";
+
+const execFileAsync = promisify(execFile);
 
 // ---------- Вход ----------
 
@@ -190,6 +195,7 @@ const bouquetInput = z.object({
   colors: z.array(z.string().max(20)).max(10),
   occasions: z.array(z.string().max(30)).max(10),
   photos: z.array(z.string().max(300)).max(12),
+  video: z.string().max(300).default(""),
   collectionId: z.number().int().nullable(),
   sizes: z.array(sizeInput).max(SIZE_ORDER.length),
 });
@@ -224,6 +230,7 @@ export async function saveBouquet(input: BouquetInput): Promise<{ ok: boolean; e
           colors: b.colors,
           occasions: b.occasions,
           photos: b.photos,
+          video: b.video,
           collectionId: b.collectionId,
         },
       });
@@ -347,6 +354,42 @@ export async function uploadPhoto(formData: FormData): Promise<{ ok: boolean; pa
   const name = `${Date.now().toString(36)}-${randomBytes(4).toString("hex")}${ext}`;
   await writeFile(path.join(UPLOAD_DIR, name), data);
   return { ok: true, path: `/uploads/${name}` };
+}
+
+export async function uploadBouquetVideo(formData: FormData): Promise<{ ok: boolean; path?: string; error?: string }> {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "Файл не выбран" };
+  if (!VIDEO_TYPES[file.type]) return { ok: false, error: "Подходят только MP4 или WebM" };
+  // Карточки подгружают ролики лишь рядом с экраном, но ограничение размера всё равно защищает каталог.
+  if (file.size > 50 * 1024 * 1024) return { ok: false, error: "Видео больше 50 МБ. Сожмите ролик перед загрузкой" };
+  const data = Buffer.from(await file.arrayBuffer());
+  if (!looksLikeVideo(data, file.type)) return { ok: false, error: "Файл не похож на видео MP4 или WebM" };
+  const tempDir = await mkdtemp(path.join(tmpdir(), "artflora-video-"));
+  const input = path.join(tempDir, "source");
+  const output = path.join(tempDir, "catalog.mp4");
+  try {
+    await writeFile(input, data);
+    // Для каталога не нужен звук. 720px по ширине и CRF 28 обычно дают 3–10 МБ
+    // для короткого вертикального ролика и не заметно ухудшают картинку на карточке.
+    await execFileAsync("ffmpeg", [
+      "-y", "-i", input,
+      "-map", "0:v:0", "-an",
+      "-vf", "scale=min(720\\,iw):-2:force_original_aspect_ratio=decrease",
+      "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
+      "-pix_fmt", "yuv420p", "-movflags", "+faststart", output,
+    ], { maxBuffer: 2 * 1024 * 1024 });
+    if ((await stat(output)).size === 0) return { ok: false, error: "Не получилось обработать видео" };
+    await mkdir(UPLOAD_DIR, { recursive: true });
+    const name = `${Date.now().toString(36)}-${randomBytes(4).toString("hex")}.mp4`;
+    await writeFile(path.join(UPLOAD_DIR, name), await readFile(output));
+    return { ok: true, path: `/uploads/${name}` };
+  } catch (e) {
+    console.error("uploadBouquetVideo:", e);
+    return { ok: false, error: "Не получилось сжать видео. Попробуйте MP4 или WebM ещё раз" };
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
 }
 
 // ---------- Коллекции ----------

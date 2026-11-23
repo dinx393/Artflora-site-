@@ -14,7 +14,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   experimental: {
-    serverActions: { bodySizeLimit: "10mb" },
+    // Видео загружается из админки и сразу пережимается на сервере.
+    serverActions: { bodySizeLimit: "60mb" },
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

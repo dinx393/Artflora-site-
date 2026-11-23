@@ -46,6 +46,7 @@ export type BouquetView = {
   colors: string[];
   occasions: string[];
   photos: string[];
+  video: string;
   collectionId: number | null;
   collectionSlug: string | null;
   collectionName: string | null;
@@ -80,6 +81,7 @@ export function toView(b: BouquetRow): BouquetView | null {
     colors: b.colors,
     occasions: b.occasions,
     photos: b.photos.length ? b.photos : ["/demo/placeholder.svg"],
+    video: b.video,
     collectionId: b.collectionId,
     collectionSlug: b.collection?.slug ?? null,
     collectionName: b.collection?.name ?? null,

@@ -22,6 +22,7 @@ RUN npx prisma generate && npx next build \
 
 FROM node:22-alpine AS run
 WORKDIR /app
+RUN apk add --no-cache ffmpeg
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 UPLOAD_DIR=/data/uploads
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static

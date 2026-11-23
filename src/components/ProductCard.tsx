@@ -3,12 +3,13 @@ import type { BouquetView } from "@/lib/catalog";
 import { formatByn } from "@/lib/money";
 import { AddToCartButton } from "./AddToCartButton";
 import { Byn } from "@/components/Byn";
+import { CatalogCardMedia } from "./CatalogCardMedia";
 
 export function ProductCard({ b, note }: { b: BouquetView; note?: string }) {
   return (
     <div className="pcard">
       <Link href={`/bouquet/${b.slug}`} className="pcard-photo">
-        <img src={b.photos[0]} alt={b.name} loading="lazy" />
+        <CatalogCardMedia image={b.photos[0]} video={b.video} alt={b.name} />
         {b.isHit && <span className="badge">Хит недели</span>}
       </Link>
       <div className="pcard-body">

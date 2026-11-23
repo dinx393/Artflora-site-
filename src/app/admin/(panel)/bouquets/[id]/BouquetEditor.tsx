@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { formatByn, kopToInput, parseByn } from "@/lib/money";
 import { qtyText, type SizeCode } from "@/lib/pricing";
 import { FORMATS, OCCASIONS, type ColorOption, type FormatCode } from "@/lib/occasions";
-import { cloneToFormat, deleteBouquet, saveBouquet, uploadPhoto, type BouquetInput } from "../../../actions";
+import { cloneToFormat, deleteBouquet, saveBouquet, uploadBouquetVideo, uploadPhoto, type BouquetInput } from "../../../actions";
 
 type Flower = { id: number; name: string; kind: "FLOWER" | "GREEN"; unit: "STEM" | "PIECE"; priceKop: number; inStock: boolean; substitutes: number[] };
 
@@ -94,6 +94,17 @@ export function BouquetEditor({
     setUploading(false);
   }
 
+  async function onVideoUpload(file: File | undefined) {
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.set("file", file);
+    const r = await uploadBouquetVideo(fd);
+    if (r.ok && r.path) setB((x) => ({ ...x, video: r.path }));
+    else setMsg({ ok: false, text: r.error ?? "Не удалось загрузить видео" });
+    setUploading(false);
+  }
+
   function save() {
     const bad = b.sizes.find((s) => parseByn(packagingText[s.code]) === null);
     if (bad) {
@@ -157,6 +168,16 @@ export function BouquetEditor({
               {uploading ? "Загрузка…" : "+ Фото"}
               <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e) => onUpload(e.target.files)} />
             </label>
+          </div>
+          <div className="field" style={{ gap: 8 }}>
+            <span>Видео в карточке каталога <span className="small muted">(MP4/WebM до 50 МБ; сайт уберёт звук и сожмёт версию для каталога)</span></span>
+            <div className="row" style={{ gap: 10 }}>
+              <label className="btn btn-outline" style={{ cursor: "pointer" }}>
+                {uploading ? "Загрузка…" : b.video ? "Заменить видео" : "+ Видео"}
+                <input type="file" accept="video/mp4,video/webm" hidden onChange={(e) => onVideoUpload(e.target.files?.[0])} />
+              </label>
+              {b.video && <><span className="small muted">Видео добавлено</span><button type="button" className="small" onClick={() => setB({ ...b, video: "" })}>Убрать</button></>}
+            </div>
           </div>
 
           <label className="field"><span>Название</span><input className="input" value={b.name} onChange={(e) => setB({ ...b, name: e.target.value })} /></label>

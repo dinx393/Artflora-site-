@@ -2,7 +2,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { safeName, UPLOAD_DIR } from "@/lib/uploads";
 
-const TYPES: Record<string, string> = { ".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
+const TYPES: Record<string, string> = {
+  ".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp",
+  ".mp4": "video/mp4", ".webm": "video/webm",
+};
 
 export async function GET(_req: Request, { params }: { params: Promise<{ name: string }> }) {
   const name = safeName((await params).name);

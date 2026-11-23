@@ -33,6 +33,7 @@ export default async function EditBouquet({ params }: { params: Promise<{ id: st
         colors: b.colors,
         occasions: b.occasions,
         photos: b.photos,
+        video: b.video,
         collectionId: b.collectionId,
         sizes: SIZE_ORDER.map((code) => {
           const s = b.sizes.find((x) => x.code === code);
