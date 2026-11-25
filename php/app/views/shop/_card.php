@@ -16,7 +16,7 @@ $href = '/bouquet/' . rawurlencode($b['slug']);
     <?php if (!empty($note)): ?><span class="small muted"><?= e($note) ?></span><?php endif ?>
     <div class="pcard-buy">
       <span class="price"><?= ShopView::byn($b['priceKop']) ?></span>
-      <button type="button" class="btn btn-outline pcard-add" aria-label="Добавить в корзину" data-add-to-cart data-bouquet="<?= e($b['id']) ?>" data-size="<?= e($b['defaultSize']) ?>">
+      <button type="button" class="btn btn-outline pcard-add" aria-label="Добавить в корзину" data-add-to-cart data-bouquet="<?= e($b['id']) ?>" data-name="<?= e($b['name']) ?>" data-price-kop="<?= e($b['priceKop']) ?>" data-size="<?= e($b['defaultSize']) ?>">
         <span data-icon><?= Icons::get('bag', 18) ?></span>
         <span class="pcard-add-word">В корзину</span>
       </button>

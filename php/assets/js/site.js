@@ -95,7 +95,9 @@
     document.querySelectorAll("[data-cart-link]").forEach(function (el) { el.setAttribute("aria-label", "Корзина, товаров: " + n); });
   }
 
-  // Цели для Яндекс Метрики, Facebook и Google (через GTM): «в корзину» (busket — так, с опечаткой, цель заведена в Метрике), «оформление» (checkout), «заказ оформлен» (order) — busket и order уже были заведены в Метрике 55261273.
+  // Цели для Яндекс Метрики, Facebook и Google (через GTM): просмотр букета (view_bouquet),
+  // переход в карточку (bouquet_click), «в корзину» (busket — так, с опечаткой, цель заведена в Метрике),
+  // «оформление» (checkout), «заказ оформлен» (order), звонок (phone) и мессенджер (messenger).
   // Счётчики работают только после «Принять» на плашке cookie (partials/counters.php): до этого цели ждут в очереди
   // и уходят, как только посетитель согласится. Если отказался — не уходят совсем.
   // ArtfloraGoal({ ym: "order", fb: "Purchase", params: { order_price: 180, currency: "BYN" } })
@@ -113,6 +115,19 @@
     });
   }
   window.ArtfloraGoal = function (g) { goals.push(g); sendGoals(); };
+  // Для просмотров и начала оформления достаточно одного срабатывания за вкладку:
+  // повторное обновление страницы не должно раздувать число достижений цели.
+  window.ArtfloraGoalOnce = function (key, g) {
+    // До согласия цель держится только в памяти текущей страницы. Не ставим отметку заранее,
+    // иначе после перехода на другую страницу событие потеряется и уже не повторится.
+    if (!window.afCountersOn) { window.ArtfloraGoal(g); return; }
+    var k = "af-goal-once-" + key;
+    try {
+      if (sessionStorage.getItem(k)) return;
+      sessionStorage.setItem(k, "1");
+    } catch (e) {}
+    window.ArtfloraGoal(g);
+  };
   window.afGoalsFlush = sendGoals;
 
   // Откуда пришёл покупатель — уходит вместе с заказом, видно в админке и Telegram (решение 2026-11-01).
@@ -160,7 +175,12 @@
       else c.lines.push({ bouquetId: line.bouquetId, size: line.size, qty: line.qty });
       if (cardText && cardText.trim()) c.cardText = cardText;
       write(c);
-      window.ArtfloraGoal({ ym: "busket", fb: "AddToCart", fbParams: { content_ids: [String(line.bouquetId)], content_type: "product" } });
+      window.ArtfloraGoal({
+        ym: "busket",
+        params: { bouquet_id: String(line.bouquetId), bouquet_name: line.name || "", bouquet_size: line.size || "", bouquet_price: (Number(line.priceKop) || 0) / 100 },
+        fb: "AddToCart",
+        fbParams: { content_ids: [String(line.bouquetId)], content_name: line.name || "", content_type: "product", value: (Number(line.priceKop) || 0) / 100, currency: "BYN" }
+      });
     },
     hasAddon: function (id) { return hasAddon(read(), id); },
     // Положить доп в корзину или убрать его оттуда. Возвращает true, если теперь он в корзине.
@@ -179,6 +199,39 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     updateBadges();
+
+    // Ключевые клики воронки. Метрика дополнительно умеет показывать обычную карту всех кликов,
+    // а эти события позволяют отдельно сравнить букеты и каналы связи в отчётах по целям.
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest && e.target.closest("a[href]");
+      if (!a) return;
+      var href = a.getAttribute("href") || "";
+      var page = location.pathname;
+      if (/^tel:/i.test(href)) {
+        window.ArtfloraGoal({ ym: "phone", params: { page: page }, fb: "Contact", fbParams: { contact_method: "phone" } });
+        return;
+      }
+      var channel = /(?:t\.me|telegram\.me)/i.test(href) ? "telegram"
+        : /^viber:/i.test(href) ? "viber"
+        : /(?:wa\.me|whatsapp\.com)/i.test(href) ? "whatsapp" : "";
+      if (channel) {
+        window.ArtfloraGoal({ ym: "messenger", params: { channel: channel, page: page }, fb: "Contact", fbParams: { contact_method: channel } });
+        return;
+      }
+      try {
+        var to = new URL(href, location.href);
+        var m = to.origin === location.origin && to.pathname.match(/^\/bouquet\/([^/]+)\/?$/);
+        if (m && to.pathname !== location.pathname) {
+          var card = a.closest(".pcard");
+          var title = card && card.querySelector(".pcard-title");
+          var img = a.querySelector("img[alt]");
+          window.ArtfloraGoal({
+            ym: "bouquet_click",
+            params: { bouquet_slug: decodeURIComponent(m[1]), bouquet_name: title ? title.textContent.trim() : (img ? img.alt : a.textContent.trim()), from_page: page }
+          });
+        }
+      } catch (err) {}
+    });
 
     // Номер в шапке: выпадающий выбор мессенджера
     document.querySelectorAll("[data-phone-menu]").forEach(function (box) {

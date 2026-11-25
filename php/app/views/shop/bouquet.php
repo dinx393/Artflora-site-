@@ -53,7 +53,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
       <div class="small muted">Перед отправкой пришлём фото именно вашего букета.</div>
     </div>
 
-    <div class="buy" data-buybox data-bouquet="<?= e($b['id']) ?>" data-size="<?= e($b['defaultSize']) ?>">
+    <div class="buy" data-buybox data-bouquet="<?= e($b['id']) ?>" data-name="<?= e($b['name']) ?>" data-size="<?= e($b['defaultSize']) ?>" data-price-kop="<?= e($def['priceKop']) ?>">
       <div class="row" style="gap: 6px">
         <?php foreach ($b['occasions'] as $o): ?>
           <a href="<?= e(Seo::catalogUrl(['occasion' => $o])) ?>" class="tag"><?= e(Occasions::label($o)) ?></a>
@@ -85,7 +85,7 @@ $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
           <div class="label">Размер</div>
           <div class="size-grid">
             <?php foreach ($b['sizes'] as $s): ?>
-              <button type="button" class="opt <?= $s['code'] === $b['defaultSize'] ? 'on' : '' ?>" data-size-opt="<?= e($s['code']) ?>"
+              <button type="button" class="opt <?= $s['code'] === $b['defaultSize'] ? 'on' : '' ?>" data-size-opt="<?= e($s['code']) ?>" data-price-kop="<?= e($s['priceKop']) ?>"
                 data-price-html="<?= e(ShopView::byn($s['priceKop'])) ?>" data-pickup-text="<?= e('Самовывоз: ' . $pickup($s['priceKop'])) ?>" data-only-shop-label="<?= e($s['onlyShopLabel']) ?>" data-width="<?= e($s['widthCm']) ?>" data-height="<?= e($s['heightCm']) ?>">
                 <b><?= e($s['code']) ?> · <?= e(Money::format($s['priceKop'])) ?></b>
                 <?php if ($s['note'] !== ''): ?><span class="note"><?= e($s['note']) ?></span><?php endif ?>

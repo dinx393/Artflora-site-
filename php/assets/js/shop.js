@@ -33,7 +33,7 @@
       var iconHtml = icon.innerHTML;
       var timer;
       btn.addEventListener("click", function () {
-        ArtfloraCart.add({ bouquetId: Number(btn.dataset.bouquet), size: btn.dataset.size, qty: 1 });
+        ArtfloraCart.add({ bouquetId: Number(btn.dataset.bouquet), name: btn.dataset.name, priceKop: Number(btn.dataset.priceKop) || 0, size: btn.dataset.size, qty: 1 });
         var img = btn.closest(".pcard") && btn.closest(".pcard").querySelector("img");
         ArtfloraFly(btn, img && (img.currentSrc || img.src));
         btn.classList.add("done");
@@ -81,12 +81,21 @@
     var box = document.querySelector("[data-buybox]");
     if (!box) return;
     var size = box.dataset.size;
+    var priceKop = Number(box.dataset.priceKop) || 0;
     var price = box.querySelector("[data-price]");
     var pickup = box.querySelector("[data-pickup]");
+
+    window.ArtfloraGoalOnce("view-bouquet-" + box.dataset.bouquet, {
+      ym: "view_bouquet",
+      params: { bouquet_id: box.dataset.bouquet, bouquet_name: box.dataset.name || "" },
+      fb: "ViewContent",
+      fbParams: { content_ids: [String(box.dataset.bouquet)], content_name: box.dataset.name || "", content_type: "product", value: priceKop / 100, currency: "BYN" }
+    });
 
     box.querySelectorAll("[data-size-opt]").forEach(function (opt) {
       opt.addEventListener("click", function () {
         size = opt.dataset.sizeOpt;
+        priceKop = Number(opt.dataset.priceKop) || priceKop;
         box.querySelectorAll("[data-size-opt]").forEach(function (o) { o.classList.toggle("on", o === opt); });
         price.innerHTML = opt.dataset.priceHtml;
         pickup.textContent = opt.dataset.pickupText;
@@ -138,7 +147,7 @@
     var added = box.querySelector("[data-added]");
     var text = box.querySelector("[data-card-text]");
     add.addEventListener("click", function () {
-      ArtfloraCart.add({ bouquetId: Number(box.dataset.bouquet), size: size, qty: 1 }, text.value);
+      ArtfloraCart.add({ bouquetId: Number(box.dataset.bouquet), name: box.dataset.name, priceKop: priceKop, size: size, qty: 1 }, text.value);
       var main = document.querySelector("[data-gallery-main]");
       ArtfloraFly(add, main && (main.currentSrc || main.src));
       // Покупатель сразу видит, что вместе с букетом едут и выбранные допы
