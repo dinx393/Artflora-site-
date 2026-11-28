@@ -264,14 +264,15 @@ final class Delivery
 
     public static function pickupDiscountKop(int $goodsKop, array $cfg): int
     {
-        // Округляем именно скидку до целого BYN по обычным математическим
-        // правилам: 17,49 → 17 BYN, 17,50 → 18 BYN.
-        $discountByn = (int) round(
-            $goodsKop * (float) $cfg['pickupDiscountPct'] / 10000,
+        // После применения скидки округляем конечную цену до целого BYN
+        // по обычным математическим правилам: 238,49 → 238, 238,50 → 239.
+        $totalByn = (int) round(
+            $goodsKop * (100 - (float) $cfg['pickupDiscountPct']) / 10000,
             0,
             PHP_ROUND_HALF_UP
         );
-        return min($goodsKop, max(0, $discountByn * 100));
+        $totalKop = min($goodsKop, max(0, $totalByn * 100));
+        return $goodsKop - $totalKop;
     }
 
     // Минимальная цена доставки — для надписи «Доставка от 6 BYN».

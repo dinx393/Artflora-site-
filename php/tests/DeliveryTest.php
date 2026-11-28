@@ -51,11 +51,10 @@ test('за МКАД — одна цена, без доплаты за км', fun
 test('бесплатно от 200 BYN внутри МКАД', fn () => eq(Delivery::quote($at('Центр'), 20000, $cfg)['priceKop'], 0));
 test('за МКАД бесплатной доставки нет', fn () => eq(Delivery::quote($at('Заславль'), 25000, $cfg)['priceKop'], $cfg['outsideMkadKop']));
 test('далеко за МКАД — та же цена «за МКАД»', fn () => eq(Delivery::quote(['lat' => 53.13, 'lng' => 26.01], 13000, $cfg)['priceKop'], $cfg['outsideMkadKop']));
-test('самовывоз: скидка округляется математически до целого BYN', function () use ($cfg) {
-    eq(Delivery::pickupDiscountKop(17500, $cfg), 1800, '17,50 BYN вверх');
-    eq(Delivery::pickupDiscountKop(17490, $cfg), 1700, '17,49 BYN вниз');
-    eq(Delivery::pickupDiscountKop(13400, $cfg), 1300, '13,40 BYN вниз');
-    eq(Delivery::pickupDiscountKop(13500, $cfg), 1400, '13,50 BYN вверх');
+test('самовывоз: конечная цена округляется математически до целого BYN', function () use ($cfg) {
+    eq(26500 - Delivery::pickupDiscountKop(26500, $cfg), 23900, '238,50 BYN вверх');
+    eq(13050 - Delivery::pickupDiscountKop(13050, $cfg), 11700, '117,45 BYN вниз');
+    eq(13056 - Delivery::pickupDiscountKop(13056, $cfg), 11800, '117,504 BYN вверх');
 });
 test('свой участок важнее кругов: своя цена или «не возим»', function () use ($at, $cfg) {
     $box = fn ($lat, $lng, $d = 0.05) => [['lat' => $lat - $d, 'lng' => $lng - $d], ['lat' => $lat - $d, 'lng' => $lng + $d], ['lat' => $lat + $d, 'lng' => $lng + $d], ['lat' => $lat + $d, 'lng' => $lng - $d]];
