@@ -52,6 +52,8 @@ Http::get('/', function () {
 function catalog_page(?string $landingSlug = null): string
 {
     $landing = $landingSlug !== null ? Seo::LANDINGS[$landingSlug] : null;
+    $shop = Settings::get('shop');
+    $delivery = Settings::get('delivery');
     $keys = ['occasion', 'price', 'flower', 'color', 'format', 'section', 'collection', 'q', 'sort', 'n'];
     $sp = $landing['filter'] ?? [];
     $userKeys = [];
@@ -83,8 +85,22 @@ function catalog_page(?string $landingSlug = null): string
     $isLanding = $landing && $canonical === "/catalog/$landingSlug";
     // Текст для поиска внизу: у раздела свой, у общего каталога без фильтров — общий
     $seoText = $isLanding ? ($landing['text'] ?? []) : ($canonical === '/catalog' && !$userKeys ? Seo::CATALOG_TEXT : []);
+    $pagePath = $canonical ?: '/catalog';
+    $pageTitle = $isLanding ? $landing['title'] : ($occ ? "Букеты {$occ['title']} с доставкой по Минску" : 'Каталог букетов с доставкой по Минску');
+    $jsonLd = [
+        Seo::collection($pageTitle, $pagePath, $list),
+        Seo::breadcrumbs($isLanding
+            ? [['Главная', '/'], ['Каталог', '/catalog'], [implode(' ', $landing['h1']), null]]
+            : [['Главная', '/'], ['Каталог', null]]),
+    ];
+    $districtShop = $isLanding && !empty($landing['district']) ? Seo::districtShop($landing, $delivery) : null;
+    $districtFaq = $districtShop ? Seo::districtFaq($landing, $districtShop, $delivery) : [];
+    if ($districtShop) {
+        $jsonLd[] = Seo::districtBusiness($landing, $districtShop, $pagePath);
+        $jsonLd[] = Seo::faqLd($districtFaq);
+    }
     return View::page('shop/catalog', [
-        'title' => $isLanding ? $landing['title'] : ($occ ? "Букеты {$occ['title']} с доставкой по Минску" : 'Каталог букетов с доставкой по Минску'),
+        'title' => $pageTitle,
         // суммы и скидка — из админки («Доставка»), а не вписаны в текст
         'description' => strtr($isLanding ? $landing['description']
             : 'Букеты, композиции в коробках и корзинах с доставкой по Минску в день заказа. Фото букета до отправки, самовывоз −{{pickupPct}}%.',
@@ -93,6 +109,9 @@ function catalog_page(?string $landingSlug = null): string
         'noindex' => $canonical === null,
         'landing' => $isLanding ? $landing : null,
         'seoText' => $seoText,
+        'districtShop' => $districtShop,
+        'districtFaq' => $districtFaq,
+        'jsonLd' => $jsonLd,
         'sp' => $sp,
         'all' => $all,
         'list' => $list,
@@ -106,8 +125,8 @@ function catalog_page(?string $landingSlug = null): string
         // В фильтре «Цветок» только основные цветы (галочка «В фильтре» в админке), дополняющие не показываем
         'flowers' => Db::all("SELECT id, name FROM flowers WHERE kind = 'FLOWER' AND inFilter = 1 ORDER BY sortOrder, name"),
         'addons' => ShopView::addons(),
-        'shop' => Settings::get('shop'),
-        'delivery' => Settings::get('delivery'),
+        'shop' => $shop,
+        'delivery' => $delivery,
         'scripts' => '<script src="' . View::asset('js/shop.js') . '"></script>',
     ]);
 }

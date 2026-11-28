@@ -232,6 +232,32 @@ $f = fn (array $patch) => e($href($sp, $patch));
       </div>
     <?php endif ?>
 
+    <?php if (!empty($districtShop)): /* Локальная страница салона: факты видны и людям, и поисковику */ ?>
+      <section class="seo-block" aria-labelledby="district-shop-title">
+        <div class="row" style="gap: 40px; align-items: flex-start">
+          <div class="stack" style="flex: 1 1 360px; gap: 12px">
+            <h2 id="district-shop-title">Магазин цветов <span class="script">в <?= e($districtShop['name']) ?></span></h2>
+            <p><strong>Адрес:</strong> <?= ShopView::mapLink($districtShop, $districtShop['address'], 'map-link') ?></p>
+            <p><strong>Время работы:</strong> <?= e($districtShop['hours']) ?></p>
+            <p>Можно заказать доставку по району и всему Минску или забрать готовый букет самостоятельно со скидкой <?= e($delivery['pickupDiscountPct']) ?>%.</p>
+            <div class="row" style="gap: 10px">
+              <a href="/delivery" class="btn btn-outline">Доставка и оплата</a>
+              <a href="<?= e(ShopView::mapUrl($districtShop)) ?>" class="btn btn-outline" target="_blank" rel="noreferrer">Открыть на карте</a>
+            </div>
+          </div>
+          <div class="acc" style="flex: 1 1 420px">
+            <h2 style="margin-bottom: 8px">Частые <span class="script">вопросы</span></h2>
+            <?php foreach ($districtFaq as [$q, $a]): ?>
+              <details>
+                <summary><?= e($q) ?></summary>
+                <div><?= e($a) ?></div>
+              </details>
+            <?php endforeach ?>
+          </div>
+        </div>
+      </section>
+    <?php endif ?>
+
     <div class="band">
       <div class="stack" style="flex: 1 1 320px; gap: 10px">
         <h2>Тот самый букет ещё <span class="script">не придуман?</span></h2>

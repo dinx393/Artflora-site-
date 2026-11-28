@@ -44,6 +44,28 @@ test('часы работы', function () {
     eq(count(Seo::openingHours('8:00–21:00')[0]['dayOfWeek']), 7);
 });
 test('json без </script> внутри', fn () => ok(!str_contains(Seo::jsonLd(['x' => '</script>']), '</script><')));
+test('районная страница связана со своим салоном', function () {
+    $delivery = Defaults::DELIVERY;
+    $u = Seo::LANDINGS['tsvety-uruchye'];
+    $m = Seo::LANDINGS['tsvety-malinovka'];
+    eq(Seo::districtShop($u, $delivery)['code'], 'uruchye');
+    eq(Seo::districtShop($m, $delivery)['code'], 'malinovka');
+    ok(str_contains(Seo::districtFaq($m, Seo::districtShop($m, $delivery), $delivery)[0][1], 'Яна Чечота'));
+});
+test('коллекция содержит ссылки и названия букетов', function () {
+    $ld = Seo::collection('Букеты в Минске', '/catalog', [[
+        'slug' => 'alye-rozy', 'name' => 'Алые розы', 'photos' => ['/uploads/rose.jpg'],
+    ]]);
+    eq($ld['@type'], 'CollectionPage');
+    eq($ld['mainEntity']['numberOfItems'], 1);
+    eq($ld['mainEntity']['itemListElement'][0]['name'], 'Алые розы');
+    ok(str_contains($ld['mainEntity']['itemListElement'][0]['url'], '/bouquet/alye-rozy'));
+});
+test('старые статьи о салонах объединены с районными страницами', function () {
+    eq(Articles::REMOVED['prodazha-tsvetov-v-uruche'], '/catalog/tsvety-uruchye');
+    eq(Articles::REMOVED['prodazha-tsvetov-v-malinovke'], '/catalog/tsvety-malinovka');
+    ok(Articles::bySlug('prodazha-tsvetov-v-uruche') === null);
+});
 
 group('статьи');
 test('у каждой статьи есть текст и рубрика', function () {

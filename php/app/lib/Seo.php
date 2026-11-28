@@ -51,18 +51,20 @@ final class Seo
         ],
         // Страницы районов (2026-11-02, SEO под «цветы Уручье», «цветы Малиновка»): все букеты, свой заголовок и текст.
         'tsvety-uruchye' => [
-            'filter' => [], 'district' => true, 'h1' => ['Цветы', 'в Уручье'],
+            'filter' => [], 'district' => true, 'shop' => 'uruchye', 'h1' => ['Цветы', 'в Уручье'],
             'title' => 'Цветы в Уручье: салон цветов на Независимости 168/1 и доставка',
-            'description' => 'Салон цветов «Артфлора.by» в Уручье на пр. Независимости, 168/1: букеты, розы, корзины. Доставка по Уручью, Боровой, Копищу и всему Минску, самовывоз −10%.',
+            'description' => 'Салон цветов «Артфлора.by» в Уручье на пр. Независимости, 168/1: букеты, розы, корзины. Доставка по Уручью, Боровой, Копищу и всему Минску, самовывоз −{{pickupPct}}%.',
+            'areas' => ['Уручье', 'Боровая', 'Новая Боровая', 'Копище', 'Зелёный Луг', 'Восток', 'Степянка'],
             'text' => [
                 'Наш салон в Уручье работает на пр. Независимости, 168/1. Здесь всегда есть свежие розы, хризантемы, сезонные цветы и готовые букеты, а флорист соберёт букет под ваш повод и бюджет.',
                 'Из этого салона мы быстрее всего доставляем цветы по Уручью, Боровой, Новой Боровой, Копищу, Зелёному Лугу, Востоку и Степянке, а также в соседние районы Минска и Минского района. Забрать букет самому можно со скидкой на самовывоз.',
             ],
         ],
         'tsvety-malinovka' => [
-            'filter' => [], 'district' => true, 'h1' => ['Цветы', 'в Малиновке'],
+            'filter' => [], 'district' => true, 'shop' => 'malinovka', 'h1' => ['Цветы', 'в Малиновке'],
             'title' => 'Цветы в Малиновке: салон цветов на Яна Чечота 7 и доставка',
-            'description' => 'Салон цветов «Артфлора.by» в Малиновке на ул. Яна Чечота, 7: букеты, розы, корзины. Доставка по Малиновке, Михалово, Брилевичам и всему Минску, самовывоз −10%.',
+            'description' => 'Салон цветов «Артфлора.by» в Малиновке на ул. Яна Чечота, 7: букеты, розы, корзины. Доставка по Малиновке, Михалово, Брилевичам и всему Минску, самовывоз −{{pickupPct}}%.',
+            'areas' => ['Малиновка', 'Михалово', 'Брилевичи', 'Курасовщина', 'Юго-Запад', 'Сухарево'],
             'text' => [
                 'Наш салон в Малиновке работает на ул. Яна Чечота, 7. Здесь всегда есть свежие розы, хризантемы, сезонные цветы и готовые букеты, а флорист соберёт букет под ваш повод и бюджет.',
                 'Из этого салона мы быстрее всего доставляем цветы по Малиновке, Михалово, Брилевичам, Курасовщине, Юго-Западу и Сухарево, а также в соседние районы Минска и Минского района. Забрать букет самому можно со скидкой на самовывоз.',
@@ -290,6 +292,85 @@ final class Seo
         ], $faq)];
     }
 
+    // Каталог как понятная поисковику коллекция товаров. На странице оставляем только ссылки,
+    // названия и изображения: полная Product-разметка с ценами живёт в карточке каждого букета.
+    public static function collection(string $name, string $path, array $bouquets): array
+    {
+        $items = [];
+        foreach (array_slice(array_values($bouquets), 0, 24) as $i => $b) {
+            $items[] = array_filter([
+                '@type' => 'ListItem',
+                'position' => $i + 1,
+                'url' => self::absUrl('/bouquet/' . rawurlencode($b['slug'])),
+                'name' => $b['name'],
+                'image' => isset($b['photos'][0]) ? self::absUrl($b['photos'][0]) : null,
+            ], fn ($v) => $v !== null);
+        }
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'CollectionPage',
+            '@id' => self::absUrl($path) . '#collection',
+            'name' => $name,
+            'url' => self::absUrl($path),
+            'inLanguage' => 'ru',
+            'isPartOf' => ['@id' => Config::siteUrl() . '/#site'],
+            'mainEntity' => [
+                '@type' => 'ItemList',
+                'numberOfItems' => count($bouquets),
+                'itemListElement' => $items,
+            ],
+        ];
+    }
+
+    public static function districtShop(array $landing, array $delivery): ?array
+    {
+        $code = $landing['shop'] ?? '';
+        foreach ($delivery['shops'] ?? [] as $s) if (($s['code'] ?? '') === $code) return $s;
+        return null;
+    }
+
+    // Ответы видны человеку и дословно дублируются в FAQPage: это полезнее и для обычного поиска,
+    // и для ответов поисковых ИИ, чем скрытая «SEO-разметка» без текста на странице.
+    public static function districtFaq(array $landing, array $shop, array $delivery): array
+    {
+        $areas = implode(', ', $landing['areas'] ?? [$shop['name']]);
+        return [
+            ["Где находится магазин цветов в {$shop['name']}?",
+                "Салон «Artflora.by» находится по адресу: {$shop['address']}. Время работы: {$shop['hours']}.",],
+            ["Можно ли заказать доставку цветов в {$shop['name']} сегодня?",
+                "Да. Выберите букет на сайте и доступное время. Перед отправкой флорист пришлёт фото готового букета, а курьер доставит заказ по адресу.",],
+            ['В какие районы вы доставляете из этого салона?',
+                "Ближайшие районы: $areas. Также доставляем цветы по всему Минску и в доступные зоны Минского района.",],
+            ['Есть ли скидка на самовывоз?',
+                'Да, при самовывозе из салона действует скидка ' . (int) $delivery['pickupDiscountPct'] . '%.',],
+        ];
+    }
+
+    // Отдельный филиал на его районной странице. Адрес, координаты, часы и зона обслуживания
+    // совпадают с видимым текстом страницы и настройками доставки.
+    public static function districtBusiness(array $landing, array $shop, string $path): array
+    {
+        $site = Config::siteUrl();
+        $phone = '+' . preg_replace('/\D/', '', Settings::get('shop')['phone']);
+        $hours = self::openingHours($shop['hours'] ?? '');
+        return ['@context' => 'https://schema.org'] + array_filter([
+            '@type' => 'Florist',
+            '@id' => "$site/#shop-{$shop['code']}",
+            'name' => "Artflora.by, {$shop['name']}",
+            'url' => self::absUrl($path),
+            'telephone' => $phone,
+            'image' => self::absUrl('/assets/img/og.jpg'),
+            'priceRange' => 'BYN',
+            'parentOrganization' => ['@id' => "$site/#org"],
+            'address' => ['@type' => 'PostalAddress', 'streetAddress' => $shop['address'], 'addressLocality' => 'Минск', 'addressCountry' => 'BY'],
+            'geo' => isset($shop['location']) ? ['@type' => 'GeoCoordinates', 'latitude' => $shop['location']['lat'], 'longitude' => $shop['location']['lng']] : null,
+            'hasMap' => $shop['mapUrl'] ?? null,
+            'openingHoursSpecification' => $hours ?: null,
+            'areaServed' => array_map(fn ($name) => ['@type' => 'Place', 'name' => $name],
+                array_values(array_unique(array_merge(['Минск'], $landing['areas'] ?? [])))),
+        ], fn ($v) => $v !== null);
+    }
+
     // <script type="application/ld+json"> для разметки schema.org
     public static function jsonLd(array $data): string
     {
@@ -340,9 +421,12 @@ final class Seo
         ]];
         foreach ($delivery['shops'] as $s) {
             $h = self::openingHours($s['hours'] ?? '');
+            $landingSlug = 'tsvety-' . ($s['code'] ?? '');
             $graph[] = array_filter([
                 '@type' => 'Florist', '@id' => "$site/#shop-{$s['code']}",
-                'name' => "Artflora.by, {$s['name']}", 'url' => "$site/", 'telephone' => $phone,
+                'name' => "Artflora.by, {$s['name']}",
+                'url' => isset(self::LANDINGS[$landingSlug]) ? "$site/catalog/$landingSlug" : "$site/",
+                'telephone' => $phone,
                 'image' => self::absUrl('/assets/img/og.jpg'), 'priceRange' => 'BYN',
                 'parentOrganization' => ['@id' => "$site/#org"],
                 'address' => ['@type' => 'PostalAddress', 'streetAddress' => $s['address'], 'addressLocality' => 'Минск', 'addressCountry' => 'BY'],

@@ -14,6 +14,10 @@ final class Articles
     // букеты из фруктов не делаем. Старые адреса ведём на похожие страницы.
     public const REMOVED = [
         'prodazha-tsvetov-v-grushevke' => '/delivery',
+        // Старые статьи о салонах объединены с коммерческими районными страницами:
+        // так ссылки и позиции не делятся между двумя страницами об одном и том же.
+        'prodazha-tsvetov-v-uruche' => '/catalog/tsvety-uruchye',
+        'prodazha-tsvetov-v-malinovke' => '/catalog/tsvety-malinovka',
         'bukety-iz-fruktov-i-konfet-zimoj' => '/blog',
         'bukety-iz-osennih-fruktov' => '/blog',
     ];
@@ -23,7 +27,9 @@ final class Articles
     // Все статьи, новые сверху
     public static function all(): array
     {
-        return self::$all ??= require APP_DIR . '/content/articles.php';
+        if (self::$all !== null) return self::$all;
+        $all = require APP_DIR . '/content/articles.php';
+        return self::$all = array_values(array_filter($all, fn ($a) => !isset(self::REMOVED[$a['slug']])));
     }
 
     public static function bySlug(string $slug): ?array
