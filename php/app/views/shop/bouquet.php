@@ -12,7 +12,7 @@ $tags = [];
 foreach (['роз' => 'Розы', 'хризантем' => 'Хризантемы', 'пион' => 'Пионы'] as $stem => $tag) {
     if (array_filter($b['flowerNames'], fn ($n) => mb_stripos($n, $stem) !== false)) $tags[] = $tag;
 }
-$pickup = fn (int $kop) => Money::format($kop - Money::percentOff($kop, $pickupPct));
+$pickup = fn (int $kop) => Money::format($kop - Delivery::pickupDiscountKop($kop, $delivery));
 $def = array_values(array_filter($b['sizes'], fn ($s) => $s['code'] === $b['defaultSize']))[0];
 $shopNames = array_column($delivery['shops'], 'name');
 $link = fn (array $x) => '/bouquet/' . rawurlencode($x['slug']);
